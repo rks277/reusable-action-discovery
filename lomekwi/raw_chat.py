@@ -37,8 +37,18 @@ def _provider_for(model: str) -> str:
 class RawChat:
     """Lazily constructs one client per provider; reusable across calls."""
 
+    # normalized per-call token usage; fields are raw provider counts (ints).
+    # NOTE on semantics (avoids a double-counting trap): Anthropic's input_tokens
+    # is the UNCACHED remainder (cache read/write are separate), whereas OpenAI's
+    # prompt_tokens INCLUDES its cached_tokens subset. So a cross-provider "total
+    # input" is input+cache_read+cache_write for Anthropic but just input for
+    # OpenAI/Google. We log the raw fields and leave that reconciliation to analysis.
+    USAGE_FIELDS = ("input_tokens", "output_tokens", "cache_read_tokens",
+                    "cache_write_tokens", "reasoning_tokens")
+
     def __init__(self):
         self._clients: dict[str, Any] = {}
+        self.last_usage: dict | None = None  # set per chat() call; None on failure
 
     def _anthropic(self):
         if "anthropic" not in self._clients:
@@ -69,8 +79,21 @@ class RawChat:
             )
         return self._clients["google"]
 
+    @staticmethod
+    def _norm_usage(**fields) -> dict:
+        """Build a normalized usage dict, coercing None/missing to int 0."""
+        return {k: int(fields.get(k) or 0) for k in RawChat.USAGE_FIELDS}
+
+    def _set_usage(self, **fields) -> None:
+        """Record per-call usage; never let extraction break the chat call."""
+        try:
+            self.last_usage = self._norm_usage(**fields)
+        except Exception:
+            self.last_usage = None
+
     async def chat(self, model: str, system: str, messages: list[dict], max_tokens: int = 1200) -> str:
         prov = _provider_for(model)
+        self.last_usage = None  # reset; stays None if the call/extraction fails
         # Reasoning models burn the budget on hidden reasoning -> empty visible
         # text at low caps. Give them headroom; keep reasoning "low" so they stay
         # comparable to the no-extended-thinking Anthropic runs.
@@ -79,8 +102,29 @@ class RawChat:
             max_tokens = max(max_tokens, 4000)
 
         if prov == "anthropic":
+            # Prompt caching: the transcript only ever grows by appending, so a
+            # breakpoint on the last message caches the whole prefix (system +
+            # all prior turns). Next turn that breakpoint is an interior prefix
+            # -> served as a cache read (~10% of input price); we only pay full
+            # price for the new turn. Collapses the quadratic input cost.
+            # COPY first: mutating the caller's list would leave a breakpoint on
+            # every past message and blow past Anthropic's 4-breakpoint cap.
+            cached = [dict(m) for m in messages]
+            if cached:
+                last = cached[-1]
+                blocks = ([{"type": "text", "text": last["content"]}]
+                          if isinstance(last["content"], str) else list(last["content"]))
+                blocks[-1] = {**blocks[-1], "cache_control": {"type": "ephemeral"}}
+                last["content"] = blocks
             resp = await self._anthropic().messages.create(
-                model=model, max_tokens=max_tokens, system=system, messages=messages,
+                model=model, max_tokens=max_tokens, system=system, messages=cached,
+            )
+            u = getattr(resp, "usage", None)
+            self._set_usage(
+                input_tokens=getattr(u, "input_tokens", 0),
+                output_tokens=getattr(u, "output_tokens", 0),
+                cache_read_tokens=getattr(u, "cache_read_input_tokens", 0),
+                cache_write_tokens=getattr(u, "cache_creation_input_tokens", 0),
             )
             return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
 
@@ -96,6 +140,16 @@ class RawChat:
             except TypeError:
                 kwargs.pop("reasoning_effort", None)
                 resp = await client.chat.completions.create(max_tokens=max_tokens, **kwargs)
+            u = getattr(resp, "usage", None)
+            ptd = getattr(u, "prompt_tokens_details", None)
+            ctd = getattr(u, "completion_tokens_details", None)
+            # OpenAI prompt_tokens INCLUDES cached_tokens; cache_write n/a (auto-cache).
+            self._set_usage(
+                input_tokens=getattr(u, "prompt_tokens", 0),
+                output_tokens=getattr(u, "completion_tokens", 0),
+                cache_read_tokens=getattr(ptd, "cached_tokens", 0),
+                reasoning_tokens=getattr(ctd, "reasoning_tokens", 0),
+            )
             return resp.choices[0].message.content or ""
 
         if prov == "google":
@@ -117,6 +171,13 @@ class RawChat:
             resp = await asyncio.to_thread(
                 self._google().models.generate_content,
                 model=model, contents=contents, config=cfg,
+            )
+            um = getattr(resp, "usage_metadata", None)
+            self._set_usage(
+                input_tokens=getattr(um, "prompt_token_count", 0),
+                output_tokens=getattr(um, "candidates_token_count", 0),
+                cache_read_tokens=getattr(um, "cached_content_token_count", 0),
+                reasoning_tokens=getattr(um, "thoughts_token_count", 0),
             )
             cand = (resp.candidates or [None])[0]
             parts = getattr(getattr(cand, "content", None), "parts", []) or []

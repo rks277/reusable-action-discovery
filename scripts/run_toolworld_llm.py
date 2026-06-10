@@ -212,12 +212,18 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     msgs = [{"role": "user", "content": s.initial_obs() + "\n\nWhat do you do?"}]
     trace = []
     noop = 0
+    usage_tot = {k: 0 for k in RawChat.USAGE_FIELDS}
+    usage_tot["calls"] = 0
     for t in range(max_turns):
         s.turn = t
         try:
             text = await client.chat(model, SYS, msgs, max_tokens=1500)
         except Exception:
             text = ""
+        if client.last_usage is not None:  # None on failed call -> skip
+            for k, v in client.last_usage.items():
+                usage_tot[k] += v
+            usage_tot["calls"] += 1
         act = extract(text)
         if not act:
             noop += 1
@@ -237,7 +243,8 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         done = s.solved()
         opened_n = len(s.opened)
         print(f"  [t{t+1}] {act} -> {obs[:78]} [{opened_n}/{n}]", flush=True)
-        trace.append({"turn": t, "action": act, "obs": obs, "agent_text": text})
+        trace.append({"turn": t, "action": act, "obs": obs, "agent_text": text,
+                      "usage": client.last_usage})
         msgs += [{"role": "assistant", "content": text},
                  {"role": "user", "content": obs +
                   (f"\n\nAll {n} doors open. Done." if done
@@ -271,6 +278,7 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "t_star": t_star,
         "reuse_fraction": reuse_fraction,
         "open_methods": [info[0] for d, info in opens],
+        "usage": usage_tot,
     }
     print(f"\n  RESULT {model} n={n} seed=({relabel_seed},{drop_seed}): "
           f"solved={result['solved']} actions={result['total_actions']} "

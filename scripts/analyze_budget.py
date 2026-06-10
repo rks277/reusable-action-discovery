@@ -54,6 +54,44 @@ def per_episode(row: dict) -> dict:
             "total_actions": total}
 
 
+def print_token_usage(rows: list[dict], models: list[str]) -> None:
+    """Per-model token totals (raw counts, no pricing). cache% is the cache-read
+    share of input-side tokens (Anthropic-style: in + read + write) and doubles
+    as a check that prompt caching is biting -- ~0 on pre-caching runs, high after.
+    Rows from older runs have no 'usage' key; those render as 0 / '-'."""
+    FIELDS = ("input_tokens", "output_tokens", "cache_read_tokens",
+              "cache_write_tokens")
+    agg = defaultdict(lambda: {**{k: 0 for k in FIELDS}, "calls": 0, "eps": 0})
+    for r in rows:
+        a = agg[r["model"]]
+        u = r.get("usage") or {}
+        for k in FIELDS:
+            a[k] += int(u.get(k, 0) or 0)
+        a["calls"] += int(u.get("calls", 0) or 0)
+        a["eps"] += 1
+
+    def cache_pct(a):
+        denom = a["input_tokens"] + a["cache_read_tokens"] + a["cache_write_tokens"]
+        return f"{a['cache_read_tokens'] / denom * 100:>5.0f}%" if denom else f"{'-':>6}"
+
+    print("\nToken usage per model (raw counts; cache% = read / (in+read+write)):\n")
+    print(f"{'model':14s} {'eps':>3} {'calls':>6} {'in':>10} {'out':>10} "
+          f"{'cache_rd':>10} {'cache%':>6}")
+    print("-" * 68)
+    tot = {**{k: 0 for k in FIELDS}, "calls": 0, "eps": 0}
+    for m in models:
+        a = agg[m]
+        for k in tot:
+            tot[k] += a[k]
+        print(f"{short(m):14s} {a['eps']:>3} {a['calls']:>6} "
+              f"{a['input_tokens']:>10} {a['output_tokens']:>10} "
+              f"{a['cache_read_tokens']:>10} {cache_pct(a)}")
+    print("-" * 68)
+    print(f"{'TOTAL':14s} {tot['eps']:>3} {tot['calls']:>6} "
+          f"{tot['input_tokens']:>10} {tot['output_tokens']:>10} "
+          f"{tot['cache_read_tokens']:>10} {cache_pct(tot)}")
+
+
 def main():
     path = Path(sys.argv[1])
     rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
@@ -93,6 +131,8 @@ def main():
               f"{waste*100:>6.0f}% {bt:>7.1f} | "
               f"{oc['built+solved']:>11}  {oc['built+ranout']:>12}  "
               f"{oc['brute+solved']:>12}  {oc['neverbuilt']:>10}")
+
+    print_token_usage(rows, models)
 
     fig_headline(summary, models, budget, path.parent / "fig_budget_headline.png")
     fig_outcomes(summary, models, path.parent / "fig_budget_outcomes.png")

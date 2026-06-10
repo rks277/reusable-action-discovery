@@ -197,12 +197,18 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
     trace = []
     noop = 0
+    usage_tot = {k: 0 for k in RawChat.USAGE_FIELDS}
+    usage_tot["calls"] = 0
     for t in range(max_turns):
         s.turn = t
         try:
             text = await client.chat(model, SYS, msgs, max_tokens=1500)
         except Exception:
             text = ""
+        if client.last_usage is not None:  # None on failed call -> skip
+            for k, v in client.last_usage.items():
+                usage_tot[k] += v
+            usage_tot["calls"] += 1
         act = extract(text)
         if not act:
             noop += 1
@@ -222,7 +228,8 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         done = s.solved()
         opened_n = len(s.opened)
         print(f"  [t{t+1}] {act} -> {obs[:74]} [{opened_n}/{n}]", flush=True)
-        trace.append({"turn": t, "action": act, "obs": obs, "agent_text": text})
+        trace.append({"turn": t, "action": act, "obs": obs, "agent_text": text,
+                      "usage": client.last_usage})
         out_of_budget = budget is not None and len(trace) >= budget
         if done or out_of_budget:
             msgs += [{"role": "assistant", "content": text},
@@ -246,6 +253,7 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "solved": s.solved(), "opened": len(s.opened),
         "total_actions": len(trace), "budget": budget,
         "built_machine": s.has_machine, "build_turn": build_turn,
+        "usage": usage_tot,
     }
     print(f"\n  RESULT {model} n={n} T={n_types} seed=({relabel_seed},{drop_seed}): "
           f"solved={result['solved']} actions={result['total_actions']} "
