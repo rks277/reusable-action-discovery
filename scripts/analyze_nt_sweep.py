@@ -62,6 +62,7 @@ PRICING = {
     "claude-haiku-4-5-20251001": (1.00, 5.00),
     "claude-sonnet-4-6": (3.00, 15.00),
     "claude-opus-4-8": (5.00, 25.00),
+    "claude-fable-5": (10.00, 50.00),
 }
 
 
