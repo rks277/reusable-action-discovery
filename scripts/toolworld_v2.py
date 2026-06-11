@@ -197,14 +197,19 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
     trace = []
     noop = 0
+    noop_total = 0       # cumulative no-ops (parse failures + API errors)
+    refusals = 0         # no-ops that were safety refusals (stop_reason=refusal)
+    unparsed = []        # raw responses we couldn't turn into an action
     usage_tot = {k: 0 for k in RawChat.USAGE_FIELDS}
     usage_tot["calls"] = 0
     for t in range(max_turns):
         s.turn = t
+        api_err = None
         try:
             text = await client.chat(model, SYS, msgs, max_tokens=1500)
-        except Exception:
+        except Exception as e:
             text = ""
+            api_err = f"{type(e).__name__}: {e}"
         if client.last_usage is not None:  # None on failed call -> skip
             for k, v in client.last_usage.items():
                 usage_tot[k] += v
@@ -212,6 +217,14 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         act = extract(text)
         if not act:
             noop += 1
+            noop_total += 1
+            dbg = getattr(client, "last_debug", None)
+            if dbg and dbg.get("stop_reason") == "refusal":
+                refusals += 1
+            unparsed.append({"turn": t, "api_error": api_err, "text": text,
+                             "debug": dbg})
+            print(f"  [t{t+1}] NO-OP{' (API-ERR)' if api_err else ''}: "
+                  f"{(api_err or text)[:80]!r} debug={dbg}", flush=True)
             if noop >= 4:
                 break
             msgs += [{"role": "assistant", "content": text},
@@ -253,11 +266,13 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "solved": s.solved(), "opened": len(s.opened),
         "total_actions": len(trace), "budget": budget,
         "built_machine": s.has_machine, "build_turn": build_turn,
+        "noop_total": noop_total, "refusals": refusals, "unparsed": unparsed,
         "usage": usage_tot,
     }
     print(f"\n  RESULT {model} n={n} T={n_types} seed=({relabel_seed},{drop_seed}): "
           f"solved={result['solved']} actions={result['total_actions']} "
-          f"built={result['built_machine']} build_turn={build_turn}", flush=True)
+          f"built={result['built_machine']} build_turn={build_turn} "
+          f"noops={noop_total} refusals={refusals}", flush=True)
     return result, trace
 
 

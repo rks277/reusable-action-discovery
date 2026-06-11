@@ -49,6 +49,7 @@ class RawChat:
     def __init__(self):
         self._clients: dict[str, Any] = {}
         self.last_usage: dict | None = None  # set per chat() call; None on failure
+        self.last_debug: dict | None = None  # set when a call returns empty text
 
     def _anthropic(self):
         if "anthropic" not in self._clients:
@@ -94,6 +95,7 @@ class RawChat:
     async def chat(self, model: str, system: str, messages: list[dict], max_tokens: int = 1200) -> str:
         prov = _provider_for(model)
         self.last_usage = None  # reset; stays None if the call/extraction fails
+        self.last_debug = None
         # Reasoning models burn the budget on hidden reasoning -> empty visible
         # text at low caps. Give them headroom; keep reasoning "low" so they stay
         # comparable to the no-extended-thinking Anthropic runs.
@@ -126,7 +128,16 @@ class RawChat:
                 cache_read_tokens=getattr(u, "cache_read_input_tokens", 0),
                 cache_write_tokens=getattr(u, "cache_creation_input_tokens", 0),
             )
-            return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+            text = "".join(b.text for b in resp.content
+                           if getattr(b, "type", None) == "text")
+            if not text:  # empty visible text -> capture why
+                self.last_debug = {
+                    "stop_reason": getattr(resp, "stop_reason", None),
+                    "stop_details": str(getattr(resp, "stop_details", None) or ""),
+                    "block_types": [getattr(b, "type", None) for b in (resp.content or [])],
+                    "output_tokens": getattr(u, "output_tokens", None),
+                }
+            return text
 
         if prov in ("openai", "ollama"):
             client = self._openai() if prov == "openai" else self._ollama()

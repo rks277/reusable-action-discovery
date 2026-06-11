@@ -84,6 +84,9 @@ async def main():
                        "obs": [x["obs"] for x in trace],
                        "solved": result["solved"],
                        "total_actions": result["total_actions"],
+                       "noop_total": result["noop_total"],
+                       "refusals": result["refusals"],
+                       "unparsed": result["unparsed"],
                        "usage": result["usage"],
                        "elapsed_s": round(time.time() - t0, 2)}
             except Exception as e:

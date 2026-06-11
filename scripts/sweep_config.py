@@ -13,6 +13,16 @@ constraint and the "build vs. grind" decision stops being economic.
 
 from __future__ import annotations
 
+import lomekwi.obfuscation as _obfuscation
+
+# --- obfuscation scheme ------------------------------------------------
+# "tokens" = pronounceable nonsense tokens (default). "letter" = a single
+# random letter per element. "alnum" = a random alphanumeric string (length
+# 4-8) per element. Flipping this here propagates to every sweep that imports
+# sweep_config (assign() reads the module default).
+OBFUSCATION_SCHEME = "letter"
+_obfuscation.DEFAULT_SCHEME = OBFUSCATION_SCHEME
+
 # --- world / budget / reps (shared across all budget sweeps) -----------
 N = 20              # locked doors per episode
 T = 3              # distinct byproduct types (recipe-search hardness)
@@ -38,9 +48,9 @@ BUDGET = budget_for(N)  # ~36 at N=8
 # their episodes.jsonl files concatenate into one paired dataset.
 ANTHROPIC_MODELS = [
     #("anthropic", "claude-haiku-4-5-20251001"),
-    #("anthropic", "claude-sonnet-4-6"),
+    ("anthropic", "claude-sonnet-4-6"),
     #("anthropic", "claude-opus-4-8"),
-    ("anthropic", "claude-fable-5"),
+    #("anthropic", "claude-fable-5"),
 ]
 NEWMODELS = [
     ("openai", "gpt-5"),

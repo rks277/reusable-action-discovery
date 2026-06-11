@@ -92,6 +92,16 @@ def wilson(k: int, n: int, z: float = 1.96):
     return p, max(0.0, center - half), min(1.0, center + half)
 
 
+def n_refusals(row: dict) -> int:
+    """Count safety refusals in an episode. Prefers the logged `refusals` field
+    (new runs); falls back to per-response stop_reason in `unparsed` for runs
+    logged before that field existed. 0 for runs predating any refusal logging."""
+    if "refusals" in row:
+        return row["refusals"]
+    return sum(1 for u in row.get("unparsed", [])
+               if (u.get("debug") or {}).get("stop_reason") == "refusal")
+
+
 def main():
     path = Path(sys.argv[1])
     rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
@@ -104,6 +114,7 @@ def main():
     budget_of = {}
     for r in rows:
         eps = per_episode(r)
+        eps["refused"] = n_refusals(r) >= 1   # episode hit >=1 safety refusal
         key = (r["model"], r["n"], r["n_types"])
         cells[key].append(eps)
         budget_of[r["n"]] = r["budget"]
@@ -122,6 +133,10 @@ def main():
         oc = defaultdict(int)
         for e in g:
             oc[e["outcome"]] += 1
+        # "clean" solve rate excludes episodes that a refusal killed (refused &
+        # not solved) -- those never really attempted the task.
+        clean = [e for e in g if not (e["refused"] and not e["solved"])]
+        clean_solve = statistics.mean(e["solved"] for e in clean) if clean else float("nan")
         summ[key] = {
             "n_eps": len(g),
             "solve": wilson(k_solve, len(g)),
@@ -129,13 +144,16 @@ def main():
             "waste": statistics.mean(e["waste_frac"] for e in g),
             "bt": statistics.mean(bts) if bts else float("nan"),
             "oc": oc,
+            "refused": sum(1 for e in g if e["refused"]),
+            "clean": clean_solve,
         }
 
     print(f"Design surface: {len(models)} models x n in {ns} x T in {Ts}  "
           f"(budgets: {', '.join(f'n{n}=b{budget_of[n]}' for n in ns)})\n")
     print(f"{'model':14s} {'n':>3} {'T':>2} {'eps':>4} "
-          f"{'solve [95% CI]':>22} {'built [95% CI]':>22} {'waste%':>7} {'build@':>7}")
-    print("-" * 92)
+          f"{'solve [95% CI]':>22} {'built [95% CI]':>22} {'waste%':>7} {'build@':>7} "
+          f"{'refd':>5} {'clean':>6}")
+    print("-" * 106)
     for m in models:
         for n in ns:
             for T in Ts:
@@ -144,10 +162,14 @@ def main():
                     continue
                 sp, slo, shi = s["solve"]
                 bp, blo, bhi = s["built"]
+                clean = f"{s['clean']:.2f}" if s["clean"] == s["clean"] else "-"
                 print(f"{short(m):14s} {n:>3} {T:>2} {s['n_eps']:>4} "
                       f"{f'{sp:.2f} [{slo:.2f}-{shi:.2f}]':>22} "
                       f"{f'{bp:.2f} [{blo:.2f}-{bhi:.2f}]':>22} "
-                      f"{s['waste']*100:>6.0f}% {s['bt']:>7.1f}")
+                      f"{s['waste']*100:>6.0f}% {s['bt']:>7.1f} "
+                      f"{s['refused']:>5} {clean:>6}")
+    print("\n  refd = episodes with >=1 safety refusal; clean = solve rate "
+          "excluding refusal-killed episodes")
 
     print_token_usage(rows, models, ns)
     print_costs(rows, models, ns)

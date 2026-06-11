@@ -26,7 +26,15 @@ from __future__ import annotations
 
 import functools
 import random
+import string
 from pathlib import Path
+
+# Obfuscation scheme selector. "tokens" = pronounceable nonsense tokens (the
+# default, documented above). "letter" = a single random letter per element
+# (a maximally minimal obfuscation; same randomization protocol, smaller pool).
+# Callers may override per-call via assign(..., scheme=...); this global is the
+# fallback so it can be flipped from config (see scripts/sweep_config.py).
+DEFAULT_SCHEME = "tokens"
 
 # Phonotactics: pronounceable, easy to read and copy back exactly.
 ONSETS = ["b", "d", "f", "g", "k", "l", "m", "n", "p", "r", "s", "t", "v", "z",
@@ -104,14 +112,66 @@ def generate_pool(size: int = 200, seed: int = 0) -> list[str]:
     return pool
 
 
+def assign_letters(elements: list[str], seed: int) -> dict[str, str]:
+    """Single-random-letter obfuscation: draw a distinct lowercase letter for
+    each latent element. Same per-episode uniform-random relabeling protocol as
+    assign() (sec. 4), just with the 26-letter alphabet as the pool. Distinct
+    letters trivially satisfy any min_dist >= 1, so confusability is a non-issue
+    here. Limited to 26 elements by construction."""
+    if len(elements) > len(string.ascii_lowercase):
+        raise ValueError(f"single-letter scheme supports <= 26 elements, got "
+                         f"{len(elements)}; use scheme='tokens'")
+    rng = random.Random(seed * 7919 + 13)
+    letters = list(string.ascii_lowercase)
+    rng.shuffle(letters)
+    return dict(zip(elements, letters))
+
+
+# Alphabet for the "alnum" scheme: [a-zA-Z0-9].
+_ALNUM = string.ascii_letters + string.digits
+
+
+def assign_alnum(elements: list[str], seed: int, min_len: int = 4,
+                 max_len: int = 8, min_dist: int = 3) -> dict[str, str]:
+    """Random-alphanumeric obfuscation: a distinct random [a-zA-Z0-9] string of
+    length in [min_len, max_len] per element. Same per-episode uniform-random
+    relabeling protocol as assign() (sec. 4); pairwise edit distance >= min_dist
+    so labels are never confusable/mistypable."""
+    rng = random.Random(seed * 7919 + 13)
+    chosen: list[str] = []
+    tries = 0
+    cap = len(elements) * 5000
+    while len(chosen) < len(elements) and tries < cap:
+        tries += 1
+        n = rng.randint(min_len, max_len)
+        tok = "".join(rng.choice(_ALNUM) for _ in range(n))
+        if all(_lev(tok, c) >= min_dist for c in chosen):
+            chosen.append(tok)
+    if len(chosen) < len(elements):
+        raise ValueError(f"could not draw {len(elements)} alnum labels at "
+                         f"min_dist={min_dist}; lower min_dist or widen length")
+    return dict(zip(elements, chosen))
+
+
 def assign(elements: list[str], seed: int, min_dist: int = 3,
-           pool_size: int = 300) -> dict[str, str]:
+           pool_size: int = 300, scheme: str | None = None) -> dict[str, str]:
     """Draw a uniformly-random label for each latent element, with pairwise edit
     distance >= min_dist so the model never confuses/mistypes two tokens.
 
     `seed` indexes the relabeling: the SAME structure run under different seeds
     gives independent labelings (this is the Sym(V) sampling of formalism sec. 4).
+
+    `scheme` selects the label pool: "tokens" (pronounceable nonsense, default),
+    "letter" (a single random letter each), or "alnum" (a random alphanumeric
+    string of length 4-8 each). None falls back to DEFAULT_SCHEME.
     """
+    scheme = scheme or DEFAULT_SCHEME
+    if scheme == "letter":
+        return assign_letters(elements, seed)
+    if scheme == "alnum":
+        return assign_alnum(elements, seed, min_dist=min_dist)
+    if scheme != "tokens":
+        raise ValueError(f"unknown obfuscation scheme {scheme!r}")
     rng = random.Random(seed * 7919 + 13)
     # Build the pool with a seed-independent base so pools are comparable, then
     # shuffle order per relabeling so the *assignment* is what randomizes.
