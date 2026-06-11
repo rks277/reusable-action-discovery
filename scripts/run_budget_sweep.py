@@ -24,18 +24,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from scripts.toolworld_v2 import run
+from scripts import sweep_config as cfg
 
-MODELS = [
-    ("anthropic", "claude-haiku-4-5-20251001"),
-    ("anthropic", "claude-sonnet-4-6"),
-    ("anthropic", "claude-opus-4-8"),
-]
-N, T, REPS = 8, 3, 8
-CONCURRENCY = {"anthropic": 6}
-
-
-def Hn(n): return sum(1.0 / k for k in range(1, n + 1))
-BUDGET = round(1.2 * (N * Hn(N) + N))      # ~36
+MODELS = cfg.ANTHROPIC_MODELS
+N, T, REPS = cfg.N, cfg.T, cfg.REPS
+BUDGET = cfg.BUDGET
+CONCURRENCY = cfg.CONCURRENCY
 
 
 async def main():
@@ -56,9 +50,9 @@ async def main():
             t0 = time.time()
             try:
                 result, trace = await run(model, n=N, n_types=T, relabel_seed=rep,
-                                          drop_seed=rep, hint=True, max_turns=200,
-                                          budget=BUDGET)
-                row = {"model": model, "n": N, "n_types": T, "hint": True,
+                                          drop_seed=rep, hint=cfg.HINT,
+                                          max_turns=cfg.MAX_TURNS, budget=BUDGET)
+                row = {"model": model, "n": N, "n_types": T, "hint": cfg.HINT,
                        "budget": BUDGET, "relabel_seed": rep, "drop_seed": rep,
                        "labels": result["labels"],
                        "actions": [x["action"] for x in trace],
@@ -69,7 +63,7 @@ async def main():
                        "usage": result["usage"],
                        "elapsed_s": round(time.time() - t0, 2)}
             except Exception as e:
-                row = {"model": model, "n": N, "n_types": T, "hint": True,
+                row = {"model": model, "n": N, "n_types": T, "hint": cfg.HINT,
                        "budget": BUDGET, "relabel_seed": rep, "drop_seed": rep,
                        "error": f"{type(e).__name__}: {e}",
                        "elapsed_s": round(time.time() - t0, 2)}

@@ -76,8 +76,8 @@ def print_token_usage(rows: list[dict], models: list[str]) -> None:
 
     print("\nToken usage per model (raw counts; cache% = read / (in+read+write)):\n")
     print(f"{'model':14s} {'eps':>3} {'calls':>6} {'in':>10} {'out':>10} "
-          f"{'cache_rd':>10} {'cache%':>6}")
-    print("-" * 68)
+          f"{'cache_rd':>10} {'cache_wr':>10} {'cache%':>6}")
+    print("-" * 79)
     tot = {**{k: 0 for k in FIELDS}, "calls": 0, "eps": 0}
     for m in models:
         a = agg[m]
@@ -85,11 +85,13 @@ def print_token_usage(rows: list[dict], models: list[str]) -> None:
             tot[k] += a[k]
         print(f"{short(m):14s} {a['eps']:>3} {a['calls']:>6} "
               f"{a['input_tokens']:>10} {a['output_tokens']:>10} "
-              f"{a['cache_read_tokens']:>10} {cache_pct(a)}")
-    print("-" * 68)
+              f"{a['cache_read_tokens']:>10} {a['cache_write_tokens']:>10} "
+              f"{cache_pct(a)}")
+    print("-" * 79)
     print(f"{'TOTAL':14s} {tot['eps']:>3} {tot['calls']:>6} "
           f"{tot['input_tokens']:>10} {tot['output_tokens']:>10} "
-          f"{tot['cache_read_tokens']:>10} {cache_pct(tot)}")
+          f"{tot['cache_read_tokens']:>10} {tot['cache_write_tokens']:>10} "
+          f"{cache_pct(tot)}")
 
 
 def main():
@@ -184,7 +186,11 @@ def fig_outcomes(summary, models, out: Path):
         ax.bar(x, vals, 0.78, bottom=bottom, label=leg[c], color=colors[c])
         bottom += np.array(vals)
     ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=8)
-    ax.set_ylim(0, 8); ax.set_yticks([0, 2, 4, 6, 8])
+    # cap = max episodes any single model has (bars stack to per-model count);
+    # round up to an even number so the ticks land cleanly.
+    cap = max((summary[m]["n"] for m in models), default=8)
+    cap = max(8, cap + (cap % 2))
+    ax.set_ylim(0, cap); ax.set_yticks(list(range(0, cap + 1, max(2, cap // 4))))
     ax.tick_params(axis="y", labelsize=8)
     ax.set_ylabel("episodes", fontsize=9)
     for spine in ("top", "right"):
