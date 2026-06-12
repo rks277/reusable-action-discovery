@@ -34,7 +34,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
+import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -232,48 +234,104 @@ def load_episodes(paths: list[str]) -> list[Episode]:
 
 # --- reporting ----------------------------------------------------------
 
-# Build-dynamics keys first (the headline question), then anything analyzers
-# add later, sorted. Unknown keys still print via the generic formatter.
-_PREFERRED = [
-    "build_outcome", "built", "build_attempts", "build_attempts_distinct",
-    "redundant_rebuilds", "combine_total",
-    "first_attempt_frac", "last_attempt_frac", "build_turn_frac",
-    "actions_after_last_attempt", "frac_after_last_attempt",
-    "first_attempt_idx", "last_attempt_idx", "build_turn_idx",
+# Sectioned layout: (section title, [metric keys]). Keys not listed in any
+# section fall into a trailing "other" section (sorted), so analyzers added
+# later still print without editing this. Each metric also gets a human label.
+_SECTIONS: list[tuple[str, list[str]]] = [
+    ("outcome", ["build_outcome", "built"]),
+    ("build attempts", ["build_attempts", "build_attempts_distinct",
+                        "redundant_rebuilds", "combine_total"]),
+    ("timing  (0 = start, 1 = end)", ["first_attempt_frac", "last_attempt_frac",
+                                     "build_turn_frac"]),
+    ("after last attempt  (non-builders)", ["actions_after_last_attempt",
+                                           "frac_after_last_attempt"]),
+    ("raw action indices", ["first_attempt_idx", "last_attempt_idx",
+                           "build_turn_idx"]),
 ]
+_LABELS = {
+    "build_outcome": "outcome", "built": "built machine",
+    "build_attempts": "attempts", "build_attempts_distinct": "distinct attempts",
+    "redundant_rebuilds": "redundant rebuilds", "combine_total": "combines (all)",
+    "first_attempt_frac": "first attempt", "last_attempt_frac": "last attempt",
+    "build_turn_frac": "build turn", "actions_after_last_attempt": "actions after",
+    "frac_after_last_attempt": "frac after", "first_attempt_idx": "first attempt",
+    "last_attempt_idx": "last attempt", "build_turn_idx": "build turn",
+}
+# Semantic colors for categorical outcome values (and per-episode rows).
+_VALUE_COLOR = {
+    "built": "green", "persisted": "cyan", "gave_up": "yellow",
+    "never_tried": "red", "nothing": "yellow", "already_built": "blue",
+}
 
 
-def _order(keys) -> list[str]:
-    pref = [k for k in _PREFERRED if k in keys]
-    return pref + sorted(k for k in keys if k not in _PREFERRED)
+class _Palette:
+    """ANSI colorizer; a no-op when stdout is not a TTY or NO_COLOR is set."""
+
+    _CODES = {"bold": "1", "dim": "2", "red": "31", "green": "32",
+              "yellow": "33", "blue": "34", "magenta": "35", "cyan": "36"}
+
+    def __init__(self, on: bool):
+        self.on = on
+
+    def __call__(self, name: str, text: str) -> str:
+        code = self._CODES.get(name)
+        return f"\x1b[{code}m{text}\x1b[0m" if (self.on and code) else text
 
 
-def _fmt(k: str, s: dict) -> str:
+def _fmt_metric(c: _Palette, s: dict) -> str:
+    """Format one aggregated metric's value column (label already printed)."""
     if s["kind"] == "rate":
-        return f"{k}: {s['rate'] * 100:.1f}% ({s['true']}/{s['n']})"
+        fill = round(s["rate"] * 10)
+        bar = c("green", "█" * fill) + c("dim", "·" * (10 - fill))
+        return f"{bar} {s['rate'] * 100:5.1f}%" + c("dim", f"  ({s['true']}/{s['n']})")
     if s["kind"] == "num":
         g = lambda v: f"{v:.2f}" if isinstance(v, float) else str(v)
-        return (f"{k}: mean={s['mean']:.2f} median={s['median']:.2f} "
-                f"min={g(s['min'])} max={g(s['max'])} (n={s['n']})")
-    parts = "  ".join(f"{v}={c}" for v, c in sorted(s["counts"].items(),
-                                                    key=lambda kv: -kv[1]))
-    return f"{k}: {parts} (n={s['n']})"
+        return (f"mean {s['mean']:6.2f}   med {s['median']:6.2f}   "
+                + c("dim", f"[{g(s['min'])}–{g(s['max'])}]  n={s['n']}"))
+    # categorical: colored chips, most common first
+    chips = []
+    for v, n in sorted(s["counts"].items(), key=lambda kv: -kv[1]):
+        chips.append(c(_VALUE_COLOR.get(str(v), "magenta"), f"{v}") +
+                     c("dim", f"×{n}"))
+    return "  ".join(chips)
 
 
 def print_text(report: dict, per_episode: bool) -> None:
+    c = _Palette(sys.stdout.isatty() and os.environ.get("NO_COLOR") is None)
     for (model, n, t), grp in report.items():
-        print(f"\n=== model={model}  n={n}  T={t}   "
-              f"({grp['n_episodes']} episodes) ===")
         summ = grp["metrics"]
-        for k in _order(summ.keys()):
-            print(f"  {_fmt(k, summ[k])}")
+        head = (f"{c('bold', _short(model))} "
+                + c("dim", f"({model})") +
+                f"   n={c('bold', str(n))}  T={c('bold', str(t))}   "
+                + c("dim", f"· {grp['n_episodes']} episodes"))
+        print("\n" + c("bold", "━━ ") + head)
+
+        present = set(summ)
+        sections = list(_SECTIONS)
+        leftover = sorted(present - {k for _title, ks in _SECTIONS for k in ks})
+        if leftover:
+            sections = sections + [("other", leftover)]
+        # align labels across the whole cell
+        labw = max((len(_LABELS.get(k, k)) for k in present), default=0)
+
+        for title, keys in sections:
+            keys = [k for k in keys if k in present]
+            if not keys:
+                continue
+            print("  " + c("dim", title))
+            for k in keys:
+                label = _LABELS.get(k, k).ljust(labw)
+                print(f"    {label}   {_fmt_metric(c, summ[k])}")
+
         if per_episode:
-            print("  --- per episode ---")
+            print("  " + c("dim", "per episode"))
             for i, row in enumerate(grp["per_episode"]):
+                oc = str(row.get("build_outcome"))
                 turns = row.get("build_attempt_turns")
-                print(f"  ep{i:>2}: outcome={row.get('build_outcome'):<11} "
-                      f"attempts={row.get('build_attempts')} "
-                      f"turns={turns}")
+                print(f"    {c('dim', f'ep{i:>2}')}  "
+                      f"{c(_VALUE_COLOR.get(oc, 'magenta'), oc.ljust(11))} "
+                      f"{c('dim', 'attempts')} {row.get('build_attempts')}  "
+                      f"{c('dim', 'turns')} {turns}")
 
 
 # --- plotting (build attempts vs. time) ---------------------------------

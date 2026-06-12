@@ -47,8 +47,8 @@ BUDGET = budget_for(N)  # ~36 at N=8
 # Each sweep imports the roster it runs; rosters share the per-rep worlds, so
 # their episodes.jsonl files concatenate into one paired dataset.
 ANTHROPIC_MODELS = [
-    #("anthropic", "claude-haiku-4-5-20251001"),
-    ("anthropic", "claude-sonnet-4-6"),
+    ("anthropic", "claude-haiku-4-5-20251001"),
+    #("anthropic", "claude-sonnet-4-6"),
     #("anthropic", "claude-opus-4-8"),
     #("anthropic", "claude-fable-5"),
 ]

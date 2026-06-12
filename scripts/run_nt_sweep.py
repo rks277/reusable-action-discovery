@@ -32,7 +32,7 @@ from scripts import sweep_config as cfg
 
 # --- the grid you set ---------------------------------------------------
 N_VALUES = [4, 8, 12, 20]      # doors per episode (build-margin axis)
-T_VALUES = [3]              # distinct byproduct types (recipe-search axis)
+T_VALUES = [5]              # distinct byproduct types (recipe-search axis)
 REPS = 10                       # runs per (model, n, T) cell
 
 MODELS = cfg.ANTHROPIC_MODELS  # swap to cfg.NEWMODELS, or concatenate, as needed
