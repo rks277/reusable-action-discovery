@@ -24,9 +24,9 @@ OBFUSCATION_SCHEME = "letter"
 _obfuscation.DEFAULT_SCHEME = OBFUSCATION_SCHEME
 
 # --- world / budget / reps (shared across all budget sweeps) -----------
-N = 20              # locked doors per episode
+N = 8              # locked doors per episode
 T = 3              # distinct byproduct types (recipe-search hardness)
-REPS = 1           # paired reps; rep r => relabel_seed = drop_seed = r
+REPS = 10           # paired reps; rep r => relabel_seed = drop_seed = r
 HINT = True        # subtle "feels active alongside a different kind" hint
 MAX_TURNS = 300    # hard turn cap (keep > BUDGET so the budget binds first)
 BUDGET_MULT = 1.2  # budget as a multiple of E[grind] (coupon-collector + n)
@@ -48,8 +48,8 @@ BUDGET = budget_for(N)  # ~36 at N=8
 # their episodes.jsonl files concatenate into one paired dataset.
 ANTHROPIC_MODELS = [
     ("anthropic", "claude-haiku-4-5-20251001"),
-    #("anthropic", "claude-sonnet-4-6"),
-    #("anthropic", "claude-opus-4-8"),
+    ("anthropic", "claude-sonnet-4-6"),
+    ("anthropic", "claude-opus-4-8"),
     #("anthropic", "claude-fable-5"),
 ]
 NEWMODELS = [
