@@ -31,7 +31,7 @@ from scripts.toolworld_v2 import run
 from scripts import sweep_config as cfg
 
 # --- the sweep you set --------------------------------------------------
-BUDGET_VALUES = [18, 36, 54, 72]  # fixed action budgets to sweep
+BUDGET_VALUES = [1000] #[18, 36, 54, 72]  # fixed action budgets to sweep
 N = cfg.N                                 # constant doors per episode
 T = cfg.T                                 # constant byproduct types
 REPS = cfg.REPS                           # runs per (model, budget) cell
