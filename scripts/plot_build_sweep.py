@@ -58,7 +58,13 @@ def main() -> None:
     budgets = sorted(by)
     n = rows[0].get("n")
     T = rows[0].get("n_types")
-    reps = max(len(g) for g in by.values())
+    rmin = min(len(g) for g in by.values())
+    rmax = max(len(g) for g in by.values())
+    reps = f"{rmin}" if rmin == rmax else f"{rmin}–{rmax}"
+    mid = (rows[0].get("model") or "").lower()
+    label = ("Sonnet" if "sonnet" in mid else "Opus" if "opus" in mid
+             else "Haiku" if "haiku" in mid else "Fable" if "fable" in mid
+             else (rows[0].get("model") or "model"))
 
     rate, rlo, rhi = [], [], []
     med, p25, p75, lo, hi = [], [], [], [], []
@@ -83,7 +89,7 @@ def main() -> None:
                  color="seagreen", lw=1.6, ms=5)
     ax1.set_ylim(-0.03, 1.05)
     ax1.set_ylabel("build rate (fraction of reps that built)")
-    ax1.set_title("Did Sonnet build the machine?")
+    ax1.set_title(f"Did {label} build the machine?")
     for x, y in zip(budgets, rate):
         ax1.annotate(f"{y:.2f}", (x, y), textcoords="offset points",
                      xytext=(0, 7), ha="center", fontsize=7)
@@ -106,7 +112,7 @@ def main() -> None:
         for sp in ("top", "right"):
             ax.spines[sp].set_visible(False)
 
-    fig.suptitle(f"Sonnet build behavior vs. budget  ·  n={n}, T={T}, {reps} reps/budget",
+    fig.suptitle(f"{label} build behavior vs. budget  ·  n={n}, T={T}, {reps} reps/budget",
                  fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = path.parent / "fig_build_rate_and_timing_vs_budget.png"
