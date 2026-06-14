@@ -68,6 +68,28 @@ def make_world(relabel_seed: int, n: int, n_types: int = 3) -> dict:
     }
 
 
+def world_from_labels(labels: dict, n: int) -> dict:
+    """Reconstruct a world dict from the labels recorded in a result/JSONL row,
+    bypassing assign(). make_world derives its label strings from the GLOBAL,
+    mutable lomekwi.obfuscation.DEFAULT_SCHEME, so a replay that re-derives them
+    only matches if that global happens to hold the same scheme the run used
+    (see sweep_config.OBFUSCATION_SCHEME). Reconstructing from the recorded
+    labels removes that coupling: the State reads only these strings, so replay
+    is byte-exact regardless of the ambient scheme. Mirrors make_world's output
+    for every field State touches."""
+    types = list(labels["types"])
+    return {
+        "n": n,
+        "n_types": len(types),
+        "door_base": labels["door_base"],
+        "key_base": labels["key_base"],
+        "machine": labels["machine"],
+        "types": types,
+        "recipe": sorted(labels["recipe"]),
+        "doors": [f"{labels['door_base']}_{i}" for i in range(1, n + 1)],
+    }
+
+
 @dataclass
 class State:
     world: dict
@@ -180,11 +202,15 @@ class State:
 
 async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
               hint: bool = True, n_types: int = 3, max_turns: int = 120,
-              budget: int | None = None):
+              budget: int | None = None, stop_on_build: bool = False):
     """budget: if set, a strict cap on the number of actions. The agent is told
     the cap and its remaining count each turn, so building the tool becomes an
     economic CHOICE (spend scarce actions hunting the recipe vs. brute-force).
-    Does not touch world mechanics, so replay stays exact."""
+    Does not touch world mechanics, so replay stays exact.
+
+    stop_on_build: if True, end the episode the instant the machine is first
+    built (the fuse succeeds), without taking further turns. Use when the only
+    thing of interest is whether/when the tool gets built, not the full solve."""
     load_dotenv()
     client = RawChat()
     world = make_world(relabel_seed, n, n_types=n_types)
@@ -243,6 +269,8 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         print(f"  [t{t+1}] {act} -> {obs[:74]} [{opened_n}/{n}]", flush=True)
         trace.append({"turn": t, "action": act, "obs": obs, "agent_text": text,
                       "usage": client.last_usage})
+        if stop_on_build and s.has_machine:
+            break  # machine just built; nothing more to learn this episode
         out_of_budget = budget is not None and len(trace) >= budget
         if done or out_of_budget:
             msgs += [{"role": "assistant", "content": text},
