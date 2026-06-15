@@ -32,7 +32,8 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, RBFInterpolator
+from scipy.ndimage import gaussian_filter
 
 import scripts.sweep_config as cfg
 
@@ -71,6 +72,12 @@ def main():
     ap.add_argument("run_dir", nargs="?", default=None)
     ap.add_argument("--metric", choices=list(META), default="built_given_solved")
     ap.add_argument("--n-hi", type=int, default=40)
+    ap.add_argument("--smooth", choices=["none", "gaussian", "rbf"], default="none",
+                    help="neighbor-pooling: 'none' = griddata linear+nearest (interpolate); "
+                         "'gaussian' = normalized Gaussian convolution (sigma=bandwidth, in "
+                         "cells; handles gaps); 'rbf' = RBFInterpolator with smoothing=bandwidth.")
+    ap.add_argument("--bandwidth", type=float, default=1.0,
+                    help="gaussian: sigma in cells; rbf: smoothing strength.")
     args = ap.parse_args()
 
     run_dir = Path(args.run_dir) if args.run_dir else latest_run()
@@ -90,7 +97,10 @@ def main():
     if metric != "built_given_solved" or n_hi != 40:
         stem = f"{stem}_Nle{n_hi}"
         jname = f"{jname}_Nle{n_hi}"
-    print(f"{run_dir}: {len(rows)} non-error episodes | model={short} | metric={metric}")
+    if args.smooth != "none":
+        stem = f"{stem}_{args.smooth}{args.bandwidth:g}"   # distinct from the unsmoothed map
+    print(f"{run_dir}: {len(rows)} non-error episodes | model={short} | metric={metric} "
+          f"| smooth={args.smooth}({args.bandwidth:g})")
 
     # aggregate per (T, N) cell
     cells = defaultdict(lambda: {"n_eps": 0, "n_solved": 0, "n_built": 0, "n_built_solved": 0})
@@ -122,9 +132,30 @@ def main():
     pts = np.array([[d["T"], d["N"]] for d in have], float)
     vals = np.array([d["value"] for d in have], float)
     grid_t, grid_n = np.meshgrid(np.arange(T_LO, T_HI + 1), np.arange(1, n_hi + 1))
-    lin = griddata(pts, vals, (grid_t, grid_n), method="linear")
-    near = griddata(pts, vals, (grid_t, grid_n), method="nearest")   # fill outside hull
-    Z = np.where(np.isnan(lin), near, lin)
+
+    if args.smooth == "none":
+        # interpolate: linear inside the convex hull, nearest-neighbour fill outside.
+        lin = griddata(pts, vals, (grid_t, grid_n), method="linear")
+        near = griddata(pts, vals, (grid_t, grid_n), method="nearest")
+        Z = np.where(np.isnan(lin), near, lin)
+    elif args.smooth == "gaussian":
+        # normalized Gaussian convolution: each cell becomes a Gaussian-weighted average
+        # of its neighbours (pools across cells; naturally fills gaps weighted by distance).
+        # grid index [i, j] <-> (N = 1 + i, T = T_LO + j).
+        V = np.zeros_like(grid_t, float)
+        M = np.zeros_like(grid_t, float)              # presence mask
+        for d in have:
+            V[d["N"] - 1, d["T"] - T_LO] = d["value"]
+            M[d["N"] - 1, d["T"] - T_LO] = 1.0
+        num = gaussian_filter(V * M, args.bandwidth, mode="nearest")
+        den = gaussian_filter(M, args.bandwidth, mode="nearest")
+        Z = np.divide(num, den, out=np.full_like(num, np.nan), where=den > 1e-9)
+        if np.isnan(Z).any():                          # any cell with ~no weight -> nearest
+            Z = np.where(np.isnan(Z), griddata(pts, vals, (grid_t, grid_n), method="nearest"), Z)
+    else:  # rbf: smoothing > 0 turns exact interpolation into a pooling regression.
+        rbf = RBFInterpolator(pts, vals, kernel="thin_plate_spline", smoothing=args.bandwidth)
+        Z = rbf(np.column_stack([grid_t.ravel(), grid_n.ravel()])).reshape(grid_t.shape)
+    Z = np.clip(Z, 0.0, 1.0)
 
     fig, ax = plt.subplots(figsize=(7, 6))
     mesh = ax.pcolormesh(grid_t, grid_n, Z, cmap="RdYlGn", vmin=0, vmax=1, shading="nearest")
@@ -146,10 +177,12 @@ def main():
         ax.scatter(gv[:, 0], gv[:, 1], marker="x", c="black", s=34, linewidths=1.0,
                    label="never solved (undefined)")
 
-    note = "single-draw density" if max(d["n_eps"] for d in table) == 1 else f"{len(rows)} eps"
+    note = "single-draw" if max(d["n_eps"] for d in table) == 1 else f"{len(rows)} eps"
+    smooth_note = "interpolated" if args.smooth == "none" else \
+        f"{args.smooth}-pooled (bw={args.bandwidth:g})"
     ax.set_xlabel("byproduct types T")
     ax.set_ylabel("number of doors N")
-    ax.set_title(f"{title}\n(interpolated; grind-calibrated budget; {note})")
+    ax.set_title(f"{title}\n({smooth_note}; grind-calibrated budget; {note})")
     ax.set_xlim(T_LO - 0.5, T_HI + 0.5)
     ax.set_ylim(0.5, n_hi + 0.5)
     ax.legend(loc="upper right", fontsize=8, framealpha=0.9)
