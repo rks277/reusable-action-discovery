@@ -272,31 +272,51 @@ def print_costs(rows, models, durs):
               f" -- tokens logged, cost omitted)")
 
 
+def _dodge(idx: int, i: int, m_count: int, width: float = 0.7) -> float:
+    """Horizontal position for model i (of m_count) at categorical slot idx, so
+    same-x points fan out instead of overplotting. Single model -> no offset."""
+    if m_count <= 1:
+        return float(idx)
+    return idx + (i - (m_count - 1) / 2) * (width / m_count)
+
+
 def fig_rates(summ, models, durs, grids, out: Path):
-    """Win rate and build rate vs durability, one line per model, faceted by
+    """Win rate and build rate vs durability, one series per model, faceted by
     grid -- the build-vs-grind flip curve (built_map should fall as durability
-    rises and grinding becomes affordable)."""
+    rises and grinding becomes affordable). Models are dodged horizontally at
+    each durability so their markers/error bars don't overlap; durability sits
+    on categorical x slots so a single-value sweep still reads cleanly."""
     metrics = [("win", "win rate"), ("built", "build rate")]
+    xidx = list(range(len(durs)))
     fig, axes = plt.subplots(len(metrics), len(grids),
-                             figsize=(3.6 * len(grids), 3.0 * len(metrics)),
+                             figsize=(max(4.8, 1.3 * len(durs) + 2.6) * len(grids),
+                                      3.2 * len(metrics)),
                              squeeze=False, sharex=True, sharey=True)
     for ri, (mkey, mlabel) in enumerate(metrics):
         for ci, grid in enumerate(grids):
             ax = axes[ri][ci]
-            for m in models:
+            present = [m for m in models
+                       if any((m, d, grid) in summ for d in durs)]
+            line = "-" if len(durs) > 1 else "none"
+            for i, m in enumerate(present):
                 xs, ys, lo, hi = [], [], [], []
-                for d in durs:
+                for di, d in enumerate(durs):
                     s = summ.get((m, d, grid))
                     if not s:
                         continue
                     p, l, h = s[mkey]
-                    xs.append(d); ys.append(p); lo.append(p - l); hi.append(h - p)
+                    xs.append(_dodge(di, i, len(present)))
+                    ys.append(p); lo.append(p - l); hi.append(h - p)
                 if not xs:
                     continue
                 ax.errorbar(xs, ys, yerr=[lo, hi], marker="o", capsize=3,
-                            color=model_color(m), label=fam_label(m), lw=1.5, ms=4)
-            ax.set_ylim(-0.05, 1.05)
-            ax.set_xticks(durs)
+                            color=model_color(m), label=fam_label(m), lw=1.5,
+                            ms=6, ls=line)
+            ax.set_xlim(-0.5, len(durs) - 0.5)
+            ax.set_xticks(xidx)
+            ax.set_xticklabels(durs)
+            ax.set_ylim(-0.05, 1.08)
+            ax.grid(axis="y", alpha=0.25, lw=0.6)
             if ri == 0:
                 ax.set_title(f"grid {grid}x{grid}", fontsize=10)
             if ri == len(metrics) - 1:
@@ -306,11 +326,13 @@ def fig_rates(summ, models, durs, grids, out: Path):
             for sp in ("top", "right"):
                 ax.spines[sp].set_visible(False)
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, fontsize=8, loc="upper center",
-               ncol=max(1, len(labels)), frameon=False, bbox_to_anchor=(0.5, 1.02))
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    fig.savefig(out, dpi=150)
-    fig.savefig(out.with_suffix(".pdf"))
+    leg = fig.legend(handles, labels, fontsize=9, loc="lower center",
+                     ncol=max(1, len(labels)), frameon=False,
+                     bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout(rect=(0, 0, 1, 0.96), h_pad=1.8)
+    extra = (leg,)
+    fig.savefig(out, dpi=150, bbox_inches="tight", bbox_extra_artists=extra)
+    fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight", bbox_extra_artists=extra)
     plt.close(fig)
     print(f"\n  wrote {out} (+ .pdf)")
 
@@ -320,7 +342,7 @@ def fig_outcomes(summ, models, durs, grids, out: Path):
     brute+lost) per model, tiled per (grid, durability) cell."""
     import numpy as np
     nr, nc = len(grids), len(durs)
-    fig, axes = plt.subplots(nr, nc, figsize=(2.7 * nc, 2.7 * nr),
+    fig, axes = plt.subplots(nr, nc, figsize=(max(3.4, 2.9 * nc), 3.0 * nr),
                              squeeze=False, sharey=True)
     cap = max((summ[k]["n_eps"] for k in summ), default=8)
     cap = max(2, cap + (cap % 2))
@@ -345,12 +367,14 @@ def fig_outcomes(summ, models, durs, grids, out: Path):
             for sp in ("top", "right"):
                 ax.spines[sp].set_visible(False)
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, fontsize=8, loc="upper center", ncol=4,
-               frameon=False, bbox_to_anchor=(0.5, 1.02))
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
-    fig.savefig(out, dpi=200)
-    fig.savefig(out.with_suffix(".pdf"))
-    fig.savefig(out.with_suffix(".svg"))
+    ncol = 4 if nc >= 2 else 2
+    leg = fig.legend(handles, labels, fontsize=8, loc="lower center",
+                     ncol=ncol, frameon=False, bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    extra = (leg,)
+    fig.savefig(out, dpi=200, bbox_inches="tight", bbox_extra_artists=extra)
+    fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight", bbox_extra_artists=extra)
+    fig.savefig(out.with_suffix(".svg"), bbox_inches="tight", bbox_extra_artists=extra)
     plt.close(fig)
     print(f"  wrote {out} (+ .pdf, .svg)")
 
@@ -361,24 +385,32 @@ def fig_efficiency(summ, models, durs, grids, out: Path):
     where the action/dig curves cross tells the same build-vs-grind story as the
     build-rate curve, in cost terms."""
     metrics = [("actions", "mean total actions"), ("digs", "mean digs")]
+    xidx = list(range(len(durs)))
     fig, axes = plt.subplots(len(metrics), len(grids),
-                             figsize=(3.6 * len(grids), 3.0 * len(metrics)),
+                             figsize=(max(4.8, 1.3 * len(durs) + 2.6) * len(grids),
+                                      3.2 * len(metrics)),
                              squeeze=False, sharex=True)
     for ri, (mkey, mlabel) in enumerate(metrics):
         for ci, grid in enumerate(grids):
             ax = axes[ri][ci]
-            for m in models:
+            present = [m for m in models
+                       if any((m, d, grid) in summ for d in durs)]
+            line = "-" if len(durs) > 1 else "none"
+            for i, m in enumerate(present):
                 xs, ys = [], []
-                for d in durs:
+                for di, d in enumerate(durs):
                     s = summ.get((m, d, grid))
                     if not s or s[mkey] != s[mkey]:
                         continue
-                    xs.append(d); ys.append(s[mkey])
+                    xs.append(_dodge(di, i, len(present))); ys.append(s[mkey])
                 if not xs:
                     continue
                 ax.plot(xs, ys, marker="o", color=model_color(m),
-                        label=fam_label(m), lw=1.5, ms=4)
-            ax.set_xticks(durs)
+                        label=fam_label(m), lw=1.5, ms=6, ls=line)
+            ax.set_xlim(-0.5, len(durs) - 0.5)
+            ax.set_xticks(xidx)
+            ax.set_xticklabels(durs)
+            ax.grid(axis="y", alpha=0.25, lw=0.6)
             if ri == 0:
                 ax.set_title(f"grid {grid}x{grid}", fontsize=10)
             if ri == len(metrics) - 1:
@@ -389,11 +421,13 @@ def fig_efficiency(summ, models, durs, grids, out: Path):
             for sp in ("top", "right"):
                 ax.spines[sp].set_visible(False)
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, fontsize=8, loc="upper center",
-               ncol=max(1, len(labels)), frameon=False, bbox_to_anchor=(0.5, 1.02))
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    fig.savefig(out, dpi=150)
-    fig.savefig(out.with_suffix(".pdf"))
+    leg = fig.legend(handles, labels, fontsize=9, loc="lower center",
+                     ncol=max(1, len(labels)), frameon=False,
+                     bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout(rect=(0, 0, 1, 0.96), h_pad=1.8)
+    extra = (leg,)
+    fig.savefig(out, dpi=150, bbox_inches="tight", bbox_extra_artists=extra)
+    fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight", bbox_extra_artists=extra)
     plt.close(fig)
     print(f"  wrote {out} (+ .pdf)")
 
