@@ -203,7 +203,8 @@ class State:
 async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
               hint: bool = True, n_types: int = 3, max_turns: int = 120,
               budget: int | None = None, stop_on_build: bool = False,
-              no_progress_window: int | None = None):
+              no_progress_window: int | None = None,
+              commit_nudge: str | None = None):
     """budget: if set, a strict cap on the number of actions. The agent is told
     the cap and its remaining count each turn, so building the tool becomes an
     economic CHOICE (spend scarce actions hunting the recipe vs. brute-force).
@@ -241,6 +242,8 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     usage_tot["calls"] = 0
     stale = 0                # executed actions since last real state progress
     stopped_reason = None    # why the episode ended (recorded guardrail)
+    nudged = False           # one-time commitment-probe nudge fired? (experiment J)
+    nudge_turn = None
     for t in range(max_turns):
         s.turn = t
         api_err = None
@@ -309,10 +312,20 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
             print(f"  [t{t+1}] SAFEGUARD: no state progress for {stale} actions "
                   f"(no build); aborting to cap runaway cost.", flush=True)
             break
+        # one-time commitment nudge (experiment J): fire when holding BOTH recipe
+        # types but not yet built. Pure commitment prompt -- never names the pair,
+        # and hint=True already tells the agent byproducts combine, so no info leak.
+        rA, rB = world["recipe"]
+        fire = (commit_nudge and not nudged and not s.has_machine
+                and s.byproducts.get(rA, 0) >= 1 and s.byproducts.get(rB, 0) >= 1)
+        if fire:
+            nudged = True
+            nudge_turn = t
+        extra = ("\n\n" + commit_nudge) if fire else ""
         left = f", {budget - len(trace)} actions left" if budget is not None else ""
         msgs += [{"role": "assistant", "content": text},
                  {"role": "user", "content": obs +
-                  f"\n\n[{opened_n}/{n} doors open{left}] What next?"}]
+                  f"\n\n[{opened_n}/{n} doors open{left}] What next?" + extra}]
 
     stopped_reason = stopped_reason or "max_turns"
     build_turn = next((x["turn"] for x in trace
@@ -328,6 +341,7 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "built_machine": s.has_machine, "build_turn": build_turn,
         "noop_total": noop_total, "refusals": refusals, "unparsed": unparsed,
         "usage": usage_tot, "stopped_reason": stopped_reason,
+        "nudged": nudged, "nudge_turn": nudge_turn,
     }
     print(f"\n  RESULT {model} n={n} T={n_types} seed=({relabel_seed},{drop_seed}): "
           f"solved={result['solved']} actions={result['total_actions']} "

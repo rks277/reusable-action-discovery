@@ -4,11 +4,11 @@
 
 ## TL;DR
 
-On an obfuscated tool-discovery task, **the smaller model builds the tool more reliably than the larger one — Haiku 0.97 > Sonnet 0.81 > Opus 0.73 build rate — a clean inverse-scaling result on the capability axis.** Decomposing it shows the gap is **not** in *gathering* the ingredients (flat ~1.0 across models) and **not** confabulation; it lives entirely in **recognition**: holding the exact winning components, Haiku combines them 98% of the time, Opus only 77%. Under our definition (discovery = *recognizing the tool can be made*), this recognition gap **is** the discovery failure.
+On an obfuscated tool-discovery task, **the smaller model builds the tool more reliably than the larger one — Haiku 0.97 > Sonnet 0.81 > Opus 0.73 build rate — a clean inverse-scaling result on the capability axis.** Decomposing it shows the gap is **not** in *gathering* the ingredients (flat ~1.0 across models) and **not** confabulation; it lives entirely in **recognition**: holding the exact winning components, Haiku combines them 98% of the time, Opus only 77%. Under our definition (discovery = *recognizing the tool can be made*), this recognition gap **is** the discovery failure. And it is **largely closable**: a one-line commitment nudge ("you hold components — try `combine`", no recipe leak) lifts Opus's recognition from 0.72 to 0.91 — past Sonnet's and near Haiku's no-nudge level — while a content-free neutral nudge *hurts* (0.52). So the deficit is capability-induced **under-recognition, not inability**, and recognition is **elicitation-sensitive in both directions**.
 
 ## Decisions for the meeting
 
-Three things to settle about where the project goes next: **(1) Which mechanism probe first — (H) commitment nudge or (F) oracle-recipe?** Both target the recognition gap on the failed seeds: (H) ("you hold the components — try building") tests whether a one-line nudge closes it (recognition is *closable* vs. a hard deficit); (F) hands Opus the recipe outright to separate recognizing-*that*-it-can-build from recognizing-*which*-pair. My read: (H) first — cheapest, most diagnostic. **(2) When to open the breadth arms — cross-family (GPT-5 / Gemini) and a second environment.** These are what turn a single-benchmark, single-family result into a general claim; the question is whether to start them now in parallel with the mechanism work or hold until (H)/(F) tell us what the mechanism is. **(3) Lock the reporting convention going forward:** adopt recognition rate `P(built | held both)` (or build rate at b≤40) as the headline metric for all future runs, since raw build rate under `stop_on_build` conflates "couldn't build" with "solved-without-building." Proposed sequence: (H) → (F) this week → if recognition gap holds, open cross-family + one new environment in parallel.
+Where we are: the capability-axis result is established (§3.1) and the mechanism is pinned to **recognition** (§3.2–3.3), and (J) has shown that recognition gap is **closable / elicitation-sensitive** (§3.4). Three things to settle about what's next: **(1) Is the mechanism question settled enough to move to breadth, or run (F) oracle-recipe first?** (F) hands Opus the recipe to split the residual ~9% gap into *recognizing-which-pair* (search over the combine space) vs. pure commitment. My read: (F) is a cheap, decisive close-out before breadth. **(2) When to open the breadth arms — cross-family (GPT-5 / Gemini) and a second environment.** These are what turn a single-benchmark, single-family result into a general claim, and the elicitation-sensitivity from (J) raises a specific question: does the recognition gap *and its prompt-fixability* reproduce off the Claude family? **(3) Lock the reporting convention:** adopt recognition rate `P(built | held both)` (not raw build rate, which `stop_on_build` confounds with solve-without-building) as the headline metric for all future runs. Proposed sequence: (F) this week → then cross-family + one new environment in parallel.
 
 ---
 
@@ -98,6 +98,26 @@ Recognition *latency* among models that do recognize is only modestly worse for 
 
 *ECDFs: Opus (blue) is shifted right (slower to first combine and to the winning combine) but converges — confirming the deficit is recognition rate, not speed.*
 
+### 3.4 (J) Commitment probe — is the recognition gap closable?
+
+Re-ran the 40 b≤640 paired-loss seeds (where Opus failed but a smaller model built the identical world) under three conditions: **baseline-rerun**, **commit-nudge** (one-time mid-episode "you hold components — try `combine`", *no recipe leak*), and **neutral-nudge** ("plenty of actions left, keep going", same trigger — controls for mere interruption). Scripts: `scripts/run_commitment_probe.py`, `scripts/analyze_commitment_probe.py`. 120 episodes, $13.13, 0 errors.
+
+| condition | recognition `P(built\|held both)` | build rate |
+|---|---|---|
+| baseline-rerun | **0.72** | 0.57 |
+| commit-nudge | **0.91** | 0.75 |
+| neutral-nudge | **0.52** | 0.42 |
+
+commit − baseline = **+0.19**; commit − neutral = **+0.39** (commit ≥ baseline at every budget; neutral ≤ baseline at every budget).
+
+- **The recognition gap is largely closable.** A one-line commitment nudge lifts Opus from 0.72 to 0.91 — near Haiku's 0.98. The deficit is capability-induced **under-recognition, not inability**.
+- **The original "failures" were mostly stochastic per-attempt misses** — baseline-rerun (0.72) ≈ the original Opus base rate (0.77); re-running the failed cells recovers them at the base rate (this is exactly why the baseline-rerun control was needed). *(The headline comparison is commit 0.91 vs baseline-rerun 0.72 — both measured on the same conditioned set in the same run, apples-to-apples. The 0.77 line is only a reference for the full-sweep base rate; it's a different, larger population, so it isn't expected to match the 0.72 bar exactly.)*
+- **Recognition is elicitation-sensitive in *both* directions** — the neutral nudge *hurts* (0.52 < 0.72). It is emphatically **not** "any interruption helps"; the commit effect is content-specific.
+
+![Commitment probe](../runs/commitment_probe_T3_n12_20260615_121244/fig_commitment_probe.png)
+
+*Left: recognition (solid, Wilson 95% CI) and build rate (light) per condition; commit-nudge reaches near Haiku's no-nudge recognition (dashed), baseline sits at Opus's base rate (dotted), neutral falls below. Right: recognition vs. budget — commit ≥ baseline ≥ neutral at every budget. (n≈33 held-both/condition: commit–baseline CIs overlap slightly; commit–neutral is clearly separated.)*
+
 ---
 
 ## 4. Analysis
@@ -105,6 +125,7 @@ Recognition *latency* among models that do recognize is only modestly worse for 
 - **The inverse-scaling is real and lives in recognition.** Holding the exact winning components, the larger model systematically fails to recognize/commit to building. Under our definition (discovery = recognizing the tool can be made), **this is the discovery failure**, not a strategic footnote.
 - **It is not what we first guessed.** We predicted confabulation (the documented Opus "fabricate-the-environment" mode). The paired data refuted that for this sweep — 0 safeguard fires, 0 derails. Confabulation is the spectacular tail in the uncapped budget sweep, but the build-rate gap is recognition.
 - **It is not a gathering/capability-floor problem** — gathering is flat across models.
+- **The gap is under-recognition, not inability (J).** A one-line commitment nudge recovers most of it (0.72→0.91); Opus *can* build, it just doesn't volunteer to. Recognition is elicitation-sensitive in both directions — the neutral nudge degrades it (0.52), so it's emphatically not "any interruption helps." This answers the "fixable harness artifact?" question and qualifies the headline to "worse at *spontaneously* recognizing/committing without a nudge."
 - **Metric caveat (important for the writeup):** build rate under `stop_on_build` conflates "couldn't build" with "solved-without-building" (32/49 Opus losses solved by brute force). The **clean metric is recognition rate `P(built | held both)`**, which the figures lead with; complementary clean cut is build rate at b≤40 (too tight to brute-force).
 - **Novelty:** known phenomenon (inverse scaling) in an unclaimed regime (agentic tool discovery) with a precise mechanism (recognition gap, not gathering/confabulation). Strongest framing: *"frontier capability under-recognizes a discoverable tool even while holding its components — inverse scaling in agentic discovery."*
 
@@ -112,12 +133,14 @@ Recognition *latency* among models that do recognize is only modestly worse for 
 
 ## 5. Open questions & next steps
 
-**Decisive next experiment — (H) commitment probe.** Re-run the *failed seeds* with a one-line nudge ("you are holding the components — try building it"). If Opus's recognition rate jumps → the deficit is a closable recognition/commitment gap (capability-induced under-recognition, not inability). If not → deeper. Cheap, targeted, not a sweep.
+**(J) commitment probe — DONE (see §3.4).** Result: the recognition gap is largely closable (commit-nudge 0.91 vs baseline 0.72), so the deficit is under-recognition, not inability — and it's elicitation-sensitive in both directions (neutral nudge hurts). This answers the "fixable harness artifact?" question: the gap is prompt-elicitable, which qualifies any "Opus is worse at discovery" claim to "worse at *spontaneously* recognizing/committing without a nudge."
+
+**Decisive next experiments:**
+- **(F) oracle-recipe ablation** — give the recipe explicitly to failed seeds; separates recognizing-*that*-it-can-build from recognizing-*which*-pair (i.e., is the residual gap search over the combine space, or commitment?).
+- **Cross-family generality** — GPT-5 and Gemini-2.5 runners (shim already supports them). Does the capability × recognition crossover (and its prompt-elicitability) reproduce outside the Claude family? Biggest novelty lever — rules out "Claude-RLHF artifact."
 
 **Other near-term:**
-- **(F) oracle-recipe ablation** — give the recipe explicitly to failed seeds; isolates recognition from execution.
 - **Deficit-only metric** — recompute build/recognition rate restricted to b≤40 (removes the solve-without-build confound) vs b≥80.
-- **Cross-family generality** — GPT-5 and Gemini-2.5 runners (shim already supports them). Does the capability × recognition crossover reproduce outside the Claude family? This is the biggest novelty lever — rules out "Claude-RLHF artifact."
 - **More environments** — vary the obfuscation level / construction-hardness knob; does the recognition gap track ambiguity?
 - **U-shaped vs monotonic** — would an even more capable model recover (as 6/11 inverse-scaling tasks did in Wei et al.), or is recognition monotonically worse?
 
@@ -133,7 +156,8 @@ Recognition *latency* among models that do recognize is only modestly worse for 
 | Per-run / comparison plots | `scripts/plot_build_sweep.py`, `scripts/plot_build_sweep_compare.py` |
 | (A) paired-loss analysis | `scripts/analyze_paired_build_losses.py` |
 | (E) recognition decomposition | `scripts/analyze_recognition_latency.py` |
-| Run data | `runs/{haiku,sonnet,opus}_build_sweep_T3_n12_*/episodes.jsonl` |
-| Figures | `runs/fig_build_compare_haiku_sonnet_opus.*`, `runs/fig_recognition_decomposition.*`, `runs/fig_recognition_latency.*` |
+| (J) commitment probe | `scripts/run_commitment_probe.py`, `scripts/analyze_commitment_probe.py`, `scripts/plot_commitment_probe.py` |
+| Run data | `runs/{haiku,sonnet,opus}_build_sweep_T3_n12_*/episodes.jsonl`, `runs/commitment_probe_T3_n12_*/episodes.jsonl` |
+| Figures | `runs/fig_build_compare_haiku_sonnet_opus.*`, `runs/fig_recognition_decomposition.*`, `runs/fig_recognition_latency.*`, `runs/commitment_probe_T3_n12_*/fig_commitment_probe.*` |
 | Deep-research report | [docs/inverse-scaling-agentic-confabulation.md](docs/inverse-scaling-agentic-confabulation.md) |
 | Experiment menu (why Opus builds less) | [docs/why-opus-builds-less-experiments.md](docs/why-opus-builds-less-experiments.md) |
