@@ -30,8 +30,10 @@ Every dig wears the shovel down by 1. If the shovel breaks (durability hits 0)
 before you find the chest, you lose. Reading the map is free; blocked moves
 (into the map edge) don't cost a turn.
 
-You always start at `(0, 0)` standing on a rock that has a scrap under it — your
-first scrap is one `interact` away.
+You start at `(0, 0)`. That cell is treated like any other: rocks are placed
+uniformly over the grid, so you may begin on bare sand or on a rock you can
+search, and a start rock is no more likely than any other to hide a scrap. You
+must explore to find the scraps either way.
 
 ### Controls
 

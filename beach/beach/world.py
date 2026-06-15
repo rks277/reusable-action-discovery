@@ -34,17 +34,18 @@ class World:
 
     grid_size: int
     treasure: Coord
-    distinctive: Coord
     rocks: Dict[Coord, Rock] = field(default_factory=dict)
 
     @classmethod
     def generate(cls, config: Config) -> "World":
         """Build a world from ``config`` using a seeded RNG.
 
-        The start cell (0, 0) always holds a paper rock — that's the player's
-        hint. The treasure goes anywhere else (never on a rock), then the
-        remaining rocks are placed and the first P rocks (starting with (0, 0))
-        carry paper.
+        The treasure goes on a random non-start cell (so the player can't win on
+        turn 0). Rocks are then placed uniformly over every remaining cell — the
+        start cell (0, 0) included, with no special treatment — so whether the
+        player begins on sand or on a searchable rock just falls out of the same
+        draw as every other cell. Paper goes to a random P-sized subset of the
+        rocks, so a start rock is no likelier than any other to hide a scrap.
         """
         rng = random.Random(config.seed)
         n = config.grid_size
@@ -54,17 +55,17 @@ class World:
 
         treasure = rng.choice([c for c in all_cells if c != start])
 
-        candidates = [c for c in all_cells if c != treasure and c != start]
-        rock_cells = [start] + rng.sample(candidates, config.total_rocks - 1)
+        candidates = [c for c in all_cells if c != treasure]
+        rock_cells = rng.sample(candidates, config.total_rocks)
 
-        rocks: Dict[Coord, Rock] = {}
-        for i, cell in enumerate(rock_cells):
-            rocks[cell] = Rock(has_paper=(i < config.papers_needed))
+        paper_cells = set(rng.sample(rock_cells, config.papers_needed))
+        rocks: Dict[Coord, Rock] = {
+            cell: Rock(has_paper=(cell in paper_cells)) for cell in rock_cells
+        }
 
         return cls(
             grid_size=n,
             treasure=treasure,
-            distinctive=start,
             rocks=rocks,
         )
 

@@ -24,9 +24,6 @@ def render_status(game: Game) -> str:
     rock = game.world.rock_at(game.pos)
     if rock is None:
         line = "There is no rock here."
-    elif game.pos == game.world.distinctive and not rock.examined:
-        # The starting rock's paper is disclosed — that's the player's hint.
-        line = "There is a rock here with a piece of paper under it."
     else:
         line = "There is a rock here."
     return "\n".join([
