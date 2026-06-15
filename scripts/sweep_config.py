@@ -13,6 +13,8 @@ constraint and the "build vs. grind" decision stops being economic.
 
 from __future__ import annotations
 
+from math import comb
+
 import lomekwi.obfuscation as _obfuscation
 
 # --- obfuscation scheme ------------------------------------------------
@@ -36,9 +38,38 @@ def _Hn(n: int) -> float:
     return sum(1.0 / k for k in range(1, n + 1))
 
 
+def _grind_cost(n: int) -> float:
+    """E[actions] to brute-force open all n doors: coupon-collector over keys
+    (n*H_n) plus the n opens themselves."""
+    return n * _Hn(n) + n
+
+
+def _build_cost(n: int, t: int) -> float:
+    """E[actions] for the build path: collect all T byproduct types (G), search
+    the recipe (R), then exploit the machine over the doors.
+
+    G = t*H_t examines (coupon-collector over types); R = (C(t,2)+1)/2 combines
+    (one of C(t,2) candidate pairs is correct, searched uniformly).
+
+    Key-aware exploit: each of the G examines ALSO drops a uniformly random
+    door-key, so by the time the machine is built we already hold the keys to
+    ~ n*(1 - (1-1/n)^G) DISTINCT doors. Those doors open in 1 action (use the
+    held key); the rest cost 2 (operate machine -> key, then use). So the exploit
+    is 2n minus one saved operate-machine action per already-keyed door."""
+    g = t * _Hn(t)                              # E[G]: examines to collect T types
+    r = (comb(t, 2) + 1) / 2                    # E[R]: recipe-search combines
+    keyed = n * (1.0 - (1.0 - 1.0 / n) ** g)    # E[distinct doors keyed en route]
+    exploit = 2 * n - keyed                     # 2/door, minus saved operate per keyed door
+    return g + r + exploit
+
+
 def budget_for(n: int = N) -> int:
-    """Strict action budget ~= BUDGET_MULT x E[grind] = BUDGET_MULT*(n*H_n + n)."""
-    return round(BUDGET_MULT * (n * _Hn(n) + n))
+    """Strict action budget = BUDGET_MULT x E[grind] (grind-calibrated). Brute
+    force is always a viable escape hatch, so building stays OPTIONAL -- feasible
+    only where it is genuinely cheaper than grinding (E[build] < E[grind]), which
+    is exactly what makes built_tool a clean disposition signal rather than a
+    feasibility outcome. _build_cost is retained for the region/boundary analyses."""
+    return round(BUDGET_MULT * _grind_cost(n))
 
 
 BUDGET = budget_for(N)  # ~36 at N=8

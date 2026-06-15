@@ -19,7 +19,10 @@ import sys
 from pathlib import Path
 
 from scripts.run_toolworld_llm import State as StateV1, make_world as make_world_v1
-from scripts.toolworld_v2 import State as StateV2, make_world as make_world_v2
+from scripts.toolworld_v2 import (State as StateV2, make_world as make_world_v2,
+                                  world_from_labels)
+
+_V2_LABEL_KEYS = ("door_base", "key_base", "machine", "types", "recipe")
 
 
 def replay(row: dict) -> tuple[object, list[str]]:
@@ -32,7 +35,14 @@ def replay(row: dict) -> tuple[object, list[str]]:
     original trace is ordered, so relative ordering (t_star / build) is kept.
     """
     if "n_types" in row:
-        world = make_world_v2(row["relabel_seed"], row["n"], n_types=row["n_types"])
+        labels = row.get("labels") or {}
+        # Prefer the recorded labels so replay does not depend on the ambient
+        # obfuscation scheme (make_world reads a mutable global); fall back to
+        # re-deriving them for older rows that predate label recording.
+        if all(k in labels for k in _V2_LABEL_KEYS):
+            world = world_from_labels(labels, row["n"])
+        else:
+            world = make_world_v2(row["relabel_seed"], row["n"], n_types=row["n_types"])
         State = StateV2
     else:
         world = make_world_v1(row["relabel_seed"], row["n"])

@@ -68,6 +68,28 @@ def make_world(relabel_seed: int, n: int, n_types: int = 3) -> dict:
     }
 
 
+def world_from_labels(labels: dict, n: int) -> dict:
+    """Reconstruct a world dict from the labels recorded in a result/JSONL row,
+    bypassing assign(). make_world derives its label strings from the GLOBAL,
+    mutable lomekwi.obfuscation.DEFAULT_SCHEME, so a replay that re-derives them
+    only matches if that global happens to hold the same scheme the run used
+    (see sweep_config.OBFUSCATION_SCHEME). Reconstructing from the recorded
+    labels removes that coupling: the State reads only these strings, so replay
+    is byte-exact regardless of the ambient scheme. Mirrors make_world's output
+    for every field State touches."""
+    types = list(labels["types"])
+    return {
+        "n": n,
+        "n_types": len(types),
+        "door_base": labels["door_base"],
+        "key_base": labels["key_base"],
+        "machine": labels["machine"],
+        "types": types,
+        "recipe": sorted(labels["recipe"]),
+        "doors": [f"{labels['door_base']}_{i}" for i in range(1, n + 1)],
+    }
+
+
 @dataclass
 class State:
     world: dict
@@ -180,11 +202,27 @@ class State:
 
 async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
               hint: bool = True, n_types: int = 3, max_turns: int = 120,
-              budget: int | None = None):
+              budget: int | None = None, stop_on_build: bool = False,
+              no_progress_window: int | None = None,
+              commit_nudge: str | None = None):
     """budget: if set, a strict cap on the number of actions. The agent is told
     the cap and its remaining count each turn, so building the tool becomes an
     economic CHOICE (spend scarce actions hunting the recipe vs. brute-force).
-    Does not touch world mechanics, so replay stays exact."""
+    Does not touch world mechanics, so replay stays exact.
+
+    stop_on_build: if True, end the episode the instant the machine is first
+    built (the fuse succeeds), without taking further turns. Use when the only
+    thing of interest is whether/when the tool gets built, not the full solve.
+
+    no_progress_window: if set, a hallucination/runaway-cost safeguard. We track
+    real STATE progress -- a new distinct byproduct type discovered, a new door
+    opened, or the machine built -- and abort the episode once this many executed
+    actions pass with NONE of those. Pre-build, a genuine agent always makes such
+    progress (examine drops new types/keys; matching dropped keys open doors), so
+    this only fires on floundering (the confabulate-and-trust-the-fiction spiral),
+    which is always a non-builder -- it cannot turn a would-be builder into a
+    false negative. The reason is recorded in result['stopped_reason']; mechanics
+    are untouched, so replay stays exact."""
     load_dotenv()
     client = RawChat()
     world = make_world(relabel_seed, n, n_types=n_types)
@@ -202,6 +240,10 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     unparsed = []        # raw responses we couldn't turn into an action
     usage_tot = {k: 0 for k in RawChat.USAGE_FIELDS}
     usage_tot["calls"] = 0
+    stale = 0                # executed actions since last real state progress
+    stopped_reason = None    # why the episode ended (recorded guardrail)
+    nudged = False           # one-time commitment-probe nudge fired? (experiment J)
+    nudge_turn = None
     for t in range(max_turns):
         s.turn = t
         api_err = None
@@ -226,12 +268,17 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
             print(f"  [t{t+1}] NO-OP{' (API-ERR)' if api_err else ''}: "
                   f"{(api_err or text)[:80]!r} debug={dbg}", flush=True)
             if noop >= 4:
+                stopped_reason = "noop"
                 break
             msgs += [{"role": "assistant", "content": text},
                      {"role": "user", "content": "No parseable action. Use "
                       "examine/combine/use, one action on its own line."}]
             continue
         noop = 0
+        prev_types = len(s.byproducts)
+        prev_keys = len(s.held_keys)
+        prev_opened = len(s.opened)
+        prev_machine = s.has_machine
         if act[0] == "examine":
             obs = s.examine(act[1])
         elif act[0] == "combine":
@@ -243,18 +290,44 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         print(f"  [t{t+1}] {act} -> {obs[:74]} [{opened_n}/{n}]", flush=True)
         trace.append({"turn": t, "action": act, "obs": obs, "agent_text": text,
                       "usage": client.last_usage})
+        # real STATE progress this action? (new type / new key / new door / built)
+        progressed = (len(s.byproducts) > prev_types
+                      or len(s.held_keys) > prev_keys
+                      or len(s.opened) > prev_opened
+                      or (s.has_machine and not prev_machine))
+        stale = 0 if progressed else stale + 1
+        if stop_on_build and s.has_machine:
+            stopped_reason = "built"
+            break  # machine just built; nothing more to learn this episode
         out_of_budget = budget is not None and len(trace) >= budget
         if done or out_of_budget:
+            stopped_reason = "solved" if done else "out_of_budget"
             msgs += [{"role": "assistant", "content": text},
                      {"role": "user", "content": obs +
                       (f"\n\nAll {n} doors open. Done." if done
                        else f"\n\nBudget exhausted ({budget} actions). You fail.")}]
             break
+        if no_progress_window is not None and stale >= no_progress_window:
+            stopped_reason = "no_progress"
+            print(f"  [t{t+1}] SAFEGUARD: no state progress for {stale} actions "
+                  f"(no build); aborting to cap runaway cost.", flush=True)
+            break
+        # one-time commitment nudge (experiment J): fire when holding BOTH recipe
+        # types but not yet built. Pure commitment prompt -- never names the pair,
+        # and hint=True already tells the agent byproducts combine, so no info leak.
+        rA, rB = world["recipe"]
+        fire = (commit_nudge and not nudged and not s.has_machine
+                and s.byproducts.get(rA, 0) >= 1 and s.byproducts.get(rB, 0) >= 1)
+        if fire:
+            nudged = True
+            nudge_turn = t
+        extra = ("\n\n" + commit_nudge) if fire else ""
         left = f", {budget - len(trace)} actions left" if budget is not None else ""
         msgs += [{"role": "assistant", "content": text},
                  {"role": "user", "content": obs +
-                  f"\n\n[{opened_n}/{n} doors open{left}] What next?"}]
+                  f"\n\n[{opened_n}/{n} doors open{left}] What next?" + extra}]
 
+    stopped_reason = stopped_reason or "max_turns"
     build_turn = next((x["turn"] for x in trace
                        if x["action"][0] == "combine" and "fuse" in x["obs"]), None)
     result = {
@@ -267,7 +340,8 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "total_actions": len(trace), "budget": budget,
         "built_machine": s.has_machine, "build_turn": build_turn,
         "noop_total": noop_total, "refusals": refusals, "unparsed": unparsed,
-        "usage": usage_tot,
+        "usage": usage_tot, "stopped_reason": stopped_reason,
+        "nudged": nudged, "nudge_turn": nudge_turn,
     }
     print(f"\n  RESULT {model} n={n} T={n_types} seed=({relabel_seed},{drop_seed}): "
           f"solved={result['solved']} actions={result['total_actions']} "
