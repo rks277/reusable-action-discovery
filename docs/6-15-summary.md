@@ -34,7 +34,7 @@ The agent acts under a **strict announced action budget** (swept 20→5120), mak
 - **Two axes must be kept separate:** the Wei U-shape is over *model scale/compute*; inference *budget* is a resource axis whose non-monotonicity (if any) is a different, hazard-driven mechanism — not a Wei-style U.
 - **Novelty assessment:** inverse scaling in an *agentic tool-discovery* regime, family-general, with a named mechanism, is unclaimed territory. The bare direction is known; the regime + mechanism is the contribution.
 
-Full report: [docs/inverse-scaling-agentic-confabulation.md](docs/inverse-scaling-agentic-confabulation.md).
+Full report: [inverse-scaling-agentic-confabulation.md](inverse-scaling-agentic-confabulation.md).
 
 ---
 
@@ -159,5 +159,5 @@ commit − baseline = **+0.19**; commit − neutral = **+0.39** (commit ≥ base
 | (J) commitment probe | `scripts/run_commitment_probe.py`, `scripts/analyze_commitment_probe.py`, `scripts/plot_commitment_probe.py` |
 | Run data | `runs/{haiku,sonnet,opus}_build_sweep_T3_n12_*/episodes.jsonl`, `runs/commitment_probe_T3_n12_*/episodes.jsonl` |
 | Figures | `runs/fig_build_compare_haiku_sonnet_opus.*`, `runs/fig_recognition_decomposition.*`, `runs/fig_recognition_latency.*`, `runs/commitment_probe_T3_n12_*/fig_commitment_probe.*` |
-| Deep-research report | [docs/inverse-scaling-agentic-confabulation.md](docs/inverse-scaling-agentic-confabulation.md) |
-| Experiment menu (why Opus builds less) | [docs/why-opus-builds-less-experiments.md](docs/why-opus-builds-less-experiments.md) |
+| Deep-research report | [inverse-scaling-agentic-confabulation.md](inverse-scaling-agentic-confabulation.md) |
+| Experiment menu (why Opus builds less) | [why-opus-builds-less-experiments.md](why-opus-builds-less-experiments.md) |
