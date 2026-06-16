@@ -61,6 +61,24 @@ N_LO, N_HI = 1, 40           # doors: 1..N_HI (overridable via --n-hi)
 # trajectory so it can only fire on a flounder, never on a real solver/builder.
 NO_PROGRESS_WINDOW = 64
 
+# Per-MTok pricing (input, output, cache-write, cache-read), keyed by model short
+# name. Used only for the optional --max-cost kill switch; cost is summed from each
+# episode's logged `usage` (cache fields included for correctness though currently 0).
+PRICING = {                       # $/1M tokens: (input, output, cache_write, cache_read)
+    "haiku":  (1.0,  5.0,  1.25, 0.10),
+    "sonnet": (3.0, 15.0,  3.75, 0.30),
+    "opus":   (5.0, 25.0,  6.25, 0.50),
+}
+
+
+def episode_cost(usage: dict, price) -> float:
+    """Dollar cost of one episode from its logged token usage."""
+    pin, pout, pcw, pcr = price
+    return (usage.get("input_tokens", 0) * pin
+            + usage.get("output_tokens", 0) * pout
+            + usage.get("cache_write_tokens", 0) * pcw
+            + usage.get("cache_read_tokens", 0) * pcr) / 1e6
+
 
 def max_turns_for(budget: int) -> int:
     """Keep the turn cap above the announced budget so the BUDGET binds first."""
@@ -84,6 +102,9 @@ def parse_args():
     p.add_argument("--reps", type=int, default=REPS)
     p.add_argument("--n-hi", type=int, default=N_HI)
     p.add_argument("--seed", type=int, default=SEED)
+    p.add_argument("--max-cost", type=float, default=None,
+                   help="kill switch: once cumulative logged cost (USD) reaches this, "
+                        "stop launching new episodes (in-flight ones finish).")
     p.add_argument("--smoke", action="store_true")
     return p.parse_args()
 
@@ -143,9 +164,18 @@ async def main():
     sem = asyncio.Semaphore(CONC)
     lock = asyncio.Lock()
 
+    price = PRICING.get(short)
+    cap = args.max_cost
+    state = {"spent": 0.0, "capped": False}   # cumulative logged cost + kill flag
+
     async def one(t, n, rep):
         budget = cfg.budget_for(n)
+        # cost-cap kill switch: once tripped, drain the queue without API calls.
+        if cap is not None and state["capped"]:
+            return
         async with sem:
+            if cap is not None and state["capped"]:   # may have tripped while queued
+                return
             t0 = time.time()
             try:
                 result, trace = await run(model, n=n, n_types=t, relabel_seed=rep,
@@ -178,11 +208,19 @@ async def main():
                 rows.append(row)
                 with out_path.open("a") as f:
                     f.write(json.dumps(row) + "\n")
+                if price and row.get("usage"):
+                    state["spent"] += episode_cost(row["usage"], price)
+                cost_note = f"${state['spent']:.2f}" if cap is not None else ""
                 print(f"  T={t:<2} N={n:<2} b={budget:<4} rep={rep:<2} "
                       f"solved={row.get('solved')} built={row.get('built_machine')} "
                       f"actions={row.get('total_actions')} "
-                      f"stop={row.get('stopped_reason')} "
+                      f"stop={row.get('stopped_reason')} {cost_note} "
                       f"{'(err)' if row.get('error') else ''}", flush=True)
+                if cap is not None and state["spent"] >= cap and not state["capped"]:
+                    state["capped"] = True
+                    print(f"  !! COST CAP HIT: logged spend ${state['spent']:.2f} "
+                          f">= ${cap:.2f}. No new episodes will launch "
+                          f"(in-flight ones finish).", flush=True)
 
     await asyncio.gather(*(one(*c) for c in cells))
     print(f"\nDone. Episodes at: {out_path}")

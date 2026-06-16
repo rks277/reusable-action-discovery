@@ -204,7 +204,9 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
               hint: bool = True, n_types: int = 3, max_turns: int = 120,
               budget: int | None = None, stop_on_build: bool = False,
               no_progress_window: int | None = None,
-              commit_nudge: str | None = None):
+              commit_nudge: str | None = None,
+              playground: bool = False,
+              playground_context: str | None = None):
     """budget: if set, a strict cap on the number of actions. The agent is told
     the cap and its remaining count each turn, so building the tool becomes an
     economic CHOICE (spend scarce actions hunting the recipe vs. brute-force).
@@ -228,11 +230,34 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     world = make_world(relabel_seed, n, n_types=n_types)
     s = State(world=world, drop_rng=random.Random(drop_seed * 6151 + 1), hint=hint)
     intro = s.initial_obs()
-    if budget is not None:
+    if playground:
+        # free-exploration framing: no goal, no budget, nothing to fail. We harvest
+        # the transcript to inject into a later (different, relabeled) game as prior
+        # experience. Mechanics are untouched, so the env's responses stay exact.
+        intro = (
+            f"You are tinkering with a PRACTICE device to learn how it works. "
+            f"There are {world['n']} locked doors: {', '.join(world['doors'])}.\n\n"
+            f"This is a practice session: there is no goal yet and nothing to fail. "
+            f"Freely experiment to understand the device's mechanics.\n\n"
+            f"You may act on objects with these verbs (one action per turn, on its "
+            f"own line):\n"
+            f"  examine <object>      - inspect or search an object\n"
+            f"  combine <a> <b>       - combine two objects you hold\n"
+            f"  use <object> <door>   - use an object on a door\n"
+            f"You hold nothing yet. Things you obtain persist unless stated otherwise.")
+    elif budget is not None:
         intro += (f"\n\nYou have a STRICT BUDGET of {budget} actions total. If the "
                   f"doors are not all open within {budget} actions, you fail. "
                   f"Spend them wisely.")
-    msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
+    # inject a prior playground session as text "experience" (a relabeled, different
+    # device). Budget still counts only game actions, so the practice is genuinely free.
+    if playground_context:
+        msgs = [{"role": "user", "content": playground_context},
+                {"role": "assistant", "content": "Understood — I see how this kind of "
+                 "device works."},
+                {"role": "user", "content": intro + "\n\nWhat do you do?"}]
+    else:
+        msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
     trace = []
     noop = 0
     noop_total = 0       # cumulative no-ops (parse failures + API errors)
@@ -323,9 +348,12 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
             nudge_turn = t
         extra = ("\n\n" + commit_nudge) if fire else ""
         left = f", {budget - len(trace)} actions left" if budget is not None else ""
+        if playground:
+            footer = "\n\nWhat do you do next?"          # neutral: no goal/score pressure
+        else:
+            footer = f"\n\n[{opened_n}/{n} doors open{left}] What next?" + extra
         msgs += [{"role": "assistant", "content": text},
-                 {"role": "user", "content": obs +
-                  f"\n\n[{opened_n}/{n} doors open{left}] What next?" + extra}]
+                 {"role": "user", "content": obs + footer}]
 
     stopped_reason = stopped_reason or "max_turns"
     build_turn = next((x["turn"] for x in trace

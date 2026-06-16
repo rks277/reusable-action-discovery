@@ -1,0 +1,42 @@
+Tool-world MDP  D=12 doors, T=3 types  (C(T,2)=3 pairs, E[K_build]=7.50 actions, exploit=2D=24)
+
+Start state (all D locked, no machine): success probability vs budget
+    b  grind-only  build-only   OPTIMAL  1st move
+--------------------------------------------------
+   12       0.000       0.000     0.000     grind
+   20       0.051       0.000     0.052     grind
+   24       0.150       0.000     0.261     grind
+   30       0.359       0.428     0.857     grind
+   36       0.563       0.945     0.987     grind
+   40       0.673       0.989     0.997     grind
+   48       0.826       1.000     1.000     grind
+   60       0.936       1.000     1.000     grind
+   80       0.989       1.000     1.000     grind
+  120       1.000       1.000     1.000     grind
+  160       1.000       1.000     1.000     grind
+  200       1.000       1.000     1.000     grind
+
+Thresholds on the start state (optimal play):
+  P(success) >= 0.5   at budget b = 27
+  P(success) >= 0.9   at budget b = 31
+  P(success) >= 0.99  at budget b = 37
+  P(success) >= 0.999 at budget b = 43
+  start-state first move flips grind -> build at b = None
+  grind-only reaches 0.99 at b = 82;  build-only at b = 41
+
+Optimal first move by (d, b)  [where build beats grind, m=0]:
+  d     build-preferred budget band
+  1                           9..74
+  2                          10..81
+  3                          12..78
+  4                          14..82
+  5                          16..82
+  6                          19..82
+  7                          25..80
+  8                         (never)
+  9                         (never)
+ 10                         (never)
+ 11                         (never)
+ 12                         (never)
+
+wrote runs/mdp_toolworld_D12_T3/fig_mdp_value_and_policy.png (+ .pdf)
