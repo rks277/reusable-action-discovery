@@ -206,7 +206,9 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
               no_progress_window: int | None = None,
               commit_nudge: str | None = None,
               playground: bool = False,
-              playground_context: str | None = None):
+              playground_context: str | None = None,
+              world_override: dict | None = None,
+              forced_prefix: list | None = None):
     """budget: if set, a strict cap on the number of actions. The agent is told
     the cap and its remaining count each turn, so building the tool becomes an
     economic CHOICE (spend scarce actions hunting the recipe vs. brute-force).
@@ -224,10 +226,27 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     this only fires on floundering (the confabulate-and-trust-the-fiction spiral),
     which is always a non-builder -- it cannot turn a would-be builder into a
     false negative. The reason is recorded in result['stopped_reason']; mechanics
-    are untouched, so replay stays exact."""
+    are untouched, so replay stays exact.
+
+    world_override: if given, use this world dict verbatim instead of
+    make_world(...). Used by the efficiency sweep to rebuild the world from a
+    recorded run's labels (world_from_labels), so replay is byte-exact regardless
+    of the ambient obfuscation scheme (make_world reads a mutable global).
+
+    forced_prefix: if given, a list of (action, agent_text) pairs executed
+    deterministically BEFORE the live loop -- no API call is made for them. Each
+    is run through State (obs recomputed) and appended to `trace` and the message
+    history exactly as the live loop would, so the agent is handed the whole prior
+    run as context. The final prefix entry is typically an artificially forced
+    winning combine. The prefix counts toward `budget` (len(trace) drives the
+    cap) and makes NO API calls (usage=None). Once replayed, the live loop
+    continues seamlessly. With a forced_prefix we tally REDUNDANT continuation
+    actions -- live actions that make no progress, where progress = opening a door
+    OR using the machine on a door (len(opened) or len(machine_used_on) grows)."""
     load_dotenv()
     client = RawChat()
-    world = make_world(relabel_seed, n, n_types=n_types)
+    world = world_override if world_override is not None else make_world(
+        relabel_seed, n, n_types=n_types)
     s = State(world=world, drop_rng=random.Random(drop_seed * 6151 + 1), hint=hint)
     intro = s.initial_obs()
     if playground:
@@ -269,8 +288,39 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     stopped_reason = None    # why the episode ended (recorded guardrail)
     nudged = False           # one-time commitment-probe nudge fired? (experiment J)
     nudge_turn = None
+    # --- efficiency sweep: replay a forced prefix with NO API calls -----------
+    # Each (action, agent_text) is executed through State (obs recomputed) and
+    # appended to trace + msgs exactly as the live loop, handing the agent the
+    # whole prior run as context. The last entry is usually a forced winning
+    # combine. The prefix counts toward `budget` via len(trace).
+    redundant_continuation = 0   # live actions making no progress (door/machine)
+    live_actions = 0             # live actions taken after the prefix
+    live_redundant_flags = []    # per-live-action redundancy bools
+    live_opened_start = None     # len(opened) when the live loop begins
+    if forced_prefix:
+        for action, atext in forced_prefix:
+            s.turn = len(trace)
+            if action[0] == "examine":
+                obs = s.examine(action[1])
+            elif action[0] == "combine":
+                obs = s.combine(action[1], action[2])
+            else:
+                obs = s.use(action[1], action[2])
+            trace.append({"turn": len(trace), "action": list(action), "obs": obs,
+                          "agent_text": atext, "usage": None})
+            opened_n = len(s.opened)
+            left = f", {budget - len(trace)} actions left" if budget is not None else ""
+            footer = f"\n\n[{opened_n}/{n} doors open{left}] What next?"
+            msgs += [{"role": "assistant", "content": atext},
+                     {"role": "user", "content": obs + footer}]
+        live_opened_start = len(s.opened)
     for t in range(max_turns):
-        s.turn = t
+        s.turn = len(trace)
+        # never spend a live action once the budget is already met (e.g. a forced
+        # prefix that consumed it). For ordinary runs the loop breaks before this.
+        if budget is not None and len(trace) >= budget:
+            stopped_reason = stopped_reason or "out_of_budget"
+            break
         api_err = None
         try:
             text = await client.chat(model, SYS, msgs, max_tokens=1500)
@@ -303,6 +353,7 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         prev_types = len(s.byproducts)
         prev_keys = len(s.held_keys)
         prev_opened = len(s.opened)
+        prev_machine_uses = len(s.machine_used_on)
         prev_machine = s.has_machine
         if act[0] == "examine":
             obs = s.examine(act[1])
@@ -321,6 +372,17 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
                       or len(s.opened) > prev_opened
                       or (s.has_machine and not prev_machine))
         stale = 0 if progressed else stale + 1
+        # efficiency sweep: classify this LIVE action as redundant unless it makes
+        # exploitation progress -- a door opens or the machine is operated on a door
+        # (re-operating on an already-keyed door, or any examine/combine/bad-key,
+        # is redundant). The forced combine is in the prefix, so it is never scored.
+        if forced_prefix:
+            made_progress = (len(s.opened) > prev_opened
+                             or len(s.machine_used_on) > prev_machine_uses)
+            live_actions += 1
+            live_redundant_flags.append(not made_progress)
+            if not made_progress:
+                redundant_continuation += 1
         if stop_on_build and s.has_machine:
             stopped_reason = "built"
             break  # machine just built; nothing more to learn this episode
@@ -371,6 +433,14 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "usage": usage_tot, "stopped_reason": stopped_reason,
         "nudged": nudged, "nudge_turn": nudge_turn,
     }
+    if forced_prefix:
+        result.update({
+            "prefix_len": len(forced_prefix),
+            "redundant_continuation": redundant_continuation,
+            "live_actions": live_actions,
+            "live_redundant_flags": live_redundant_flags,
+            "live_opened_delta": len(s.opened) - (live_opened_start or 0),
+        })
     print(f"\n  RESULT {model} n={n} T={n_types} seed=({relabel_seed},{drop_seed}): "
           f"solved={result['solved']} actions={result['total_actions']} "
           f"built={result['built_machine']} build_turn={build_turn} "
