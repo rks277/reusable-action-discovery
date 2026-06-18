@@ -39,8 +39,9 @@ class GameV2:
     def papers_needed(self) -> int:
         return self.config.papers_needed
 
-    def inventory_summary(self) -> str:
-        items = [f"shovel (durability {self.durability})"]
+    def inventory_summary(self, with_durability: bool = True) -> str:
+        items = [f"shovel (durability {self.durability})" if with_durability
+                 else "shovel"]
         if self.has_map:
             items.append("map")
         elif self.papers > 0:

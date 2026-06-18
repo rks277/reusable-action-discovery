@@ -29,10 +29,13 @@ class Rock:
 class World:
     """Static map layout plus mutable rock-examined state.
 
-    Coordinates are ``(x, y)`` with ``0 <= x, y < grid_size``.
+    Coordinates are ``(x, y)`` with ``0 <= x < grid_size`` (width) and
+    ``0 <= y < rows`` (height). Square when ``rows == grid_size``; a 1-D strip
+    when ``rows == 1``.
     """
 
     grid_size: int
+    rows: int
     treasure: Coord
     rocks: Dict[Coord, Rock] = field(default_factory=dict)
 
@@ -48,10 +51,10 @@ class World:
         rocks, so a start rock is no likelier than any other to hide a scrap.
         """
         rng = random.Random(config.seed)
-        n = config.grid_size
+        w, h = config.grid_size, config.rows
         start = (0, 0)
 
-        all_cells = [(x, y) for x in range(n) for y in range(n)]
+        all_cells = [(x, y) for y in range(h) for x in range(w)]
 
         treasure = rng.choice([c for c in all_cells if c != start])
 
@@ -64,7 +67,8 @@ class World:
         }
 
         return cls(
-            grid_size=n,
+            grid_size=w,
+            rows=h,
             treasure=treasure,
             rocks=rocks,
         )
@@ -73,7 +77,7 @@ class World:
 
     def in_bounds(self, coord: Coord) -> bool:
         x, y = coord
-        return 0 <= x < self.grid_size and 0 <= y < self.grid_size
+        return 0 <= x < self.grid_size and 0 <= y < self.rows
 
     def rock_at(self, coord: Coord) -> Optional[Rock]:
         return self.rocks.get(coord)

@@ -44,13 +44,14 @@ from lomekwi.raw_chat import RawChat                 # noqa: E402
 
 def make_game(grid_size: int = 5, seed: int = 12345, papers_needed: int = 4,
               total_rocks: int = 12, shovel_durability: int = 15, hint: bool = True,
-              max_turns: int | None = None) -> GameV2:
+              max_turns: int | None = None, rows: int | None = None) -> GameV2:
     """Build a fresh GameV2 from parameters, routed through the game's own
-    validate() so we honour the same invariants config.json does."""
+    validate() so we honour the same invariants config.json does. `rows` is the
+    grid height (None -> square grid_size x grid_size; 1 -> a 1-D strip)."""
     cfg = validate({
-        "grid_size": grid_size, "seed": seed, "papers_needed": papers_needed,
-        "total_rocks": total_rocks, "shovel_durability": shovel_durability,
-        "hint": hint, "max_turns": max_turns,
+        "grid_size": grid_size, "rows": rows, "seed": seed,
+        "papers_needed": papers_needed, "total_rocks": total_rocks,
+        "shovel_durability": shovel_durability, "hint": hint, "max_turns": max_turns,
     })
     return GameV2(cfg, World.generate(cfg))
 
@@ -110,11 +111,11 @@ def grid_state_text(game: GameV2) -> str:
     spatial layout directly; naming sand explicitly keeps the render from biasing
     the agent toward rocks; the treasure is never disclosed. The cell at column x,
     row y -- addressed (x, y) by inspect/dig -- is grid[y][x]."""
-    n = game.config.grid_size
+    w, h = game.config.grid_size, game.config.rows
     rows = []
-    for y in range(n):
+    for y in range(h):
         row = []
-        for x in range(n):
+        for x in range(w):
             rock = game.world.rock_at((x, y))
             if rock is None:
                 row.append("sand")
@@ -129,15 +130,23 @@ def grid_state_text(game: GameV2) -> str:
             f"Inventory: {game.inventory_summary()}.")
 
 
-def initial_obs(game: GameV2) -> str:
-    n = game.config.grid_size
+def initial_obs(game: GameV2, reveal_tool: bool = False) -> str:
+    w, h = game.config.grid_size, game.config.rows
+    reveal = ""
+    if reveal_tool:
+        reveal = (
+            f" Some rocks hide a scrap of an old map: inspect rocks to collect the "
+            f"scraps, and once you have all {game.papers_needed} of them they form "
+            f"a map that reveals exactly where the treasure is buried (read it with "
+            f"`use map`)."
+        )
     return (
-        f"You are looking down on an {n}x{n} beach. Each cell is either sand or a "
-        f"rock. Cells are addressed by (x, y): x is the column (0 to {n-1}, left "
-        f"to right) and y is the row (0 to {n-1}, top to bottom). You can see the "
+        f"You are looking down on a {w}x{h} beach. Each cell is either sand or a "
+        f"rock. Cells are addressed by (x, y): x is the column (0 to {w-1}, left "
+        f"to right) and y is the row (0 to {h-1}, top to bottom). You can see the "
         f"whole grid at once.\n\n"
         f"GOAL: find the buried treasure and dig it up, using as few actions as "
-        f"possible.\n\n"
+        f"possible.{reveal}\n\n"
         f"You carry a shovel that can dig {game.durability} times before it "
         f"breaks. If it breaks before you uncover the treasure, you lose.\n\n"
         f"You may act with these verbs (one action per turn, on its own line):\n"
@@ -158,18 +167,23 @@ SYS = ("You are an agent looking down on a beach to find buried treasure, using 
 async def run(model: str, grid_size: int = 5, seed: int = 12345,
               papers_needed: int = 4, total_rocks: int = 12,
               shovel_durability: int = 15, hint: bool = True,
-              max_turns: int = 120, budget: int | None = None):
+              max_turns: int = 120, budget: int | None = None,
+              rows: int | None = None, reveal_tool: bool = False):
     """budget: optional strict cap on actions, announced to the agent each turn.
     Like v1, this makes building the map an economic choice (spend scarce actions
-    hunting scraps vs. grinding digs) without touching game mechanics."""
+    hunting scraps vs. grinding digs) without touching game mechanics. `rows` sets
+    the grid height (None -> square; 1 -> a 1-D strip). reveal_tool: if True, the
+    intro explicitly discloses the rock -> scrap -> map -> treasure chain (turns
+    the task from tool DISCOVERY into tool EXPLOITATION)."""
     load_dotenv()
     client = RawChat()
     game = make_game(grid_size, seed, papers_needed, total_rocks,
-                     shovel_durability, hint)
-    intro = initial_obs(game)
+                     shovel_durability, hint, rows=rows)
+    intro = initial_obs(game, reveal_tool)
     if budget is not None:
-        intro += (f"\n\nYou have a STRICT BUDGET of {budget} actions total. If you "
-                  f"have not dug up the treasure within {budget} actions, you fail.")
+        intro += (f"\n\nYou ALSO have a STRICT BUDGET of {budget} actions total "
+                  f"(inspecting and digging each cost one action). If you have not "
+                  f"dug up the treasure within {budget} actions, you fail.")
     msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
 
     trace = []
@@ -261,9 +275,11 @@ async def run(model: str, grid_size: int = 5, seed: int = 12345,
 
     stopped_reason = stopped_reason or "max_turns"
     result = {
-        "model": model, "grid_size": grid_size, "seed": seed,
+        "model": model, "grid_size": grid_size, "rows": game.config.rows,
+        "seed": seed,
         "papers_needed": papers_needed, "total_rocks": total_rocks,
         "shovel_durability": shovel_durability, "hint": hint, "budget": budget,
+        "reveal_tool": reveal_tool,
         "treasure": list(game.world.treasure),
         "won": won, "total_actions": len(trace), "turns": game.turns,
         "durability_left": game.durability, "papers_collected": game.papers,

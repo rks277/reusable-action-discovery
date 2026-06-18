@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 DEFAULTS = {
     "grid_size": 8,
+    "rows": None,          # grid height; None -> square (rows = grid_size)
     "seed": 12345,
     "papers_needed": 3,
     "total_rocks": 12,
@@ -33,7 +34,10 @@ class Config:
 
     Attributes mirror the JSON keys:
 
-    - ``grid_size``: side length ``n`` of the ``n x n`` grid (coords ``0..n-1``).
+    - ``grid_size``: grid WIDTH ``n`` (x coords ``0..n-1``).
+    - ``rows``: grid HEIGHT (y coords ``0..rows-1``). The grid is
+      ``grid_size`` x ``rows``; square ``n x n`` when ``rows == grid_size``,
+      a 1-D strip when ``rows == 1``.
     - ``seed``: single integer seed driving treasure + rock + paper placement.
     - ``papers_needed`` (P): number of paper-bearing rocks; collecting all P
       forms exactly one map.
@@ -45,6 +49,7 @@ class Config:
     """
 
     grid_size: int
+    rows: int
     seed: int
     papers_needed: int
     total_rocks: int
@@ -63,6 +68,8 @@ def _require_int(value, name: str) -> int:
 def validate(data: dict) -> Config:
     """Validate a raw config dict (defaults already merged) into a ``Config``."""
     grid_size = _require_int(data["grid_size"], "grid_size")
+    rows = data.get("rows")
+    rows = grid_size if rows is None else _require_int(rows, "rows")
     seed = _require_int(data["seed"], "seed")
     papers_needed = _require_int(data["papers_needed"], "papers_needed")
     total_rocks = _require_int(data["total_rocks"], "total_rocks")
@@ -80,6 +87,8 @@ def validate(data: dict) -> Config:
 
     if grid_size < 1:
         raise ConfigError("'grid_size' must be >= 1")
+    if rows < 1:
+        raise ConfigError("'rows' must be >= 1")
     if papers_needed < 1:
         raise ConfigError("'papers_needed' must be >= 1")
     if shovel_durability < 1:
@@ -91,16 +100,17 @@ def validate(data: dict) -> Config:
         )
 
     # Need room for every rock plus a treasure cell that carries no rock.
-    capacity = grid_size * grid_size
+    capacity = grid_size * rows
     if total_rocks + 1 > capacity:
         raise ConfigError(
             f"grid is too small: {total_rocks} rocks + 1 treasure cell need "
-            f"{total_rocks + 1} cells but the {grid_size}x{grid_size} grid only "
+            f"{total_rocks + 1} cells but the {grid_size}x{rows} grid only "
             f"has {capacity}"
         )
 
     return Config(
         grid_size=grid_size,
+        rows=rows,
         seed=seed,
         papers_needed=papers_needed,
         total_rocks=total_rocks,
