@@ -72,6 +72,10 @@ def metrics(row: dict) -> dict | None:
     n_types = row.get("n_types", 1)
     s, obs = replay(row)
     actions = row["actions"]
+    # v3 records free `pickup` actions in the trace (so replay reconstructs the
+    # inventory exactly), but they cost no budget -- exclude them from any
+    # action-cost metric. v1/v2 traces have no pickups, so this is a no-op there.
+    budgeted = [a for a in actions if a[0] != "pickup"]
 
     # --- built_tool & build index (first combine that fused the machine) ---
     build_idx = next((i for i, o in enumerate(obs) if "fuse into" in o), None)
@@ -87,7 +91,7 @@ def metrics(row: dict) -> dict | None:
     #     brute_expected <= optimal_tool, i.e. the tool can't help) ---
     be, opt = brute_expected(n), optimal_tool(n, n_types)
     if row["solved"] and be > opt:
-        action_efficiency = (be - len(actions)) / (be - opt)
+        action_efficiency = (be - len(budgeted)) / (be - opt)
     else:
         action_efficiency = None
 
@@ -109,7 +113,7 @@ def metrics(row: dict) -> dict | None:
 
     return {
         "model": row["model"], "n": n, "n_types": n_types,
-        "solved": row["solved"], "total_actions": len(actions),
+        "solved": row["solved"], "total_actions": len(budgeted),
         "built_tool": built_tool, "grind_before_build": grind,
         "action_efficiency": action_efficiency, "rational_use": rational_use,
         "open_methods": [s.opened[d][0] for d in sorted(s.opened)],

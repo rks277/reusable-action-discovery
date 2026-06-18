@@ -1,38 +1,25 @@
-"""Sweep over the beach treasure-hunt world (scripts/run_beach_llm.py), the
-build-vs-grind analog of run_nt_sweep.py.
+"""Sweep over the beach v2 world (scripts/run_beach_v2_llm.py) -- the no-movement,
+coordinate-addressed build-vs-grind analog of run_beach_sweep.py.
 
-Set the arrays below -- MODELS, GRID_VALUES, PAPERS_VALUES, REPS -- and this
-runs every (model, grid, papers, rep) cell concurrently (per-provider in-flight
-caps). The two world levers swept are:
-  - grid_size    : the search space (n x n cells to explore / dig through)
+Identical sweep machinery to run_beach_sweep.py (set MODELS / GRID_VALUES /
+PAPERS_VALUES / REPS; every cell runs concurrently with per-provider in-flight
+caps), reusing its per-cell calibration (durability_for / total_rocks_for) so the
+two world levers stay comparable:
+  - grid_size    : the search space (n x n cells -- sand to dig, rocks to search)
   - papers_needed: how many scraps must be collected before the map forms
 
-shovel_durability and total_rocks are DERIVED per cell by default, but can be
-pinned to a constant via the DURABILITY / TOTAL_ROCKS overrides:
-  - durability  = durability_for(grid)   -- ~half the grid's cells, so the
-      brute-force dig budget scales with area and the build-vs-grind margin
-      stays comparable across grid sizes.
-  - total_rocks = total_rocks_for(grid) -- a fixed fraction of the grid's cells,
-      so rock density (hence how much searching it takes to find the paper
-      rocks) stays constant as the beach grows, independent of papers_needed.
-      Clamped to the grid: a count that would overflow just fills every cell but
-      the rock-free treasure cell.
-
-WHY these levers: the map is the reusable TOOL (collect P scraps -> map -> read
-the treasure coordinate -> one walk + dig); brute force is digging cells until
-you hit the chest, capped by shovel durability. grid_size sets how costly the
-search/grind is; papers_needed sets how much work building the tool takes.
-Together they trace where a model flips between grinding and building.
+The only difference from v1 is the environment: v2 removes movement, the agent
+sees the whole grid, and inspect/dig are addressed by coordinate. The map is
+still the reusable TOOL (collect P scraps -> map -> read the treasure coordinate
+-> one dig); brute force is digging sand cells until you hit the chest, capped by
+shovel durability.
 
 Rep r => seed=r, shared across every cell, so the same rep index is the SAME
-world (treasure / rock / paper / start-cell layout) at a given (grid, papers)
--> paired comparison across models.
+world at a given (grid, papers) -> paired comparison across models AND against the
+v1 sweep (same seeds, same World.generate).
 
-Output: one JSONL row per episode carrying the full run() instrumentation
-(won / built_map / used_map / digs / ... ) plus the per-cell config (grid_size /
-papers_needed / total_rocks / shovel_durability) and a compact trace, so
-downstream analysis loads it unchanged. Each row carries its own config, so
-pooling across the grid must group by those, not just by model.
+Output: one JSONL row per episode, schema-identical to run_beach_sweep.py, so
+scripts/analyze_beach_v2.py (which reuses the v1 analyzer) loads it unchanged.
 """
 
 from __future__ import annotations
@@ -46,11 +33,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Work whether invoked as `python scripts/run_beach_sweep.py` or
-# `python -m scripts.run_beach_sweep`: ensure the repo root is importable so
+# Work whether invoked as `python scripts/run_beach_v2_sweep.py` or
+# `python -m scripts.run_beach_v2_sweep`: ensure the repo root is importable so
 # both `scripts.*` and `lomekwi.*` resolve.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from scripts.run_beach_llm import run  # noqa: E402
+from scripts.run_beach_v2_llm import run                              # noqa: E402
+from scripts.run_beach_sweep import durability_for, total_rocks_for  # noqa: E402
 
 # --- the grid you set ---------------------------------------------------
 MODELS = [
@@ -61,17 +49,14 @@ MODELS = [
     # ("google", "gemini-2.5-pro"),
 ]
 # swept axes
-GRID_VALUES = [4,5,6]      # n x n beach (grid_size); the search/grind space
-PAPERS_VALUES = [2,3,4,5]    # scraps needed to form the map (papers_needed)
-REPS = 10                    # runs per cell; rep r => seed=r
+GRID_VALUES = [4, 5, 6]      # n x n beach (grid_size); the search/grind space
+PAPERS_VALUES = [2, 3, 4, 5]  # scraps needed to form the map (papers_needed)
+REPS = 10                     # runs per cell; rep r => seed=r
 
 # Optional constant overrides. Leave as None to DERIVE per cell (recommended, so
 # the levers stay calibrated to grid/papers); set an int to pin it everywhere.
 DURABILITY = None          # int to fix shovel digs, else durability_for(grid)
 TOTAL_ROCKS = None         # int to fix rock count, else total_rocks_for(grid)
-
-DURABILITY_FRAC = 0.4      # derived durability = round(grid^2 * this)
-ROCK_DENSITY = 0.4         # derived total_rocks = round(grid^2 * this)
 
 HINT = True
 MAX_TURNS = 200            # generous; durability/grid are the real caps
@@ -80,29 +65,10 @@ MAX_TURNS = 200            # generous; durability/grid are the real caps
 CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4}
 
 
-def durability_for(grid: int) -> int:
-    """Default shovel digs when DURABILITY is unset: ~DURABILITY_FRAC of the
-    grid's cells, so the brute-force dig budget scales with the area an agent
-    would have to dig through. Larger grids get more digs (grinding stays
-    viable), keeping the build-vs-grind margin comparable across grid sizes."""
-    return max(3, round(grid * grid * DURABILITY_FRAC))
-
-
-def total_rocks_for(grid: int) -> int:
-    """Default rock count when TOTAL_ROCKS is unset: a fixed fraction
-    (ROCK_DENSITY) of the grid's cells, so rock density -- and thus how much
-    searching it takes to find the paper rocks -- stays constant as the beach
-    grows, independent of how many scraps the map needs. Clamped so the rocks
-    never exceed the grid: if the derived count would overflow, the whole grid
-    is rocks bar the single rock-free treasure cell."""
-    cells = grid * grid
-    return min(round(cells * ROCK_DENSITY), cells - 1)
-
-
 async def main():
     load_dotenv()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_dir = Path("runs") / f"beach_sweep_{ts}"
+    out_dir = Path("runs") / f"beach_v2_sweep_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "episodes.jsonl"
     out_path.write_text("")

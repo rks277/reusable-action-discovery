@@ -21,6 +21,7 @@ from pathlib import Path
 from scripts.run_toolworld_llm import State as StateV1, make_world as make_world_v1
 from scripts.toolworld_v2 import (State as StateV2, make_world as make_world_v2,
                                   world_from_labels)
+from scripts.toolworld_v3 import State as StateV3
 
 _V2_LABEL_KEYS = ("door_base", "key_base", "machine", "types", "recipe")
 
@@ -43,7 +44,9 @@ def replay(row: dict) -> tuple[object, list[str]]:
             world = world_from_labels(labels, row["n"])
         else:
             world = make_world_v2(row["relabel_seed"], row["n"], n_types=row["n_types"])
-        State = StateV2
+        # v3 reuses the v2 world layout but has its own State (ground + pickup);
+        # route by the recorded variant tag (v3 rows also carry 'n_types').
+        State = StateV3 if row.get("variant") == "v3_pickup" else StateV2
     else:
         world = make_world_v1(row["relabel_seed"], row["n"])
         State = StateV1
@@ -56,6 +59,8 @@ def replay(row: dict) -> tuple[object, list[str]]:
         verb = act[0]
         if verb == "examine":
             obs = s.examine(act[1])
+        elif verb == "pickup":
+            obs = s.pickup()
         elif verb == "combine":
             obs = s.combine(act[1], act[2])
         elif verb == "use":
