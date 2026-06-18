@@ -31,11 +31,11 @@ The 6-15 build sweep fixed `n=12, T=3` and swept budget. This sweep instead **va
 
 **Built-density across the design surface (Gaussian-pooled).** Pooling the per-cell built outcomes (normalized convolution, σ=1) over the `(N,T)` rectangle gives a legible surface despite 1 rep/cell. The three panels show the same ordering visually — Haiku's build region is broad and dense, Opus's is sparse and confined to the easiest (low-T, high-N) corner:
 
-<img src="../figs/haiku_region_p100_r1_Nle20/fig_haiku_density_built_Nle20_gaussian1.png" alt="Haiku built density" width="360">
-<img src="../figs/sonnet_region_p200_r1_Nle20/fig_sonnet_density_built_Nle20_gaussian1.png" alt="Sonnet built density" width="360">
-<img src="../figs/opus_region_p200_r1_Nle20/fig_opus_density_built_Nle20_gaussian1.png" alt="Opus built density" width="360">
+<img src="../figs/toolworld/haiku_region_p100_r1_Nle20/fig_haiku_density_built_Nle20_gaussian1.png" alt="Haiku built density" width="360">
+<img src="../figs/toolworld/sonnet_region_p200_r1_Nle20/fig_sonnet_density_built_Nle20_gaussian1.png" alt="Sonnet built density" width="360">
+<img src="../figs/toolworld/opus_region_p200_r1_Nle20/fig_opus_density_built_Nle20_gaussian1.png" alt="Opus built density" width="360">
 
-*Gaussian-pooled built density over `(N,T)` — Haiku (top), Sonnet (middle), Opus (bottom). Opus builds only in the easy corner; difference maps (`figs/_diffs/fig_opus_minus_{haiku,sonnet}_density_Nle20.png`) show almost no cells where Opus builds more. The analytic build-vs-grind boundary (where `E[build] < E[grind]`) is `figs/_analytic/fig_build_vs_grind_region.png`.*
+*Gaussian-pooled built density over `(N,T)` — Haiku (top), Sonnet (middle), Opus (bottom). Opus builds only in the easy corner; difference maps (`figs/toolworld/_diffs/fig_opus_minus_{haiku,sonnet}_density_Nle20.png`) show almost no cells where Opus builds more. The analytic build-vs-grind boundary (where `E[build] < E[grind]`) is `figs/toolworld/_analytic/fig_build_vs_grind_region.png`.*
 
 **Recognition holds up on this sweep too — and the gap widens.** Conditioning on the precondition (held both recipe ingredients) and Gaussian-pooling the held-both cells gives the recognition surface `P(built | held both)`:
 
@@ -47,7 +47,7 @@ The 6-15 build sweep fixed `n=12, T=3` and swept budget. This sweep instead **va
 
 These are *sharper* than the single-config (E) numbers (0.98 / 0.81 / 0.77) because the region sweep spans hard geometries (high T = more candidate combines, low N = thin build margin) where recognition is much harder — and **the larger model degrades far more there** (Opus 0.36 vs. 0.77 at the easy `n=12,T=3` point). Script: `scripts/plot_recognition_panels.py`.
 
-![Recognition panels](../figs/_panels/fig_recognition_panels_Nle20.png)
+![Recognition panels](../figs/toolworld/_panels/fig_recognition_panels_Nle20.png)
 
 *Three-panel `P(built | held both)` over `(N,T)`, Gaussian-pooled (held-both cells only; cells never holding both are dropped). Headline recognition in each title: Haiku 0.87, Sonnet 0.64, Opus 0.36.*
 
@@ -65,7 +65,7 @@ The build/recognition maps say the *smaller* model discovers the tool more. The 
 
 **The ordering inverts relative to building** (Sonnet/Opus solve *more* than Haiku). This is the project's central tension made visual: the stronger models are better at *succeeding at the task* (they grind larger worlds effectively) but worse at *discovering the reusable tool*. The panels show Sonnet/Opus extending their solvable (green) region further up-and-right into larger `(N,T)`, while Haiku's green stays confined to the low-`N` band; for all three, most solved cells sit *above* the analytic `E[build]=E[grind]` boundary — i.e. **most solves are grind-based, not build-based**. Script: `scripts/plot_solve_panels.py`.
 
-![Solve-rate panels](../figs/_panels/fig_solve_panels_Nle20.png)
+![Solve-rate panels](../figs/toolworld/_panels/fig_solve_panels_Nle20.png)
 
 *Three-panel `P(solved)` over `(N,T)`, Gaussian-pooled, full region sweep. Solve rate: Haiku 0.21 < Opus 0.29 < Sonnet 0.33 — the inverse of the build/recognition ordering.*
 
@@ -110,9 +110,9 @@ Three arms:
 - **Watching exploration *hurts* building for every model** (Opus 0.10, Sonnet 0.00, Haiku 0.30 — all below their own baseline). Content-free familiarity with the device suppresses building (it appears to prime grinding), so the recovery is specific to the **build demonstration**, not to "having seen the device before."
 - **Converges with the commitment probe (6-15 §3.4):** a *content-specific* intervention (a build demo / a "try combine" nudge) closes the gap; a content-free one (exploration / neutral nudge) does not — now shown across all three models. Two independent manipulations point to the same mechanism: the larger models *can* build reliably; they under-recognize that they should.
 
-![Opus playground experiment](../figs/_playground/fig_playground_experiment_opus_n12_T6.png)
-![Sonnet playground experiment](../figs/_playground/fig_playground_experiment_sonnet_n12_T6.png)
-![Haiku playground experiment](../figs/_playground/fig_playground_experiment_haiku_n12_T6.png)
+![Opus playground experiment](../figs/toolworld/_playground/fig_playground_experiment_opus_n12_T6.png)
+![Sonnet playground experiment](../figs/toolworld/_playground/fig_playground_experiment_sonnet_n12_T6.png)
+![Haiku playground experiment](../figs/toolworld/_playground/fig_playground_experiment_haiku_n12_T6.png)
 
 *Build / recognition / solve rate by arm (binomial SE bars), Opus → Sonnet → Haiku. The build-demo arm lifts Opus and Sonnet to ~0.90 build; Haiku (already at its ceiling) is flat. The explore arm sits below baseline for all three.*
 
@@ -200,8 +200,8 @@ Crafter is the most natural second environment: its tech tree gives **many** dis
 | Region sweep runners | `scripts/run_{haiku,sonnet,opus}_region_sweep.py`, `scripts/run_nt_sweep.py` |
 | Region analysis / plots | `scripts/analyze_nt_sweep.py`, `scripts/plot_haiku_region_heatmap.py`, `scripts/plot_region_diff.py`, `scripts/plot_build_vs_grind_region.py`, `scripts/plot_recognition_panels.py`, `scripts/plot_solve_panels.py` |
 | Region run data | `runs/{haiku,sonnet,opus}_region_sweep_*_Nle20_*/episodes.jsonl` (+ `points.json`, `region_*_density*.json`) |
-| Region figures | build-rate `figs/{model}_region_p*/fig_*_region_build_rate_Nle20.*`; Gaussian-pooled density `figs/{model}_region_p*/fig_*_density_built_Nle20_gaussian1*.*`; recognition panels `figs/_panels/fig_recognition_panels_Nle20.*`; solve-rate panels `figs/_panels/fig_solve_panels_Nle20.*`; diffs `figs/_diffs/fig_*_minus_*_density_Nle20.*`; analytic boundary `figs/_analytic/fig_build_vs_grind_region.*` |
+| Region figures | build-rate `figs/{model}_region_p*/fig_*_region_build_rate_Nle20.*`; Gaussian-pooled density `figs/{model}_region_p*/fig_*_density_built_Nle20_gaussian1*.*`; recognition panels `figs/toolworld/_panels/fig_recognition_panels_Nle20.*`; solve-rate panels `figs/toolworld/_panels/fig_solve_panels_Nle20.*`; diffs `figs/toolworld/_diffs/fig_*_minus_*_density_Nle20.*`; analytic boundary `figs/toolworld/_analytic/fig_build_vs_grind_region.*` |
 | Playground experiment | `scripts/gen_playgrounds.py`, `scripts/run_playground_experiment.py`, `scripts/plot_playground_experiment.py` |
-| Playground run data / figs | `runs/{opus,sonnet,haiku}_playground_expt_T6_n12_*/` (+ `design.json`), `figs/_playground/fig_playground_experiment_{opus,sonnet,haiku}_n12_T6.*`; demo pool `playgrounds/T3_n8/` |
+| Playground run data / figs | `runs/{opus,sonnet,haiku}_playground_expt_T6_n12_*/` (+ `design.json`), `figs/toolworld/_playground/fig_playground_experiment_{opus,sonnet,haiku}_n12_T6.*`; demo pool `playgrounds/T3_n8/` |
 
 Prior artifacts (build sweeps, recognition decomposition, commitment probe, deep-research report, experiment menu) are unchanged — see [6-15-summary.md](6-15-summary.md) §6.

@@ -73,7 +73,7 @@ def main():
                  f"9 colormaps (seaborn KDE ratio, bw={args.bandwidth:g})", y=0.995, fontsize=16)
     fig.tight_layout(rect=(0, 0, 1, 0.985))
 
-    out = Path(f"figs/fig_recognition_sonnet_cmaps_Nle{args.n_hi}.png")
+    out = Path(f"figs/toolworld/fig_recognition_sonnet_cmaps_Nle{args.n_hi}.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=140, bbox_inches="tight")
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight")

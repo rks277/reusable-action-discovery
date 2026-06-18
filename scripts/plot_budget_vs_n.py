@@ -47,7 +47,7 @@ def main():
     ax.legend()
     fig.tight_layout()
 
-    out = Path("figs/fig_budget_vs_n.png")
+    out = Path("figs/toolworld/fig_budget_vs_n.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150)
     fig.savefig(out.with_suffix(".pdf"))

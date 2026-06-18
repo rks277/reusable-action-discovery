@@ -163,7 +163,7 @@ def main():
     ax.legend(loc="upper right", fontsize=8, framealpha=0.9)
     fig.tight_layout()
 
-    out = Path(f"figs/{stem}.png")
+    out = Path(f"figs/toolworld/{stem}.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150)
     fig.savefig(out.with_suffix(".pdf"))

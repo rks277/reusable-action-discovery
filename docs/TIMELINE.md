@@ -119,7 +119,7 @@ density/heatmap maps over (T, N), a commitment probe, and supporting writeups.
 - `sonnet_region_sweep_smoke_20260615_175231/`
 - `sonnet_region_sweep_p200_r1_Nle20_20260615_175252/` — Sonnet full-coverage density map.
 
-**Figures (figs/)** — all generated 06-15
+**Figures (figs/toolworld/)** — all generated 06-15
 - `fig_budget_vs_n`, `fig_build_vs_grind_region` — budget geometry.
 - `fig_haiku_region_build_rate`(`_Nle20`), `fig_sonnet_region_build_rate_Nle20` — P(built|solved) heatmaps.
 - `fig_haiku_density_built_Nle20`(`_gaussian1`), `fig_sonnet_density_built_Nle20`(`_gaussian1`, `_gaussian1.5`) — build-propensity density maps.

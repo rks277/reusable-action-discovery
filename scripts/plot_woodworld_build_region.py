@@ -69,8 +69,8 @@ def main():
                  "green: build < grind     grey: grind ≤ build", fontsize=10)
 
     fig.tight_layout()
-    out = Path("figs/fig_woodworld_build_vs_grind_region.png")
-    out.parent.mkdir(exist_ok=True)
+    out = Path("figs/woodworld/analytic/fig_woodworld_build_vs_grind_region.png")
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150)
     fig.savefig(out.with_suffix(".pdf"))
     print(f"wrote {out} and {out.with_suffix('.pdf')}")

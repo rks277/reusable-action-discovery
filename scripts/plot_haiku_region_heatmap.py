@@ -93,7 +93,7 @@ def main():
     stem = f"fig_{short}_{fig_base}"
     title = f"{short.capitalize()} {title_suffix}"
     # tag the N-range unless it's the original default run (built_given_solved, N<=40),
-    # so we never clobber the headline figs/fig_haiku_region_build_rate.png
+    # so we never clobber the headline figs/toolworld/fig_haiku_region_build_rate.png
     if metric != "built_given_solved" or n_hi != 40:
         stem = f"{stem}_Nle{n_hi}"
         jname = f"{jname}_Nle{n_hi}"
@@ -188,7 +188,7 @@ def main():
     ax.legend(loc="upper right", fontsize=8, framealpha=0.9)
     fig.tight_layout()
 
-    out = Path(f"figs/{stem}.png")
+    out = Path(f"figs/toolworld/{stem}.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150)
     fig.savefig(out.with_suffix(".pdf"))

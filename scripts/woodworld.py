@@ -88,9 +88,14 @@ def _build_world(labels: dict, n: int, gather_prob: float = GATHER_PROB) -> dict
     }
 
 
-def make_world(relabel_seed: int, n: int, gather_prob: float = GATHER_PROB) -> dict:
-    """Per-episode world: relabel the latent roles uniformly at random."""
-    return _build_world(assign(ELEMENTS, seed=relabel_seed), n, gather_prob)
+def make_world(relabel_seed: int, n: int, gather_prob: float = GATHER_PROB,
+               obfuscate: bool = True) -> dict:
+    """Per-episode world: relabel the latent roles uniformly at random. With
+    obfuscate=False the latent roles keep their real English names (wood/stick/
+    axe) -- an ablation isolating how much of the discovery difficulty is the
+    obfuscation itself versus the hidden recipe/payoff structure."""
+    labels = assign(ELEMENTS, seed=relabel_seed) if obfuscate else {e: e for e in ELEMENTS}
+    return _build_world(labels, n, gather_prob)
 
 
 def world_from_labels(labels: dict, n: int, gather_prob: float = GATHER_PROB) -> dict:
@@ -164,13 +169,18 @@ class State:
         return "You gather, but find nothing this time."
 
     def craft(self, toks: list[str]) -> str:
-        """Combine >=2 held items. The provided multiset of tokens must EQUAL a
-        recipe's input multiset AND be held in full (multiset equality, not
-        subset, so dumping the whole inventory never matches). On success the obs
-        echoes the exact consumed/produced multisets, so recipe counts are
-        learnable from a successful craft; failures are opaque ('nothing happens')
-        to keep discovery honest."""
+        """Combine EXACTLY two held items. Every recipe takes two inputs, so
+        combining is binary: the agent can only ever pair two items, never dump a
+        pile. The provided pair of tokens must EQUAL a recipe's input multiset AND
+        be held in full (multiset equality, so an unmatched pair never fires). On
+        success the obs echoes the exact consumed/produced multisets, so recipe
+        counts are learnable from a successful craft; failures are opaque
+        ('nothing happens') to keep discovery honest. A non-binary attempt is
+        rejected with an explicit message (it still counts as a craft attempt)."""
         self.craft_attempts += 1
+        if len(toks) != 2:
+            return (f"You can only combine two items at a time (you tried "
+                    f"{len(toks)}). Combine exactly two.")
         provided = Counter(toks)
         for r in self.world["recipes"]:
             need = Counter(r["in"])
@@ -223,7 +233,7 @@ class State:
             f"using as few actions as possible.\n\n"
             f"You may act with these verbs (one action per turn, on its own line):\n"
             f"  gather                - search for raw material\n"
-            f"  combine <a> <b> ...   - combine two or more items you hold\n"
+            f"  combine <a> <b>       - combine exactly two items you hold\n"
             f"  use <item>            - operate or apply an item you hold\n"
             f"You hold nothing yet. Things you obtain persist unless stated otherwise.")
         if budget is not None:
@@ -280,14 +290,14 @@ def extract(text: str):
 
 SYS = ("You are an agent in a workshop and must accumulate a target item using as "
        "few actions as possible. End each turn with exactly one action on its own "
-       "line: gather, combine <a> <b> ..., or use <item>. Think briefly, then act. "
-       "Minimize total actions.")
+       "line: gather, combine <a> <b> (exactly two items), or use <item>. Think "
+       "briefly, then act. Minimize total actions.")
 
 
 async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int = 0,
               hint: bool = True, max_turns: int = 120, budget: int | None = None,
               no_progress_window: int | None = None, stop_on_build: bool = False,
-              gather_prob: float = GATHER_PROB,
+              gather_prob: float = GATHER_PROB, obfuscate: bool = True,
               world_override: dict | None = None, forced_prefix: list | None = None):
     """One woodworld episode. Mirrors toolworld_v2.run.
 
@@ -301,7 +311,7 @@ async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int =
     load_dotenv()
     client = RawChat()
     world = (world_override if world_override is not None
-             else make_world(relabel_seed, n, gather_prob))
+             else make_world(relabel_seed, n, gather_prob, obfuscate))
     s = State(world=world, gather_rng=random.Random(gather_seed * 6151 + 1), hint=hint)
 
     intro = s.initial_obs(budget)
@@ -413,18 +423,21 @@ async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int =
 
     stopped_reason = stopped_reason or "max_turns"
 
-    # action efficiency vs oracle (lazy import to avoid a circular dependency)
+    # action efficiency vs oracle (lazy import to avoid a circular dependency).
+    # brute_expected MUST use the episode's actual p -- with the default p=0.8 the
+    # grind baseline is wrong off the default cell (it understates grind cost at low
+    # p), making solved low-p episodes look absurdly inefficient.
     action_efficiency = None
     if s.solved():
         from scripts.validate_woodworld import brute_expected, oracle_min
-        be, om = brute_expected(n), oracle_min(n)
+        be, om = brute_expected(n, world["gather_prob"]), oracle_min(n)
         if be > om:
             action_efficiency = (be - len(trace)) / (be - om)
 
     result = {
         "model": model, "task": "woodworld", "n": n, "N": n,
         "relabel_seed": relabel_seed, "gather_seed": gather_seed, "hint": hint,
-        "gather_prob": world["gather_prob"],
+        "obfuscate": obfuscate, "gather_prob": world["gather_prob"],
         "labels": world["labels"],
         "solved": s.solved(), "total_actions": len(trace), "budget": budget,
         "built_axe": s.built_axe, "build_turn": s.build_turn, "t_star": t_star,

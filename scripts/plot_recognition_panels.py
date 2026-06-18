@@ -132,7 +132,7 @@ def main():
     cb = fig.colorbar(mesh, ax=axes, fraction=0.025, pad=0.02)
     cb.set_label("P(built | held both)")
 
-    out = Path(f"figs/fig_recognition_panels_Nle{args.n_hi}.png")
+    out = Path(f"figs/toolworld/fig_recognition_panels_Nle{args.n_hi}.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight")

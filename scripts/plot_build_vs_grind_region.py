@@ -44,7 +44,7 @@ def main():
     ax.set_xticks(T_VALUES[::2])
 
     fig.tight_layout()
-    out = Path("figs/fig_build_vs_grind_region.png")
+    out = Path("figs/toolworld/fig_build_vs_grind_region.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150)
     fig.savefig(out.with_suffix(".pdf"))

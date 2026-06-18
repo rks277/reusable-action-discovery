@@ -65,6 +65,9 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--reps", type=int, default=REPS)
+    ap.add_argument("--n-values", default=None,
+                    help="comma-separated target-wood N values (overrides the default "
+                         "integer range N_LO..N_HI), e.g. '10,20,30,40,50,60,70,80,90'")
     ap.add_argument("--hint", action="store_true", help="enable the subtle hint")
     ap.add_argument("--max-cost", type=float, default=None,
                     help="kill switch: stop launching new episodes once cumulative "
@@ -79,25 +82,29 @@ async def main():
     model = args.model
     short = model.split("-")[1] if model.startswith("claude-") else model
 
+    n_values = ([int(x) for x in args.n_values.split(",") if x.strip()]
+                if args.n_values else list(range(N_LO, N_HI + 1)))
+    n_lo, n_hi = min(n_values), max(n_values)
+
     resume = os.environ.get("WOODWORLD_REGION_RESUME")
     if resume:
         out_dir = Path(resume)
     else:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         h = "hint" if args.hint else "nohint"
-        tag = "smoke" if args.smoke else f"r{args.reps}_{h}_N{N_LO}-{N_HI}"
+        tag = "smoke" if args.smoke else f"r{args.reps}_{h}_N{n_lo}-{n_hi}"
         out_dir = Path("runs") / f"{short}_woodworld_region_{tag}_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "episodes.jsonl"
     out_path.touch()
 
-    points = [(p, n) for p in P_VALUES for n in range(N_LO, N_HI + 1)]
+    points = [(p, n) for p in P_VALUES for n in n_values]
     reps = range(args.reps)
     if args.smoke:
-        points, reps = [(0.2, 20)], range(1)     # one expensive-ish low-p cell
+        points, reps = [(0.2, max(n_values))], range(1)   # one expensive low-p cell
     (out_dir / "points.json").write_text(json.dumps(
-        {"p_values": P_VALUES, "n_range": [N_LO, N_HI], "reps": args.reps,
-         "hint": args.hint, "model": model}, indent=2))
+        {"p_values": P_VALUES, "n_values": n_values, "n_range": [n_lo, n_hi],
+         "reps": args.reps, "hint": args.hint, "model": model}, indent=2))
 
     # resume: skip already-completed (p, n, rep)
     done = set()

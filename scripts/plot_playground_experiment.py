@@ -87,7 +87,7 @@ def main():
                  f"recognition denominator = episodes that held both ingredients")
     ax.legend(loc="upper left", fontsize=9)
 
-    out = Path(f"figs/fig_playground_experiment_{model}_n{n}_T{t}.png")
+    out = Path(f"figs/toolworld/fig_playground_experiment_{model}_n{n}_T{t}.png")
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight")

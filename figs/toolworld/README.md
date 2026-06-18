@@ -1,8 +1,8 @@
-# Figures, grouped by run
+# Toolworld figures, grouped by run
 
 Figures are sorted into one subfolder per source run. **Note:** the plotting scripts
-still write to `figs/` root (paths are hardcoded), so regenerated figures land loose and
-need re-sorting into the matching folder below.
+still write to the `figs/toolworld/` root (paths are hardcoded), so regenerated figures
+land loose and need re-sorting into the matching folder below.
 
 | Folder | Source run dir | Contents |
 |---|---|---|
