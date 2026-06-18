@@ -36,8 +36,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import scripts.woodworld_config as cfg          # sets DEFAULT_SCHEME='letter'
-from scripts.validate_woodworld import budget_for
-from scripts.woodworld import run
+from scripts.validate_woodworld import budget_for, axe_cost
+from scripts.woodworld import run, VARIANTS
 
 MODEL = "claude-haiku-4-5-20251001"
 N_LO, N_HI = 2, 20                                # target wood
@@ -69,6 +69,13 @@ def parse_args():
                     help="comma-separated target-wood N values (overrides the default "
                          "integer range N_LO..N_HI), e.g. '10,20,30,40,50,60,70,80,90'")
     ap.add_argument("--hint", action="store_true", help="enable the subtle hint")
+    ap.add_argument("--variant", default="base", choices=list(VARIANTS),
+                    help="game mechanics variant (default base); e.g. iso_apples3 "
+                         "= 3 inert apple decoys + single-step 2 wood->axe")
+    ap.add_argument("--budget-mult", type=float, default=1.0,
+                    help="grind-calibration multiplier: budget = round(mult * n / p). "
+                         "1.0 = forced regime (grind is a coin-flip); 1.2 = ToolWorld "
+                         "slack regime (grind has a ~20%% surplus, a viable escape hatch).")
     ap.add_argument("--max-cost", type=float, default=None,
                     help="kill switch: stop launching new episodes once cumulative "
                          "logged cost (USD) reaches this (in-flight ones finish).")
@@ -85,6 +92,9 @@ async def main():
     n_values = ([int(x) for x in args.n_values.split(",") if x.strip()]
                 if args.n_values else list(range(N_LO, N_HI + 1)))
     n_lo, n_hi = min(n_values), max(n_values)
+    mech = VARIANTS[args.variant]
+    # axe build cost for THIS variant's recipe (recorded for the boundary overlay)
+    mech_axe_cost = list(axe_cost(mech.recipes, mech.tool_item, mech.goal_item))
 
     resume = os.environ.get("WOODWORLD_REGION_RESUME")
     if resume:
@@ -92,7 +102,9 @@ async def main():
     else:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         h = "hint" if args.hint else "nohint"
-        tag = "smoke" if args.smoke else f"r{args.reps}_{h}_N{n_lo}-{n_hi}"
+        vtag = "" if args.variant == "base" else f"{args.variant}_"
+        mtag = "" if abs(args.budget_mult - 1.0) < 1e-9 else f"mult{args.budget_mult:g}_"
+        tag = "smoke" if args.smoke else f"{vtag}{mtag}r{args.reps}_{h}_N{n_lo}-{n_hi}"
         out_dir = Path("runs") / f"{short}_woodworld_region_{tag}_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "episodes.jsonl"
@@ -104,7 +116,8 @@ async def main():
         points, reps = [(0.2, max(n_values))], range(1)   # one expensive low-p cell
     (out_dir / "points.json").write_text(json.dumps(
         {"p_values": P_VALUES, "n_values": n_values, "n_range": [n_lo, n_hi],
-         "reps": args.reps, "hint": args.hint, "model": model}, indent=2))
+         "reps": args.reps, "hint": args.hint, "model": model,
+         "variant": args.variant, "budget_mult": args.budget_mult}, indent=2))
 
     # resume: skip already-completed (p, n, rep)
     done = set()
@@ -134,7 +147,7 @@ async def main():
     async def one(p, n, rep):
         if cap is not None and state["capped"]:
             return
-        budget = budget_for(n, p)
+        budget = budget_for(n, p, mult=args.budget_mult)
         window = round(NO_PROG_K / p)
         max_turns = max(cfg.MAX_TURNS, round(budget * 1.5))
         async with sem:
@@ -145,8 +158,9 @@ async def main():
                 result, trace = await run(model, n=n, relabel_seed=rep, gather_seed=rep,
                                           hint=args.hint, gather_prob=p, budget=budget,
                                           max_turns=max_turns, stop_on_build=False,
-                                          no_progress_window=window)
+                                          no_progress_window=window, mech=mech)
                 row = {"model": model, "n": n, "gather_prob": p, "hint": args.hint,
+                       "variant": args.variant, "axe_cost": mech_axe_cost,
                        "budget": budget, "relabel_seed": rep, "gather_seed": rep,
                        "labels": result["labels"],
                        "actions": [x["action"] for x in trace],
@@ -154,6 +168,7 @@ async def main():
                        "obs": [x["obs"] for x in trace],
                        "solved": result["solved"],
                        "built_axe": result["built_axe"],
+                       "held_ingredients": result["held_ingredients"],
                        "build_turn": result["build_turn"],
                        "t_star": result["t_star"],
                        "use_axe_count": result["use_axe_count"],

@@ -67,46 +67,177 @@ TOOL_ITEM = "axe"                                 # the persistent reusable tool
 ELEMENTS = ["wood", "stick", "axe"]               # the latent roles to relabel
 
 
-def _build_world(labels: dict, n: int, gather_prob: float = GATHER_PROB) -> dict:
-    """Assemble a world dict from a latent->token label map. Everything State
-    touches is a token string (or the scalar gather_prob), so replay needs only
-    these labels + the recorded gather_prob (no assign, no module constants)."""
+@dataclass(frozen=True)
+class Mech:
+    """A self-contained mechanics spec (one game variant). The module globals
+    above define the BASE game; variants override fields to ablate structural
+    factors (see VARIANTS). `elements` ORDER matters -- assign() is positional
+    over a shuffled alphabet, so BASE.elements must equal ELEMENTS verbatim or
+    every baseline label shifts. `decoy_items` are inert items gather drops
+    (no recipe, `use` does nothing); they only widen the combine space."""
+    gather_yield: tuple                # (latent item, count)
+    recipes: tuple                     # tuple of {"in": {...}, "out": {...}}
+    use_yields: dict                   # latent -> (yield latent, n)
+    goal_item: str
+    tool_item: str
+    elements: tuple                    # latent roles to relabel (order-sensitive)
+    decoy_items: tuple = ()            # inert items also dropped by gather (one-of-k, w.p. p)
+    extra_drops: tuple = ()            # items each dropped by an INDEPENDENT Bernoulli(p) draw
+                                       # per gather (e.g. a free side-ingredient + an inert decoy)
+    family_items: tuple = ()           # items relabeled as a shared-stem numbered family
+                                       # "{stem}{i}" (random stem + index order per episode),
+                                       # so the parts look interchangeable -> the recipe becomes
+                                       # a "which of these parts combine?" search (ToolWorld-style)
+
+
+BASE = Mech(gather_yield=GATHER_YIELD, recipes=tuple(RECIPES), use_yields=dict(USE_YIELDS),
+            goal_item=GOAL_ITEM, tool_item=TOOL_ITEM, elements=tuple(ELEMENTS))
+
+# iso variant: ablate the narrow tree (3 inert apple decoys widen the combine
+# space) AND the multilayer (single-step 2 wood -> axe, no sticks), KEEPING the
+# hostile build (the combine still consumes 2 wood, the goal item). Isolates
+# whether hostility alone drives WoodWorld's discovery bottleneck.
+ISO_APPLES3 = Mech(
+    gather_yield=("wood", 1),
+    recipes=({"in": {"wood": 2}, "out": {"axe": 1}},),
+    use_yields={"axe": ("wood", 2)},
+    goal_item="wood", tool_item="axe",
+    elements=("wood", "axe", "apple1", "apple2", "apple3"),
+    decoy_items=("apple1", "apple2", "apple3"),
+)
+
+# non-hostile control: ablate the HOSTILE build. The tool is made from a FREE
+# side-resource (sticks, gathered independently w.p. p) instead of the goal item
+# (wood), so building is pure upside -- no wood is lost. Single-step (2 sticks ->
+# axe) and widened with one inert apple decoy, matching iso_apples3 on everything
+# BUT hostility. Expected ToolWorld-like (models build readily). gather drops wood,
+# stick, apple each by an independent Bernoulli(p) draw; nothing but stick+stick
+# combines; apple is inert (no recipe, `use` does nothing).
+ISO_NONHOSTILE = Mech(
+    gather_yield=("wood", 1),
+    recipes=({"in": {"stick": 2}, "out": {"axe": 1}},),
+    use_yields={"axe": ("wood", 2)},
+    goal_item="wood", tool_item="axe",
+    elements=("wood", "stick", "axe", "apple"),
+    extra_drops=("stick", "apple"),    # each independent w.p. p; apple inert (no recipe)
+)
+
+# non-hostile, TWO inert decoys (apple + pear): same as iso_nonhostile but widens
+# the candidate-combine space with a second do-nothing item. Used with budget slack
+# (mult 1.2) to test whether a viable brute-force alternative + extra distractors
+# pull capable models off the build (R drop).
+ISO_NONHOSTILE_PEAR = Mech(
+    gather_yield=("wood", 1),
+    recipes=({"in": {"stick": 2}, "out": {"axe": 1}},),
+    use_yields={"axe": ("wood", 2)},
+    goal_item="wood", tool_item="axe",
+    elements=("wood", "stick", "axe", "apple", "pear"),
+    extra_drops=("stick", "apple", "pear"),   # apple + pear inert decoys; stick the ingredient
+)
+
+# recipe-search variant: non-hostile (stick+stick -> axe, sticks free) but the four
+# gatherable parts (stick + 3 inert decoys apple/pear/cherry) are relabeled as a
+# shared-stem numbered FAMILY ("r1".."r4", random stem + order per episode), so they
+# look interchangeable and the agent must SEARCH which combine -- C(4,2)+4 = 10
+# candidate pairs, one correct (the stick-pair). Mimics ToolWorld's byproduct-type
+# recipe search, isolating build-discovery cost from hostility. Tests whether a costly
+# build-search (vs a trivial obvious combine) makes capable models decline it -> R inversion.
+ISO_RECIPE = Mech(
+    gather_yield=("wood", 1),
+    recipes=({"in": {"stick": 2}, "out": {"axe": 1}},),
+    use_yields={"axe": ("wood", 2)},
+    goal_item="wood", tool_item="axe",
+    elements=("wood", "stick", "axe", "apple", "pear", "cherry"),
+    extra_drops=("stick", "apple", "pear", "cherry"),   # each independent w.p. p; 3 inert
+    family_items=("stick", "apple", "pear", "cherry"),  # relabeled as a uniform part family
+)
+
+VARIANTS = {"base": BASE, "iso_apples3": ISO_APPLES3, "iso_nonhostile": ISO_NONHOSTILE,
+            "iso_nonhostile_pear": ISO_NONHOSTILE_PEAR, "iso_recipe": ISO_RECIPE}
+
+
+def _familize(labels: dict, mech: "Mech", relabel_seed: int) -> dict:
+    """Relabel mech.family_items as a shared-stem numbered family '{stem}{i}'
+    (deterministic in relabel_seed): a random stem letter + a random index order, so
+    the parts are a priori indistinguishable (mimics ToolWorld's obfuscated byproduct
+    types). Non-family elements (wood, axe) keep their assign() labels; the stem avoids
+    their tokens and the 2-char '{stem}{i}' labels never collide with them."""
+    rng = random.Random(relabel_seed * 99991 + 17)
+    labels = dict(labels)
+    nonfam = {labels[e] for e in mech.elements if e not in mech.family_items}
+    alph = list("abcdefghijkmnpqrstuvwxyz")          # drop l/o (look like 1/0)
+    rng.shuffle(alph)
+    stem = next(c for c in alph if c not in nonfam)
+    order = list(mech.family_items)
+    rng.shuffle(order)
+    for i, it in enumerate(order, 1):
+        labels[it] = f"{stem}{i}"
+    return labels
+
+
+def _tool_recipe_in(labels: dict, mech: "Mech") -> dict:
+    """Token-keyed input multiset of the recipe whose output is the tool (axe).
+    Used by the recipe-agnostic held-ingredients instrumentation."""
+    for r in mech.recipes:
+        if mech.tool_item in r["out"]:
+            return {labels[k]: c for k, c in r["in"].items()}
+    return {}
+
+
+def _build_world(labels: dict, n: int, gather_prob: float = GATHER_PROB,
+                 mech: "Mech" = BASE) -> dict:
+    """Assemble a world dict from a latent->token label map + a mechanics spec.
+    Everything State touches is a token string (or scalars), so replay needs only
+    these labels + the recorded gather_prob + the mech (defaults to BASE)."""
     return {
         "n": n,
         "gather_prob": gather_prob,                        # per-episode p
         "labels": labels,                                  # latent -> token
         "tok2latent": {v: k for k, v in labels.items()},
-        "goal_tok": labels[GOAL_ITEM],
-        "tool_tok": labels[TOOL_ITEM],
-        "gather_tok": labels[GATHER_YIELD[0]],
-        "gather_n": GATHER_YIELD[1],
+        "goal_tok": labels[mech.goal_item],
+        "tool_tok": labels[mech.tool_item],
+        "gather_tok": labels[mech.gather_yield[0]],
+        "gather_n": mech.gather_yield[1],
+        # inert decoy tokens gather also drops, one-of-k (empty for BASE)
+        "decoy_toks": [labels[d] for d in mech.decoy_items],
+        # tokens each dropped by an INDEPENDENT Bernoulli(p) draw (empty for BASE)
+        "extra_toks": [labels[e] for e in mech.extra_drops],
+        # token-keyed input multiset of the tool recipe (held-ingredients check)
+        "tool_recipe_in": _tool_recipe_in(labels, mech),
         # token-keyed copies of the recipe table + use yields
         "recipes": [{"in": {labels[k]: c for k, c in r["in"].items()},
                      "out": {labels[k]: c for k, c in r["out"].items()}}
-                    for r in RECIPES],
-        "use_yields": {labels[k]: (labels[y], c) for k, (y, c) in USE_YIELDS.items()},
+                    for r in mech.recipes],
+        "use_yields": {labels[k]: (labels[y], c) for k, (y, c) in mech.use_yields.items()},
     }
 
 
 def make_world(relabel_seed: int, n: int, gather_prob: float = GATHER_PROB,
-               obfuscate: bool = True) -> dict:
+               obfuscate: bool = True, mech: "Mech" = BASE) -> dict:
     """Per-episode world: relabel the latent roles uniformly at random. With
     obfuscate=False the latent roles keep their real English names (wood/stick/
     axe) -- an ablation isolating how much of the discovery difficulty is the
-    obfuscation itself versus the hidden recipe/payoff structure."""
-    labels = assign(ELEMENTS, seed=relabel_seed) if obfuscate else {e: e for e in ELEMENTS}
-    return _build_world(labels, n, gather_prob)
+    obfuscation itself versus the hidden recipe/payoff structure. `mech` selects
+    the game variant (default BASE = the module-global mechanics)."""
+    labels = (assign(list(mech.elements), seed=relabel_seed) if obfuscate
+              else {e: e for e in mech.elements})
+    if obfuscate and mech.family_items:
+        labels = _familize(labels, mech, relabel_seed)
+    return _build_world(labels, n, gather_prob, mech)
 
 
-def world_from_labels(labels: dict, n: int, gather_prob: float = GATHER_PROB) -> dict:
+def world_from_labels(labels: dict, n: int, gather_prob: float = GATHER_PROB,
+                      mech: "Mech" = BASE) -> dict:
     """Reconstruct a world from the labels recorded in a result/JSONL row,
     bypassing assign(). make_world derives its label strings from the GLOBAL,
     mutable lomekwi.obfuscation.DEFAULT_SCHEME, so a replay that re-derives them
     only matches if that global happens to hold the same scheme the run used.
     Reconstructing from the recorded labels (+ recorded gather_prob) removes that
     coupling: State reads only these, so replay is byte-exact regardless of the
-    ambient scheme (mirrors toolworld_v2.world_from_labels)."""
-    return _build_world(dict(labels), n, gather_prob)
+    ambient scheme (mirrors toolworld_v2.world_from_labels). `mech` defaults to
+    BASE; variant replays should pass the matching mech (trailing arg keeps the
+    positional replay_woodworld call valid)."""
+    return _build_world(dict(labels), n, gather_prob, mech)
 
 
 def _fmt(multiset: dict) -> str:
@@ -132,10 +263,21 @@ class State:
     build_turn: int | None = None
     wood_from_gather: int = 0
     wood_from_use: int = 0
+    held_ingredients: bool = False                 # ever held the tool recipe's inputs
 
     # --- helpers ---
     def held(self, tok: str) -> int:
         return self.inv.get(tok, 0)
+
+    def _check_held_ingredients(self):
+        """Sticky flag: set once inventory satisfies the tool (axe) recipe's input
+        multiset. Recipe-agnostic (reads world['tool_recipe_in']) so it works for
+        any variant -- this is the C = P(hold ingredients) acquisition signal."""
+        if self.held_ingredients:
+            return
+        need = self.world["tool_recipe_in"]
+        if need and all(self.held(t) >= c for t, c in need.items()):
+            self.held_ingredients = True
 
     def _add(self, tok: str, k: int):
         self.inv[tok] = self.inv.get(tok, 0) + k
@@ -164,9 +306,26 @@ class State:
             self._add(tok, k)
             self.gather_success += 1
             self.wood_from_gather += k
-            return (f"You gather. You find {k} {tok}. You now hold "
-                    f"{self.held(tok)} {tok}.")
-        return "You gather, but find nothing this time."
+            msg = (f"You gather. You find {k} {tok}. You now hold "
+                   f"{self.held(tok)} {tok}.")
+        else:
+            msg = "You gather, but find nothing this time."
+        # inert decoy drop: an INDEPENDENT prob-p draw, gated on decoy_toks so the
+        # BASE game (no decoys) keeps the single-RNG-draw invariant and byte-exact
+        # replay. One uniformly-chosen decoy; decoys have no recipe/use effect.
+        decoys = self.world["decoy_toks"]
+        if decoys and self.gather_rng.random() < self.world["gather_prob"]:
+            d = self.gather_rng.choice(decoys)
+            self._add(d, 1)
+            msg += f" You also find 1 {d}. You now hold {self.held(d)} {d}."
+        # extra drops: each an INDEPENDENT prob-p draw (a free side-ingredient and/or
+        # an inert decoy). Also gated so BASE/decoy-only variants keep their RNG-draw
+        # counts and byte-exact replay.
+        for tok in self.world["extra_toks"]:
+            if self.gather_rng.random() < self.world["gather_prob"]:
+                self._add(tok, 1)
+                msg += f" You also find 1 {tok}. You now hold {self.held(tok)} {tok}."
+        return msg
 
     def craft(self, toks: list[str]) -> str:
         """Combine EXACTLY two held items. Every recipe takes two inputs, so
@@ -298,6 +457,7 @@ async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int =
               hint: bool = True, max_turns: int = 120, budget: int | None = None,
               no_progress_window: int | None = None, stop_on_build: bool = False,
               gather_prob: float = GATHER_PROB, obfuscate: bool = True,
+              mech: "Mech" = BASE,
               world_override: dict | None = None, forced_prefix: list | None = None):
     """One woodworld episode. Mirrors toolworld_v2.run.
 
@@ -311,7 +471,7 @@ async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int =
     load_dotenv()
     client = RawChat()
     world = (world_override if world_override is not None
-             else make_world(relabel_seed, n, gather_prob, obfuscate))
+             else make_world(relabel_seed, n, gather_prob, obfuscate, mech))
     s = State(world=world, gather_rng=random.Random(gather_seed * 6151 + 1), hint=hint)
 
     intro = s.initial_obs(budget)
@@ -329,10 +489,13 @@ async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int =
 
     def dispatch(act):
         if act[0] == "gather":
-            return s.gather()
-        if act[0] in ("craft", "combine"):
-            return s.craft(act[1])
-        return s.use(act[1])
+            obs = s.gather()
+        elif act[0] in ("craft", "combine"):
+            obs = s.craft(act[1])
+        else:
+            obs = s.use(act[1])
+        s._check_held_ingredients()    # recipe-agnostic acquisition signal (C)
+        return obs
 
     # --- forced prefix: replay actions with NO API calls (efficiency sweeps) ---
     if forced_prefix:
@@ -441,6 +604,7 @@ async def run(model: str, n: int = 16, relabel_seed: int = 0, gather_seed: int =
         "labels": world["labels"],
         "solved": s.solved(), "total_actions": len(trace), "budget": budget,
         "built_axe": s.built_axe, "build_turn": s.build_turn, "t_star": t_star,
+        "held_ingredients": s.held_ingredients,
         "gather_count": s.gather_count, "gather_success": s.gather_success,
         "craft_attempts": s.craft_attempts, "craft_success": s.craft_success,
         "use_count": s.use_count, "use_axe_count": s.use_axe_count,

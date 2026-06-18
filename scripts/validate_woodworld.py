@@ -26,44 +26,46 @@ BUDGET_MULT = 1.0
 USE_YIELD = USE_YIELDS[TOOL_ITEM][1]
 
 
-def budget_for(n: int, p: float = GATHER_PROB) -> int:
-    """B = round(BUDGET_MULT * E[grind]) = round(BUDGET_MULT * N / p): the strict
-    total-action cap, grind-calibrated. At BUDGET_MULT=1.0 a grinder expects
-    exactly N wood (E[grind successes] = B*p = N) -- NO surplus -- so pure
-    grinding is a coin-flip (~P(Binom(B,p) >= N) ~ 0.5-0.6) and building the axe
-    is now the path that reliably solves. (At 1.2 grinding had a 20% surplus and
-    building was merely cheaper, not necessary.)"""
-    return round(BUDGET_MULT * n / p)
+def budget_for(n: int, p: float = GATHER_PROB, mult: float = BUDGET_MULT) -> int:
+    """B = round(mult * E[grind]) = round(mult * N / p): the strict total-action cap,
+    grind-calibrated. At mult=1.0 a grinder expects exactly N wood (E[grind
+    successes] = B*p = N) -- NO surplus -- so pure grinding is a coin-flip
+    (~P(Binom(B,p) >= N) ~ 0.5-0.6) and building the axe is the path that reliably
+    solves. At mult=1.2 grinding has a 20% surplus and is a viable escape hatch
+    (building merely cheaper, not necessary) -- the ToolWorld slack regime. `mult`
+    defaults to the module BUDGET_MULT; the region sweep can override it per-run."""
+    return round(mult * n / p)
 
 
-def _recipes_map():
+def _recipes_map(recipes=RECIPES):
     """latent output item -> (recipe, yield count) for the first recipe making it."""
     m = {}
-    for r in RECIPES:
+    for r in recipes:
         for out, c in r["out"].items():
             m.setdefault(out, (r, c))
     return m
 
 
-def _cost_to_make(item: str, count: int, rmap) -> tuple[int, int]:
+def _cost_to_make(item: str, count: int, rmap, goal_item=GOAL_ITEM) -> tuple[int, int]:
     """(wood needed, craft actions) to obtain `count` of `item`, assuming wood is
     the gatherable base. Yields are batched (one craft makes a whole batch)."""
     if item not in rmap:                      # base item (wood): gather it
-        return (count if item == GOAL_ITEM else 0, 0)
+        return (count if item == goal_item else 0, 0)
     recipe, y = rmap[item]
     batches = ceil(count / y)
     wood, crafts = 0, batches
     for inp, c in recipe["in"].items():
-        w, cr = _cost_to_make(inp, batches * c, rmap)
+        w, cr = _cost_to_make(inp, batches * c, rmap, goal_item)
         wood += w
         crafts += cr
     return wood, crafts
 
 
-def axe_cost() -> tuple[int, int]:
-    """(wood, crafts) to build one tool from scratch, derived from the current
-    recipe table (e.g. (3, 2) for 2 wood->4 sticks + 1 stick + 1 wood->axe)."""
-    return _cost_to_make(TOOL_ITEM, 1, _recipes_map())
+def axe_cost(recipes=RECIPES, tool_item=TOOL_ITEM, goal_item=GOAL_ITEM) -> tuple[int, int]:
+    """(wood, crafts) to build one tool from scratch, derived from a recipe table.
+    Defaults to the BASE recipe ((3, 2) for 2 wood->4 sticks + 1 stick+1 wood->axe);
+    pass a variant's recipes to get its cost (e.g. iso 2 wood->axe gives (2, 1))."""
+    return _cost_to_make(tool_item, 1, _recipes_map(recipes), goal_item)
 
 
 def brute_expected(n: int, p: float = GATHER_PROB) -> float:
@@ -71,18 +73,20 @@ def brute_expected(n: int, p: float = GATHER_PROB) -> float:
     return n / p
 
 
-def build_expected(n: int, p: float = GATHER_PROB) -> float:
+def build_expected(n: int, p: float = GATHER_PROB, axe_cost_override=None,
+                   use_yield: int = USE_YIELD) -> float:
     """E[actions] for the tool path: gather the build wood (~wood/p), the crafts,
-    then N wood at USE_YIELD per use (post-build inventory wood is 0)."""
-    wood, crafts = axe_cost()
-    return wood / p + crafts + n / USE_YIELD
+    then N wood at use_yield per use (post-build inventory wood is 0). Pass
+    axe_cost_override=(wood, crafts) to evaluate a variant recipe's boundary."""
+    wood, crafts = axe_cost_override if axe_cost_override is not None else axe_cost()
+    return wood / p + crafts + n / use_yield
 
 
-def oracle_min(n: int) -> int:
+def oracle_min(n: int, axe_cost_override=None, use_yield: int = USE_YIELD) -> int:
     """Deterministic best-case action count (every gather succeeds): the smaller
-    of pure-gather (N) and build (wood + crafts + ceil(N/USE_YIELD))."""
-    wood, crafts = axe_cost()
-    return min(n, wood + crafts + ceil(n / USE_YIELD))
+    of pure-gather (N) and build (wood + crafts + ceil(N/use_yield))."""
+    wood, crafts = axe_cost_override if axe_cost_override is not None else axe_cost()
+    return min(n, wood + crafts + ceil(n / use_yield))
 
 
 def p_brute(n: int, p: float = GATHER_PROB) -> float:

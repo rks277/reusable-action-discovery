@@ -23,6 +23,16 @@ because it is where the build/solve trade-off is most informative and matches th
    on *"gather wood directly"*; obfuscation forces *"figure out what X is / can I
    multiply it"* — but it's a probabilistic nudge on top of a strong gather-default,
    which is why the metric gaps are real-in-direction but modest.
+5. **(§8) Capability acts through *curiosity*, not recognition** — the qualitative
+   opposite of ToolWorld. In the 3-model hint-off N=10–90 decomposition, C=P(hold
+   ingredients) scales 0.12→0.75→0.93 (Haiku→Sonnet→Opus) while recognition
+   (0.90/0.97/0.99) and efficiency (0.89/0.90/0.91) are flat-high. WoodWorld is
+   *discovery-limited*; ToolWorld was *disposition-limited* (recognition inverted).
+6. **(§9) The hostile build is the driver of that switch.** A non-hostile control
+   (axe from *free sticks* instead of consuming wood; single-step; widened) flips
+   Haiku's build rate **0.04 → 0.86** vs the hostile single-step variant, width and
+   step-count matched. Hostility — building spends the goal item — is what suppresses
+   building, not tree width or step count.
 
 ---
 
@@ -339,6 +349,8 @@ find which one flips the behavior:
    "counterproductive, I lost 2 r" misread seen in Haiku/Sonnet transcripts). ToolWorld's
    build was net-neutral-to-positive (examines also dropped keys). *Ablation:* make the
    build non-consuming (or have it not touch the goal item) and see whether curiosity rises.
+   **→ DONE (§9): this is the driver.** A non-hostile single-step control flips Haiku's
+   build rate 0.04 → 0.86 (width/step-count matched).
 3. **Multilayered build tree** — the axe needs **two consecutive builds** (wood→sticks→axe),
    vs ToolWorld's single combine. The intermediate (sticks) is inert on its own, so a model
    that stops after one build sees no payoff. *Ablation:* collapse to a one-step recipe
@@ -346,6 +358,118 @@ find which one flips the behavior:
 
 Goal: determine which factor (or combination) causes the bottleneck to move from recognition
 to acquisition, i.e. what makes a tool-discovery task discovery-limited vs disposition-limited.
+
+## 9. Isolating factor (2): the hostile build is the driver
+
+Two single-step WoodWorld variants (`scripts/woodworld.py` `VARIANTS`, selected via
+`run_woodworld_region_sweep.py --variant`), each Haiku / hint-off / N=10–90 / 81 cells,
+holding **tree-width and step-count fixed** and flipping only **hostility**:
+
+- **`iso_apples3`** (hostile) — single step **2 wood → axe** (building *consumes the goal
+  item*), widened with 3 inert combinable apple decoys.
+- **`iso_nonhostile`** (non-hostile control) — single step **2 sticks → axe**, where sticks are
+  a *free side-resource* gathered independently w.p. p alongside wood (building consumes
+  sticks, **not** wood), widened with one inert apple. `use axe → +2 wood`, unchanged. So the
+  axe ingredients are essentially free (C≈1 by construction) and building is pure upside.
+
+| variant (Haiku, hint-off, N10–90) | **C** P(hold ingr) | **R** P(built\|held) | **E** P(solved\|built) | build | solve | cost |
+|---|---|---|---|---|---|---|
+| baseline (§7, hostile + multilayer + narrow) | 0.12 | 0.90 | 0.89 | 0.11 | 0.77 | — |
+| **`iso_apples3`** (hostile, 1-step, widened) | 0.99 | **0.04** | 0.67 | **0.04** | 0.09 | $13.82 |
+| **`iso_nonhostile`** (non-hostile, 1-step, widened) | 1.00 | **0.86** | 0.86 | **0.86** | **0.86** | **$8.56** |
+
+**Hostility is the driver.** Flipping the build from hostile to non-hostile — width and
+step-count matched — takes Haiku's build rate from **0.04 → 0.86** (~20×) and solve from
+**0.09 → 0.86**. With a free-ingredient, non-consuming build, Haiku behaves **ToolWorld-like**:
+it builds readily and recognition is no longer the bottleneck (R 0.86). This is the
+qualitative flip §8.2 was hunting for, and it lands on factor (2), the actively hostile build
+action — not tree width or step count. Mechanistically it matches the transcript misread
+("counterproductive, I lost 2 wood"): when building no longer spends the goal item, the
+disincentive disappears. Panels (C/R/E/solve/persistence) in `figs/woodworld/nonhostile/`;
+builder rows verified (`axe_cost=[0,1]`, `combine 2 sticks → axe (persists)`, then repeated
+`use axe → +2 wood`).
+
+### 9.1 `iso_nonhostile` across the full capability axis (Haiku / Sonnet / Opus)
+
+Re-ran `iso_nonhostile` on **Sonnet** (`claude-sonnet-4-6`, $4.58, 3194 actions) and **Opus**
+(`claude-opus-4-8`, $9.14, 3197 actions) — both ~0.6× Haiku's action count (they build
+immediately and grind less). Panels in `figs/woodworld/nonhostile/{sonnet,opus}/`.
+
+| `iso_nonhostile` (hint-off, N10–90) | **C** | **R** P(built\|held) | **E** | build | solve | cost |
+|---|---|---|---|---|---|---|
+| **Haiku** | 1.00 | 0.86 | 0.86 | 0.86 | 0.86 | $8.56 |
+| **Sonnet** | 1.00 | 0.89 | **1.00** | 0.89 | 0.89 | $4.58 |
+| **Opus** | 1.00 | **0.99** | 0.96 | **0.99** | **0.95** | $9.14 |
+
+All three land in the same ToolWorld-like regime: C and E saturate, and **R rises *monotonically
+and positively* with capability (0.86 → 0.89 → 0.99)** — the *normal* direction, and the exact
+opposite of ToolWorld. Compare their baseline build rates (§8: Haiku 0.11 / Sonnet 0.73 / Opus
+0.91): non-hostility collapses the build gap to near-ceiling for every model, most completely for
+Opus.
+
+**This is the exact mirror of ToolWorld's recognition inversion** (there R *fell* with capability:
+Haiku 0.87 → Opus 0.36; here it *rises*: Haiku 0.86 → Opus 0.99). ToolWorld's inversion was a
+*disposition* effect — capable models declining a build they were able to do (recoverable by a
+build demo; cf. the playground finding), because ToolWorld offered a salient brute-force
+alternative and rich state to confabulate around. `iso_nonhostile` removes both (the build is
+strictly dominant; the world is minimal and gives explicit success feedback), so recognition
+saturates and the residual capability signal points the normal way (more capable → marginally
+more reliable execution of a simple, obvious step). Crucially, hostility is *not* the axis behind
+the R-ordering — ToolWorld's build was already non-hostile and R *still* inverted, so the
+ToolWorld↔WoodWorld R-ordering difference is separate from the §9 hostility finding (which is
+about build *rate* via curiosity, not the R *ordering*).
+
+**Caveat on the contrast (not the conclusion).** The two variants aren't perfectly
+width-matched: `iso_apples3` has **3** apple decoys, `iso_nonhostile` only **1**. With 3
+decoys the agent had many junk pairs to chase — 481/484 combine attempts were apple-pairs and
+only 3 were the working wood+wood, so its build rate ≈0.04 partly reflects *"it rarely even
+tried the build"*, not *"it tried and declined the hostile build."* The airtight isolation is
+a **matched pair with an identical item set + gather distribution, flipping only the recipe
+input**: both worlds gather wood + stick + apple (each w.p. p) with the same 4 items, and the
+only difference is `2 wood → axe` (hostile; stick + apple both inert decoys) vs `2 stick → axe`
+(non-hostile; apple the only decoy). That removes the decoy-count / candidate-pair confound
+entirely. But the direction is already unambiguous: a non-hostile single-step build flips Haiku
+from ~never-builds to almost-always-builds.
+
+### 9.2 Budget slack does *not* reproduce the ToolWorld inversion (Sonnet + Opus)
+
+ToolWorld's recognition inversion (R falls with capability, Opus R≈0.36) could in principle come
+from a *viable brute-force alternative*: ToolWorld ran with budget **slack** (mult ≈1.2 —
+grinding had a ~20% surplus, a real escape hatch), whereas WoodWorld is the **forced** regime
+(mult 1.0 — grinding is a coin-flip). Hypothesis: with slack, a capable model defects to the
+viable grind instead of building, lowering R. Test variant `iso_nonhostile_pear` (= `iso_nonhostile`
++ a second inert decoy "pear", to also widen the candidate space) run at **`--budget-mult 1.2`**
+on Sonnet and Opus. (New plumbing: `validate_woodworld.budget_for(n, p, mult)` +
+`run_woodworld_region_sweep.py --budget-mult`; figures `figs/woodworld/nonhostile/wide/{model}/`.)
+
+| `iso_nonhostile`, hint-off N10–90 | R / build | solve | non-build cells |
+|---|---|---|---|
+| **Sonnet** mult 1.0, 1 decoy | 0.89 | 0.89 | (build = solve) |
+| **Sonnet** mult 1.2 + pear (wide) | 0.83 | 0.91 | 14 cells, mean p 0.88, 8 grind-solved |
+| **Opus** mult 1.0, 1 decoy | 0.99 | 0.95 | (build = solve) |
+| **Opus** mult 1.2 + pear (wide) | 0.86 | 0.96 | 11 cells, mean p 0.85, 9 grind-solved |
+
+**Two findings.** (1) **Slack genuinely lowers build rate** — both models build less (Sonnet
+0.89→0.83, Opus 0.99→0.86). But (2) **it does NOT reproduce the inversion, and the lower R is
+rational, not a failure.** The cells where each model stops building are the **high-p** ones
+(Sonnet mean p 0.88, Opus 0.85; vs grid mean 0.6), they **still solve by grinding** (solve rises
+to 0.91 / 0.96), and for Opus 8 of the 11 were cells it *built* at mult 1.0 — i.e. they flip from
+build-necessary (tight budget) to grind-sufficient (20% surplus). The model correctly reads the
+economics and grinds where building is unneeded. Crucially the **capability ordering is preserved**:
+under slack Opus (0.86) is still ≥ Sonnet (0.83) — *not* the ToolWorld pattern (Opus < Sonnet).
+And the *character* is opposite: here a capable model declines a build that is *unnecessary* (and
+still solves); in ToolWorld it declined a build that was *needed* (and lost performance — a
+mistake recoverable by a demo).
+
+So **alternative-viability explains "less building," but not "Opus specifically worse than
+Sonnet."** Rational defection to a viable grind keeps the ordering intact. Combined with the
+earlier falsification of the build-landscape-width hypothesis (ToolWorld also has exactly *one*
+valid build; and WoodWorld baseline's 2-step tree didn't invert either), the surviving driver of
+the inversion is **ambiguity / confabulation room** (Opus invents mechanics under ambiguity;
+WoodWorld is minimal and gives explicit success feedback, so Opus's capability is pure upside →
+R 0.99/0.86). **Next test:** inject *ambiguity* into WoodWorld (misleading/suggestive feedback,
+opaque failures, fake-mechanic lore) — *not* more decoys or slack — and check whether Opus's R
+finally falls *below* Sonnet's. That would be the genuine recreation of the ToolWorld inversion.
 
 ## Caveats
 
@@ -377,6 +501,14 @@ to acquisition, i.e. what makes a tool-discovery task discovery-limited vs dispo
 | 3-model hint-OFF (§8) | `runs/{sonnet,opus}_woodworld_region_r1_nohint_N10-90_*/` (Sonnet ~$7, Opus $9.83) |
 | 3-model panels (§8) | `figs/woodworld/panels/fig_woodworld_{curiosity,recognition,efficiency,solve}_haiku_sonnet_opus_nohint_N10-90.*` |
 | small-N panels (archived) | `figs/woodworld/panels/small/` (the N=2–20 hint-on trio panels) |
+| variant seam (§9) | `scripts/woodworld.py` `Mech` / `VARIANTS` (`iso_apples3`, `iso_nonhostile`; `extra_drops` field) |
+| hostility control (§9) | `runs/haiku_woodworld_region_iso_nonhostile_r1_nohint_N10-90_20260618_134932/` ($8.56, 81 cells) |
+| hostility control — Sonnet (§9.1) | `runs/sonnet_woodworld_region_iso_nonhostile_r1_nohint_N10-90_20260618_141641/` ($4.58, 81 cells) → `figs/woodworld/nonhostile/sonnet/` |
+| hostility control — Opus (§9.1) | `runs/opus_woodworld_region_iso_nonhostile_r1_nohint_N10-90_20260618_142729/` ($9.14, 81 cells) → `figs/woodworld/nonhostile/opus/` |
+| slack probe — `iso_nonhostile_pear` + `--budget-mult` (§9.2) | env: `scripts/woodworld.py` `ISO_NONHOSTILE_PEAR`; `validate_woodworld.budget_for(n,p,mult)`; `run_woodworld_region_sweep.py --budget-mult` |
+| slack probe runs (§9.2) | `runs/{sonnet,opus}_woodworld_region_iso_nonhostile_pear_mult1.2_r1_nohint_N10-90_2026061[8]_*/` (Sonnet $4.82, Opus $10.34) → `figs/woodworld/nonhostile/wide/{sonnet,opus}/` |
+| `iso_apples3` run (§9) | `runs/haiku_woodworld_region_iso_apples3_r1_nohint_N10-90_20260618_123329/` ($13.82) |
+| hostility figures (§9) | `figs/woodworld/nonhostile/fig_woodworld_{curiosity,recognition,efficiency,solve,persistence}_haiku_nohint_N10-90.*`; `figs/woodworld/iso/` (`iso_apples3`) |
 
 ## Open threads
 
@@ -386,10 +518,21 @@ N=10–90 C·R·E decomposition, to find which flips the bottleneck from recogni
 (ToolWorld) to acquisition (WoodWorld):
 - **(a) widen the build tree** (decoy combinable items / more candidate pairs) — does R
   start to invert?
-- **(b) non-hostile build** (build doesn't consume the goal item) — does C rise?
+- **(b) non-hostile build** (build doesn't consume the goal item) — **DONE (§9): YES, this is
+  the driver.** Non-hostile single-step control flips Haiku build 0.04 → 0.86.
 - **(c) one-step recipe** (wood→axe directly, no inert intermediate) — does the discovery
-  gap shrink?
+  gap shrink? (`iso_apples3` is one-step + hostile; built only 0.04, but confounded by
+  combinable decoys — see below.)
 Then pairwise / full-factorial if a single factor doesn't fully account for the switch.
+
+Immediate follow-ups to §9:
+- **Airtight hostility isolation:** build a matched comparator with the *same item set + gather*
+  as `iso_nonhostile` (wood + stick + apple, each w.p. p) but recipe `2 wood → axe` (hostile;
+  stick + apple both inert decoys). Identical width / candidate-pairs to `iso_nonhostile`,
+  differing only in whether the build consumes the goal item — removes the 3-vs-1 decoy-count
+  confound in the current `iso_apples3` contrast (where 481/484 combines were apple-pairs).
+- **Extend §9 to Sonnet/Opus** (`iso_nonhostile` + the fixed `iso_apples3`) to confirm the
+  hostility effect across the capability axis.
 
 Secondary:
 - Does revealing the recipe (vs only capping arity, §2) close the rest of the gap?

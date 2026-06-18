@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -54,8 +55,11 @@ OUT_DIR = Path("figs/woodworld/panels")
 # --- per-episode metric helpers (recomputed from recorded actions/obs) ----------
 def got_sticks(r: dict) -> bool:
     """Did the episode ever produce the stick intermediate? (robust to obfuscation:
-    read the recorded stick label and scan combine outputs)."""
-    stk = r["labels"]["stick"]
+    read the recorded stick label and scan combine outputs). Returns False for
+    variants with no stick (e.g. the iso single-step recipe)."""
+    stk = r.get("labels", {}).get("stick")
+    if stk is None:
+        return False
     for o in r["obs"]:
         if o.startswith("You combine") and "(new)" in o:
             out = o.split(" into ", 1)[1].split(" (new)")[0]
@@ -64,12 +68,22 @@ def got_sticks(r: dict) -> bool:
     return False
 
 
+def held_ingredients(r: dict) -> bool:
+    """Recipe-agnostic acquisition signal C = P(hold the tool recipe's ingredients).
+    Prefers the recorded `held_ingredients` flag (iso + new base runs); falls back
+    to got_sticks for legacy base runs (where the stick intermediate ~= held both
+    axe ingredients, since wood is freely gathered)."""
+    if "held_ingredients" in r:
+        return bool(r["held_ingredients"])
+    return got_sticks(r)
+
+
 def build_stage(r: dict) -> float:
-    """Build persistence: 2 if the episode built the axe, 1 if it only got as far as
-    sticks, 0 if it built neither. axe implies sticks, so the axe check comes first."""
+    """Build persistence: 2 if the episode built the axe, 1 if it only acquired the
+    recipe ingredients, 0 if neither. axe implies ingredients, so axe is first."""
     if r.get("built_axe"):
         return 2.0
-    if got_sticks(r):
+    if held_ingredients(r):
         return 1.0
     return 0.0
 
@@ -88,19 +102,24 @@ def cell_key(r: dict) -> tuple[float, int]:
 
 
 # --- generic three-panel renderer ----------------------------------------------
-def render(loaded, value_fn, keep_fn, title, cb_label, fname, bw,
-           vmin=0.0, vmax=1.0, cmap="RdYlGn", headline_fn=None,
-           cb_ticks=None, cb_ticklabels=None):
+def _render(loaded, value_fn, keep_fn, title, cb_label, fname, bw,
+            vmin=0.0, vmax=1.0, cmap="RdYlGn", headline_fn=None,
+            cb_ticks=None, cb_ticklabels=None, outdir=None):
     """value_fn(r)->float|None (cell value, None to skip), keep_fn(r)->bool (does the
     episode contribute / is its cell 'live'). Cells with no live episode are drawn as
-    grey x (coverage shown, not painted). headline_fn(rows)->float for panel title."""
-    bp, bn = boundary()
+    grey x (coverage shown, not painted). headline_fn(rows)->float for panel title.
+    outdir overrides where the figure is written (else region/<model> for single-model
+    runs, panels/ for the trio)."""
     # infer the (p, N) lattice from the data so non-default grids (e.g. N=10..90
     # step 10) render correctly; fall back to the module grids if empty.
     n_grid = sorted({r["n"] for _, rows in loaded for r in rows}) or N_GRID
     p_grid = sorted({round(r["gather_prob"], 1) for _, rows in loaded for r in rows}) or P_GRID
     n_lo, n_hi = n_grid[0], n_grid[-1]
     nstep = (n_grid[1] - n_grid[0]) if len(n_grid) > 1 else 1
+    # boundary uses THIS run's recipe economics (recorded axe_cost) when present
+    axe = next((r.get("axe_cost") for _, rows in loaded for r in rows
+                if r.get("axe_cost")), None)
+    bp, bn = boundary(axe_cost_override=tuple(axe) if axe else None, n_hi=max(n_hi, 20))
 
     fig, axes = plt.subplots(1, len(loaded), figsize=(5 * len(loaded), 5.2), sharey=True)
     axes = np.atleast_1d(axes)
@@ -146,9 +165,11 @@ def render(loaded, value_fn, keep_fn, title, cb_label, fname, bw,
         cb.set_ticks(cb_ticks)
         if cb_ticklabels is not None:
             cb.set_ticklabels(cb_ticklabels)
-    # single-model renders are per-model region heatmaps -> group under region/<model>/;
+    # explicit outdir wins; else single-model renders group under region/<model>/ and
     # the multi-model trio stays in panels/
-    out_dir = (Path("figs/woodworld/region") / loaded[0][0] if len(loaded) == 1 else OUT_DIR)
+    out_dir = (Path(outdir) if outdir
+               else Path("figs/woodworld/region") / loaded[0][0] if len(loaded) == 1
+               else OUT_DIR)
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / fname
     fig.savefig(out, dpi=150, bbox_inches="tight")
@@ -169,6 +190,9 @@ def main():
     ap.add_argument("--dirs", default=None,
                     help="comma-separated run dirs (overrides --haiku/--sonnet/--opus); "
                          "renders one panel per dir, e.g. a single Haiku N=10-90 run")
+    ap.add_argument("--outdir", default=None,
+                    help="explicit output folder for the figures (e.g. figs/woodworld/iso); "
+                         "default routes single-model->region/<model>/, trio->panels/")
     ap.add_argument("--bandwidth", type=float, default=1.0)
     args = ap.parse_args()
 
@@ -176,6 +200,7 @@ def main():
                 else [args.haiku, args.sonnet, args.opus])
     loaded = [load(d) for d in run_dirs]
     bw = args.bandwidth
+    render = partial(_render, outdir=args.outdir)   # thread outdir into every panel
     # N-range tag for filenames (so single / large-N runs don't clobber the 2-20 panels)
     n_all = sorted({r["n"] for _, rows in loaded for r in rows})
     ntag = f"N{n_all[0]}-{n_all[-1]}" if n_all else f"Nle{N_HI}"
@@ -207,16 +232,16 @@ def main():
     if args.panel in ("recognition", "all"):
         render(
             loaded, value_fn=lambda r: float(bool(r["built_axe"])),
-            keep_fn=got_sticks,
-            title=("woodworld RECOGNITION: P(built axe | got sticks) over (p, N), "
-                   "got-sticks cells only\n"
-                   f"[gaussian-pooled bw={bw:g}, 1 rep/cell; sticks = discovered "
-                   "intermediate; green = follows through to the tool]"),
-            cb_label="P(built | got sticks)",
+            keep_fn=held_ingredients,
+            title=("woodworld RECOGNITION: R = P(built axe | held ingredients) over "
+                   "(p, N), held-ingredients cells only\n"
+                   f"[gaussian-pooled bw={bw:g}, 1 rep/cell; given the recipe inputs, "
+                   "did it build the tool? green = follows through]"),
+            cb_label="P(built | held ingredients)",
             fname=fnm("recognition"), bw=bw,
             headline_fn=lambda rows: (
-                sum(1 for r in rows if got_sticks(r) and r["built_axe"]) /
-                max(1, sum(1 for r in rows if got_sticks(r)))))
+                sum(1 for r in rows if held_ingredients(r) and r["built_axe"]) /
+                max(1, sum(1 for r in rows if held_ingredients(r)))))
 
     if args.panel in ("solve", "all"):
         render(
@@ -233,17 +258,17 @@ def main():
             title=("woodworld BUILD PERSISTENCE: how far the build chain got over "
                    "(p, N), all cells\n"
                    f"[gaussian-pooled bw={bw:g}, 1 rep/cell; 2 = built axe, "
-                   "1 = got sticks only, 0 = built neither; green = furthest]"),
+                   "1 = held ingredients only, 0 = neither; green = furthest]"),
             cb_label="build stage reached", vmin=0.0, vmax=2.0,
             fname=fnm("persistence"), bw=bw,
             cb_ticks=[0, 1, 2],
-            cb_ticklabels=["0 neither", "1 sticks", "2 axe"])
+            cb_ticklabels=["0 neither", "1 ingredients", "2 axe"])
 
     if args.panel in ("curiosity", "all"):
         render(
-            loaded, value_fn=lambda r: float(got_sticks(r)), keep_fn=lambda r: True,
-            title=("woodworld CURIOSITY: C = P(hold ingredients) = P(reached the recipe "
-                   "ingredients / got sticks) over (p, N), all cells\n"
+            loaded, value_fn=lambda r: float(held_ingredients(r)), keep_fn=lambda r: True,
+            title=("woodworld CURIOSITY: C = P(hold ingredients) = P(reached the tool "
+                   "recipe's ingredients) over (p, N), all cells\n"
                    f"[gaussian-pooled bw={bw:g}, 1 rep/cell; the acquisition stage C in "
                    "build = curiosity × recognition × efficiency; green = acquired "
                    "ingredients]"),

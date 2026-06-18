@@ -73,11 +73,15 @@ def pooled(cells, bw, clip=(0.0, 1.0), p_grid=None, n_grid=None):
     return gp, gn, np.clip(Z, clip[0], clip[1])
 
 
-def boundary():
-    """N where E[build] crosses E[grind], per p (build cheaper at/above the line)."""
+def boundary(axe_cost_override=None, n_hi: int = N_HI):
+    """N where E[build] crosses E[grind], per p (build cheaper at/above the line).
+    axe_cost_override=(wood, crafts) evaluates a variant recipe's boundary (e.g.
+    iso's single-step (2, 1)); default uses the BASE recipe economics. n_hi widens
+    the crossover search for large-N grids."""
     ps = np.linspace(P_LO, P_HI, 200)
-    ns = [next((n for n in range(N_LO, N_HI + 1)
-                if build_expected(n, p) < brute_expected(n, p)), np.nan) for p in ps]
+    ns = [next((n for n in range(1, n_hi + 1)
+                if build_expected(n, p, axe_cost_override) < brute_expected(n, p)),
+               np.nan) for p in ps]
     return ps, ns
 
 
