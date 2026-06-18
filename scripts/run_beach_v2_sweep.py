@@ -42,9 +42,15 @@ from scripts.run_beach_sweep import durability_for, total_rocks_for  # noqa: E40
 
 # --- the grid you set ---------------------------------------------------
 MODELS = [
-    ("anthropic", "claude-opus-4-8"),
-    ("anthropic", "claude-sonnet-4-6"),
-    ("anthropic", "claude-haiku-4-5-20251001"),
+    # Local Gemma via Ollama (the ":" in each id routes to the ollama provider;
+    # edit the family tag to match `ollama list`, e.g. gemma3, if needed).
+    ("ollama", "gemma4:1b"),
+    ("ollama", "gemma4:4b"),
+    ("ollama", "gemma4:12b"),
+    # Anthropic models unhooked for now -- bring back later.
+    # ("anthropic", "claude-opus-4-8"),
+    # ("anthropic", "claude-sonnet-4-6"),
+    # ("anthropic", "claude-haiku-4-5-20251001"),
     # ("openai", "gpt-5"),
     # ("google", "gemini-2.5-pro"),
 ]
@@ -61,8 +67,9 @@ TOTAL_ROCKS = None         # int to fix rock count, else total_rocks_for(grid)
 HINT = True
 MAX_TURNS = 200            # generous; durability/grid are the real caps
 
-# per-provider in-flight episode cap (bounds rate-limit / token bursts)
-CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4}
+# per-provider in-flight episode cap (bounds rate-limit / token bursts).
+# ollama is local (one server) -> keep it small to avoid thrashing.
+CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2}
 
 
 async def main():

@@ -87,7 +87,16 @@ NEWMODELS = [
     ("openai", "gpt-5"),
     ("google", "gemini-2.5-pro"),
 ]
+# Local Gemma via Ollama. The ":" in each id routes to the ollama provider
+# (lomekwi.raw_chat._provider_for). If your `ollama list` uses a different family
+# tag (e.g. gemma3), edit these ids to match what is actually pulled locally.
+GEMMA_MODELS = [
+    ("ollama", "gemma4:1b"),
+    ("ollama", "gemma4:4b"),
+    ("ollama", "gemma4:12b"),
+]
 
 # Per-provider in-flight episode cap (bounds rate-limit / token bursts). A
 # single shared dict is fine -- each sweep only indexes the providers it runs.
-CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4}
+# ollama is local (one server) -> keep it small to avoid thrashing.
+CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2}

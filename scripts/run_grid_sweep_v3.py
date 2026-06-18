@@ -32,15 +32,26 @@ from dotenv import load_dotenv
 
 from scripts.toolworld_v3 import run
 from scripts import sweep_config as cfg
+from lomekwi.raw_chat import _provider_for
 
 # --- sweep knobs -------------------------------------------------------
-MODEL = "claude-haiku-4-5-20251001"   # haiku only for now
-PROVIDER = "anthropic"
+# Model roster: each model gets its own run dir (grid_sweep_v3_<tag>_<ts>) and is
+# run sequentially. `--model <id>` overrides the roster with a single model.
+# Local Gemma via Ollama (the ":" in each id routes to the ollama provider; edit
+# the family tag to match `ollama list`, e.g. gemma3, if needed). Anthropic
+# models are unhooked for now -- kept commented to bring back later.
+MODELS = [
+    "gemma4:1b",
+    "gemma4:4b",
+    "gemma4:12b",
+    # "claude-haiku-4-5-20251001",
+    # "claude-sonnet-4-6",
+    # "claude-opus-4-8",
+]
 N_RANGE = range(1, 21)                 # N = 1..20 inclusive (N=0 is trivially solved)
 T_RANGE = range(2, 11)                 # T = 2..10 inclusive (T<2 has no recipe pair)
 SAMPLE_N = 100                         # random points over the grid
 SAMPLE_SEED = 20260618                 # fixes WHICH cells are sampled
-CONCURRENCY = cfg.CONCURRENCY[PROVIDER]
 
 
 def sampled_points() -> list[tuple[int, int]]:
@@ -72,21 +83,12 @@ def model_tag(model: str) -> str:
     if "sonnet" in model: return "sonnet"
     if "haiku" in model: return "haiku"
     if "opus" in model: return "opus"
-    return model.split("/")[-1].replace(".", "-")
+    # generic (e.g. ollama "gemma4:12b" -> "gemma4-12b"): strip path/punctuation
+    return model.split("/")[-1].replace(".", "-").replace(":", "-")
 
 
-async def main():
-    dry = "--dry-run" in sys.argv
-    model = MODEL
-    if "--model" in sys.argv:
-        model = sys.argv[sys.argv.index("--model") + 1]
+def print_cost_estimate(model: str, points: list[tuple[int, int]]):
     tag = model_tag(model)
-    points = sampled_points()
-    ns = [n for n, _ in points]
-    print(f"v3 grid sweep: {len(points)} points, model={model}", flush=True)
-    print(f"  N in [{min(ns)},{max(ns)}] (mean {sum(ns)/len(ns):.1f}), "
-          f"T in [{min(T_RANGE)},{max(T_RANGE)}]; budget=budget_for(N) "
-          f"(pickup is free)", flush=True)
     if tag == "haiku":
         lo, hi = estimate_usd(points)
         print(f"  ESTIMATED COST (Haiku 4.5): ~${lo:.0f}-${hi:.0f} USD", flush=True)
@@ -97,20 +99,15 @@ async def main():
         print(f"  ESTIMATED COST (Opus 4.8): ~$20-24 USD "
               f"(~1.7-1.9x the Sonnet run; under the $30 cap with less headroom)",
               flush=True)
-    if dry:
-        print("\n--dry-run: sampled (N,T) cells:")
-        for i, (n, t) in enumerate(points):
-            print(f"  [{i:3d}] N={n:2d} T={t:2d} budget={cfg.budget_for(n)}")
-        print("\nNo API calls made.")
-        return
+    elif _provider_for(model) == "ollama":
+        print(f"  COST: local (ollama) -- no API spend", flush=True)
 
-    load_dotenv()
-    # --resume <dir>: re-run only the cells missing from an interrupted run's
-    # episodes.jsonl (e.g. after a watchdog kill), appending to the same file.
-    # Worlds are deterministic in the rep index, so resumed cells are identical.
-    resume_dir = None
-    if "--resume" in sys.argv:
-        resume_dir = Path(sys.argv[sys.argv.index("--resume") + 1])
+
+async def run_one_model(model: str, points: list[tuple[int, int]],
+                        resume_dir: Path | None):
+    """Run the sweep for a single model into its own (or a resumed) run dir."""
+    tag = model_tag(model)
+    concurrency = cfg.CONCURRENCY[_provider_for(model)]
     done_idx: set[int] = set()
     if resume_dir is not None:
         out_dir = resume_dir
@@ -126,10 +123,11 @@ async def main():
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "episodes.jsonl"
         out_path.write_text("")
-        print(f"\nWriting to {out_path}", flush=True)
+        print(f"\nWriting to {out_path}  (model={model}, concurrency={concurrency})",
+              flush=True)
     todo = [(i, n, t) for i, (n, t) in enumerate(points) if i not in done_idx]
 
-    sem = asyncio.Semaphore(CONCURRENCY)
+    sem = asyncio.Semaphore(concurrency)
     lock = asyncio.Lock()
 
     async def one(i: int, n: int, t: int):
@@ -162,13 +160,50 @@ async def main():
             async with lock:
                 with out_path.open("a") as f:
                     f.write(json.dumps(row) + "\n")
-                print(f"  [{i:3d}] N={n:2d} T={t:2d} solved={row.get('solved')} "
+                print(f"  [{tag} {i:3d}] N={n:2d} T={t:2d} solved={row.get('solved')} "
                       f"actions={row.get('total_actions')} "
                       f"pickups={row.get('pickups')} "
                       f"{'(err)' if row.get('error') else ''}", flush=True)
 
     await asyncio.gather(*(one(i, n, t) for (i, n, t) in todo))
-    print(f"\nDone. Episodes at: {out_path}")
+    print(f"\nDone ({model}). Episodes at: {out_path}", flush=True)
+
+
+async def main():
+    dry = "--dry-run" in sys.argv
+    # roster: --model overrides the configured MODELS list with a single model
+    if "--model" in sys.argv:
+        roster = [sys.argv[sys.argv.index("--model") + 1]]
+    else:
+        roster = list(MODELS)
+    resume_dir = None
+    if "--resume" in sys.argv:
+        resume_dir = Path(sys.argv[sys.argv.index("--resume") + 1])
+        if len(roster) != 1:
+            raise SystemExit("--resume requires a single model (pass --model too)")
+
+    points = sampled_points()
+    ns = [n for n, _ in points]
+    print(f"v3 grid sweep: {len(points)} points, models={roster}", flush=True)
+    print(f"  N in [{min(ns)},{max(ns)}] (mean {sum(ns)/len(ns):.1f}), "
+          f"T in [{min(T_RANGE)},{max(T_RANGE)}]; budget=budget_for(N) "
+          f"(pickup is free)", flush=True)
+    for model in roster:
+        print_cost_estimate(model, points)
+
+    if dry:
+        print("\n--dry-run: sampled (N,T) cells:")
+        for i, (n, t) in enumerate(points):
+            print(f"  [{i:3d}] N={n:2d} T={t:2d} budget={cfg.budget_for(n)}")
+        print("\nNo API calls made.")
+        return
+
+    load_dotenv()
+    # Models run sequentially -- ollama serves one model at a time, and per-model
+    # run dirs keep results separable. Each row is deterministic in the rep index.
+    for model in roster:
+        await run_one_model(model, points, resume_dir)
+    print("\nAll models done.")
 
 
 if __name__ == "__main__":
