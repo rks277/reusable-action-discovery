@@ -22,7 +22,8 @@ from dotenv import load_dotenv
 from scripts.woodworld import run
 from scripts import woodworld_config as cfg
 
-MODELS = cfg.ANTHROPIC_MODELS
+MODELS = cfg.OSS_MODELS   # or cfg.ANTHROPIC_MODELS / cfg.NEWMODELS
+
 N_VALUES, REPS = cfg.N_VALUES, cfg.REPS
 CONCURRENCY = cfg.CONCURRENCY
 

@@ -15,7 +15,7 @@ calibration signal rather than being flat (the toolworld-v1 failure mode).
 from __future__ import annotations
 
 import lomekwi.obfuscation as _obfuscation
-from scripts.sweep_config import ANTHROPIC_MODELS, CONCURRENCY, NEWMODELS  # noqa: F401
+from scripts.sweep_config import ANTHROPIC_MODELS, CONCURRENCY, NEWMODELS, OSS_MODELS  # noqa: F401
 from scripts.validate_woodworld import budget_for, n_star  # noqa: F401
 
 # --- obfuscation scheme ------------------------------------------------

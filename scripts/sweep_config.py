@@ -87,7 +87,18 @@ NEWMODELS = [
     ("openai", "gpt-5"),
     ("google", "gemini-2.5-pro"),
 ]
+# Open-weight Qwen2.5 ladder (known param counts) served locally via an
+# OpenAI-compatible endpoint (Ollama on a GPU box, reached over an SSH tunnel).
+# Ordered by parameter size: 0.5B < 1.5B < 3B < 7B -- a within-family capability
+# axis below Haiku. The ":" in each tag routes them to the ollama backend.
+# (Small hosted Gemma was dropped: the Gemini API only serves the 26B/31B Gemma 4
+#  models, not the 1B/4B/12B sizes -- those are open-weights-only.)
+OSS_MODELS = [
+    ("ollama", "qwen2.5:1.5b"),
+    ("ollama", "qwen2.5:3b"),
+    ("ollama", "qwen2.5:7b"),
+]
 
 # Per-provider in-flight episode cap (bounds rate-limit / token bursts). A
 # single shared dict is fine -- each sweep only indexes the providers it runs.
-CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4}
+CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2}

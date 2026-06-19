@@ -27,7 +27,7 @@ def _provider_for(model: str) -> str:
         return "anthropic"
     if m.startswith("gpt") or m.startswith("o1") or m.startswith("o3"):
         return "openai"
-    if m.startswith("gemini"):
+    if m.startswith("gemini") or m.startswith("gemma"):
         return "google"
     if ":" in m or m.startswith("qwen") or m.startswith("llama"):
         return "ollama"

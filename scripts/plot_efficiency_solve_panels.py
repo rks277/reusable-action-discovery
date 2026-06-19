@@ -32,12 +32,20 @@ T_LO, T_HI = 2, 10
 
 
 def load_cells(run_dir: Path):
+    """Reps per cell are AVERAGED into the cell value; headline is pooled over all
+    forced-build continuations. Identical to the old 0/1 value for a 1-rep source;
+    tightens when forked from a multi-rep region sweep."""
+    from collections import defaultdict
     rows = [json.loads(l) for l in (run_dir / "episodes.jsonl").read_text().splitlines() if l.strip()]
     rows = [r for r in rows if not r.get("error")]
     short = (rows[0].get("model", "?").split("-")[1]
              if rows and rows[0].get("model", "").startswith("claude-") else "?")
-    cells = {(r["n_types"], r["n"]): int(bool(r.get("live_solved"))) for r in rows}
-    head = sum(cells.values()) / len(cells) if cells else float("nan")
+    acc = defaultdict(list)  # (T,N) -> live_solved 0/1 for each continuation
+    for r in rows:
+        acc[(r["n_types"], r["n"])].append(int(bool(r.get("live_solved"))))
+    cells = {k: sum(v) / len(v) for k, v in acc.items()}
+    nd = sum(len(v) for v in acc.values())
+    head = sum(sum(v) for v in acc.values()) / nd if nd else float("nan")
     return short, cells, head
 
 

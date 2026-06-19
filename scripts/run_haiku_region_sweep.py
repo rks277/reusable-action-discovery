@@ -101,6 +101,8 @@ def parse_args():
     p.add_argument("--n-points", type=int, default=N_POINTS)
     p.add_argument("--reps", type=int, default=REPS)
     p.add_argument("--n-hi", type=int, default=N_HI)
+    p.add_argument("--conc", type=int, default=CONC,
+                   help="in-flight episodes (local override; default tuned for the API)")
     p.add_argument("--seed", type=int, default=SEED)
     p.add_argument("--max-cost", type=float, default=None,
                    help="kill switch: once cumulative logged cost (USD) reaches this, "
@@ -157,11 +159,11 @@ async def main():
     print(f"Writing to {out_path}\n"
           f"Sweep: {short} ({model}) run-to-solve over {len(points)} (T,N) points x {len(reps)} reps "
           f"= {len(points) * len(reps)} episodes (budget = grind-calibrated budget_for(n); "
-          f"stop_on_build=False, no_progress_window={NO_PROGRESS_WINDOW}, conc={CONC})\n"
+          f"stop_on_build=False, no_progress_window={NO_PROGRESS_WINDOW}, conc={args.conc})\n"
           f"resume: {len(done)} cells already done, {len(cells)} remaining",
           flush=True)
 
-    sem = asyncio.Semaphore(CONC)
+    sem = asyncio.Semaphore(args.conc)
     lock = asyncio.Lock()
 
     price = PRICING.get(short)

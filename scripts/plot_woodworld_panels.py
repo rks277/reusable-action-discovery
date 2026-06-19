@@ -92,8 +92,8 @@ def load(run_dir: str) -> tuple[str, list[dict]]:
     rows = [json.loads(l) for l in (Path(run_dir) / "episodes.jsonl").read_text().splitlines()
             if l.strip()]
     rows = [r for r in rows if not r.get("error")]
-    short = (rows[0]["model"].split("-")[1]
-             if rows and rows[0].get("model", "").startswith("claude-") else "?")
+    m0 = rows[0].get("model", "?") if rows else "?"
+    short = m0.split("-")[1] if m0.startswith("claude-") else m0.replace(":", "-")
     return short, rows
 
 

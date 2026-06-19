@@ -26,16 +26,18 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from scripts import sweep_config as cfg
 from scripts.toolworld_v2 import run
 
 
 # --- Grid (locked first pass) ------------------------------------------
 
-MODELS = [
-    ("anthropic", "claude-haiku-4-5-20251001"),
-    ("anthropic", "claude-sonnet-4-6"),
-    ("anthropic", "claude-opus-4-8"),
-]
+MODELS = cfg.OSS_MODELS   # or the Anthropic roster:
+# MODELS = [
+#     ("anthropic", "claude-haiku-4-5-20251001"),
+#     ("anthropic", "claude-sonnet-4-6"),
+#     ("anthropic", "claude-opus-4-8"),
+# ]
 N_VALUES = [8]          # well above the v2 threshold n*=4 (rational to build).
                         # below-threshold anchor (n=3) added later only if needed.
 HINTS = [True]          # subtle-hint only (E1 no-hint arm deferred)
@@ -45,7 +47,7 @@ N_TYPES = 3             # multi-type construction (v2): n*=4, real recipe search
 # Per-provider concurrency cap. All three models share the Anthropic key, so
 # this bounds total in-flight episodes. Opus is ~80% of cost and the slowest;
 # keep it modest to avoid rate limits / token bursts.
-CONCURRENCY = {"anthropic": 6, "openai": 6, "google": 4}
+CONCURRENCY = {"anthropic": 6, "openai": 6, "google": 4, "ollama": 2}
 
 
 def seed_pair(rep: int) -> tuple[int, int]:

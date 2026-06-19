@@ -79,6 +79,8 @@ def parse_args():
     ap.add_argument("--max-cost", type=float, default=None,
                     help="kill switch: stop launching new episodes once cumulative "
                          "logged cost (USD) reaches this (in-flight ones finish).")
+    ap.add_argument("--conc", type=int, default=CONC,
+                    help="in-flight episodes (local override; default tuned for the API)")
     ap.add_argument("--smoke", action="store_true")
     return ap.parse_args()
 
@@ -135,10 +137,10 @@ async def main():
     print(f"Writing to {out_path}\n"
           f"Sweep: {short} ({model}) HINT {'ON' if args.hint else 'OFF'} over {len(points)} (p,N) cells x "
           f"{len(reps)} rep = {len(points) * len(reps)} episodes "
-          f"(budget=budget_for(n,p), run-to-solve, conc={CONC})\n"
+          f"(budget=budget_for(n,p), run-to-solve, conc={args.conc})\n"
           f"resume: {len(done)} done, {len(cells)} remaining", flush=True)
 
-    sem = asyncio.Semaphore(CONC)
+    sem = asyncio.Semaphore(args.conc)
     lock = asyncio.Lock()
     price = PRICING.get(short)
     cap = args.max_cost

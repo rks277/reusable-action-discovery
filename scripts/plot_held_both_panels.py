@@ -32,14 +32,20 @@ T_LO, T_HI = 2, 10
 
 
 def load_cells(run_dir: Path):
+    """Reps per cell are AVERAGED into the cell value; headline is pooled over all
+    episodes. Identical to the old 0/1 value for a 1-rep grid; tightens with reps."""
+    from collections import defaultdict
     rows = [json.loads(l) for l in (run_dir / "episodes.jsonl").read_text().splitlines() if l.strip()]
     rows = [r for r in rows if not r.get("error")]
-    short = (rows[0].get("model", "?").split("-")[1]
-             if rows and rows[0].get("model", "").startswith("claude-") else "?")
-    cells = {(r["n_types"], r["n"]):
-             int(acquire_both_turn(r.get("obs"), set(r["labels"]["recipe"])) is not None)
-             for r in rows}
-    head = sum(cells.values()) / len(cells) if cells else float("nan")
+    m0 = rows[0].get("model", "?") if rows else "?"
+    short = m0.split("-")[1] if m0.startswith("claude-") else m0
+    acc = defaultdict(list)  # (T,N) -> held-both 0/1 for each rep
+    for r in rows:
+        acc[(r["n_types"], r["n"])].append(
+            int(acquire_both_turn(r.get("obs"), set(r["labels"]["recipe"])) is not None))
+    cells = {k: sum(v) / len(v) for k, v in acc.items()}
+    nd = sum(len(v) for v in acc.values())
+    head = sum(sum(v) for v in acc.values()) / nd if nd else float("nan")
     return short, cells, head
 
 
@@ -57,18 +63,19 @@ def pooled(cells, n_hi, bw):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("haiku_dir"); ap.add_argument("sonnet_dir"); ap.add_argument("opus_dir")
+    ap.add_argument("dirs", nargs="+", help="one or more region run dirs (one panel each)")
     ap.add_argument("--n-hi", type=int, default=20)
     ap.add_argument("--bandwidth", type=float, default=1.0)
+    ap.add_argument("--outdir", default="figs/toolworld")
     args = ap.parse_args()
 
-    loaded = [load_cells(Path(d)) for d in (args.haiku_dir, args.sonnet_dir, args.opus_dir)]
+    loaded = [load_cells(Path(d)) for d in args.dirs]
 
     ts = np.linspace(T_LO, T_HI, 200)
     bnd = [next((n for n in range(1, args.n_hi + 1)
                  if cfg._build_cost(n, int(round(t))) < cfg._grind_cost(n)), np.nan) for t in ts]
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), sharey=True)
+    fig, axes = plt.subplots(1, len(loaded), figsize=(5 * len(loaded), 5.2), sharey=True)
     mesh = None
     for ax, (short, cells, head) in zip(axes, loaded):
         print(f"{short}: held-both rate {head:.2f} ({sum(cells.values())}/{len(cells)})")
@@ -92,8 +99,8 @@ def main():
     cb = fig.colorbar(mesh, ax=axes, fraction=0.025, pad=0.02)
     cb.set_label("P(held both ingredients)")
 
-    out = Path(f"figs/toolworld/fig_industry_panels_Nle{args.n_hi}.png")
-    out.parent.mkdir(exist_ok=True)
+    out = Path(args.outdir) / f"fig_industry_panels_Nle{args.n_hi}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight")
     print(f"wrote {out} (+ .pdf)")

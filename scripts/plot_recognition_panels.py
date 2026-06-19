@@ -50,19 +50,24 @@ def held_both(row: dict) -> bool:
 
 
 def load_cells(run_dir: Path):
-    """-> (short, {(T,N): built01 for held-both cells}, headline P(built|held))."""
+    """-> (short, {(T,N): mean built over held-both reps}, headline pooled P(built|held)).
+
+    Reps per cell are AVERAGED (the cell surface value is the per-cell built rate);
+    the headline is pooled over all held-both episodes (numerator/denominator), so it
+    is identical to the old 0/1 value for a 1-rep grid and tightens with more reps."""
+    from collections import defaultdict
     rows = [json.loads(l) for l in (run_dir / "episodes.jsonl").read_text().splitlines() if l.strip()]
     rows = [r for r in rows if not r.get("error")]
-    short = (rows[0].get("model", "?").split("-")[1]
-             if rows and rows[0].get("model", "").startswith("claude-") else "?")
-    cells = {}
-    nb = 0
+    m0 = rows[0].get("model", "?") if rows else "?"
+    short = m0.split("-")[1] if m0.startswith("claude-") else m0
+    acc = defaultdict(list)  # (T,N) -> built01 for each held-both rep
     for r in rows:
         if held_both(r):
-            b = int(built(r))
-            cells[(r["n_types"], r["n"])] = b
-            nb += b
-    head = nb / len(cells) if cells else float("nan")
+            acc[(r["n_types"], r["n"])].append(int(built(r)))
+    cells = {k: sum(v) / len(v) for k, v in acc.items()}
+    nb = sum(sum(v) for v in acc.values())
+    nd = sum(len(v) for v in acc.values())
+    head = nb / nd if nd else float("nan")
     return short, cells, head
 
 
@@ -81,13 +86,14 @@ def pooled(cells, n_hi, bw):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("haiku_dir"); ap.add_argument("sonnet_dir"); ap.add_argument("opus_dir")
+    ap.add_argument("dirs", nargs="+", help="one or more region run dirs (one panel each)")
     ap.add_argument("--n-hi", type=int, default=20)
     ap.add_argument("--smooth", choices=["none", "gaussian"], default="gaussian")
     ap.add_argument("--bandwidth", type=float, default=1.0)
+    ap.add_argument("--outdir", default="figs/toolworld")
     args = ap.parse_args()
 
-    dirs = [Path(args.haiku_dir), Path(args.sonnet_dir), Path(args.opus_dir)]
+    dirs = [Path(d) for d in args.dirs]
     loaded = [load_cells(d) for d in dirs]
 
     # boundary E[build] = E[grind]
@@ -95,7 +101,7 @@ def main():
     bnd = [next((n for n in range(1, args.n_hi + 1)
                  if cfg._build_cost(n, int(round(t))) < cfg._grind_cost(n)), np.nan) for t in ts]
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), sharey=True)
+    fig, axes = plt.subplots(1, len(loaded), figsize=(5 * len(loaded), 5.2), sharey=True)
     mesh = None
     for ax, (short, cells, head) in zip(axes, loaded):
         print(f"{short}: held-both cells {len(cells)} | recognition P(built|held)={head:.2f}")
@@ -132,8 +138,8 @@ def main():
     cb = fig.colorbar(mesh, ax=axes, fraction=0.025, pad=0.02)
     cb.set_label("P(built | held both)")
 
-    out = Path(f"figs/toolworld/fig_recognition_panels_Nle{args.n_hi}.png")
-    out.parent.mkdir(exist_ok=True)
+    out = Path(args.outdir) / f"fig_recognition_panels_Nle{args.n_hi}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight")
     print(f"wrote {out} (+ .pdf)")
