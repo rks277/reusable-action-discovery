@@ -20,12 +20,20 @@ from .game import ActionResult
 from .world import Coord, World
 
 
+# Canonical names for the five obfuscatable nouns. Pass a `labels` dict mapping
+# any of these keys to alternate surface strings (e.g. letter-obfuscated tokens)
+# to strip the English semantics; omitted keys fall back to the word itself.
+DEFAULT_LABELS = {"sand": "sand", "rock": "rock", "treasure": "treasure",
+                  "map": "map", "paper": "paper", "shovel": "shovel"}
+
+
 class GameV2:
     """Mutable game state plus rules, addressed by coordinate (no position)."""
 
-    def __init__(self, config: Config, world: World):
+    def __init__(self, config: Config, world: World, labels: "dict | None" = None):
         self.config = config
         self.world = world
+        self.labels = {**DEFAULT_LABELS, **(labels or {})}
         self.durability = config.shovel_durability
         self.papers = 0
         self.has_map = False
@@ -40,12 +48,15 @@ class GameV2:
         return self.config.papers_needed
 
     def inventory_summary(self, with_durability: bool = True) -> str:
-        items = [f"shovel (durability {self.durability})" if with_durability
-                 else "shovel"]
+        sh = self.labels["shovel"]
+        if with_durability and self.durability is not None:
+            items = [f"{sh} (durability {self.durability})"]
+        else:                                   # unlimited shovel -> no durability shown
+            items = [sh]
         if self.has_map:
-            items.append("map")
+            items.append(self.labels["map"])
         elif self.papers > 0:
-            items.append(f"paper x{self.papers}")
+            items.append(f"{self.labels['paper']} x{self.papers}")
         return ", ".join(items)
 
     # --- turn accounting ---------------------------------------------------
@@ -68,57 +79,65 @@ class GameV2:
         if not self.world.in_bounds(coord):
             return ActionResult(f"{coord} is off the map.")
 
+        L = self.labels
         rock = self.world.rock_at(coord)
         if rock is None:
-            return self._with_turn(f"Nothing but sand at {coord}.")
+            return self._with_turn(f"You inspect {coord}: nothing but {L['sand']}.")
 
         if rock.examined:
-            return self._with_turn(f"Nothing under the rock at {coord}.")
+            return self._with_turn(f"You inspect {coord}: nothing left under the "
+                                   f"{L['rock']}.")
 
         # First time examining this rock.
         self.world.mark_examined(coord)
         if not rock.has_paper:
-            return self._with_turn(f"Nothing under the rock at {coord}.")
+            return self._with_turn(f"You inspect {coord} and look under the "
+                                   f"{L['rock']}: nothing.")
 
         # Found a piece of paper.
         self.papers += 1
-        lines = [f"You find a piece of paper under the rock at {coord}."]
+        lines = [f"You inspect {coord} and under the {L['rock']} you find a "
+                 f"{L['paper']}."]
         if not self.has_map and self.papers >= self.papers_needed:
             self.has_map = True
             if self.config.hint:
-                lines.append("The pieces form a map.")
+                lines.append(f"The {L['paper']}s combine into a {L['map']}.")
         return self._with_turn("\n".join(lines))
 
     def dig(self, coord: Coord) -> ActionResult:
         """Dig at ``coord`` -- the coordinate-addressed analog of
         ``Game.use_shovel``. Bounds-checked first so an off-map dig wastes no
         shovel charge."""
+        L = self.labels
         if self.over:
             return ActionResult("The game is already over.")
         if not self.world.in_bounds(coord):
             return ActionResult(f"{coord} is off the map.")
-        if self.durability <= 0:
+        unlimited = self.durability is None      # None => unbreakable; budget is the cap
+        if not unlimited and self.durability <= 0:
             # Defensive: shouldn't happen since hitting 0 ends the game.
-            return ActionResult("Your shovel is broken; you can't dig.")
+            return ActionResult(f"Your {L['shovel']} is broken.")
 
-        self.durability -= 1
+        if not unlimited:
+            self.durability -= 1
 
         if self.world.is_treasure(coord):
             self.over = True
             self.won = True
             self._consume_turn()
             return ActionResult(
-                f"You dig at {coord} and find the treasure. You win!",
+                f"You use the {L['shovel']} at {coord} and dig up the "
+                f"{L['treasure']}. Congratulations, you win!",
                 turn_consumed=True,
                 game_over=True,
                 won=True,
             )
 
-        msg = f"You dig at {coord} but find nothing."
-        if self.durability <= 0:
+        msg = f"You use the {L['shovel']} at {coord} but get nothing."
+        if not unlimited and self.durability <= 0:
             self.over = True
             return ActionResult(
-                f"{msg}\nYour shovel breaks. You lose.",
+                f"{msg}\nYour {L['shovel']} breaks. You lose.",
                 turn_consumed=True,
                 game_over=True,
             )
@@ -128,10 +147,11 @@ class GameV2:
         if self.over:
             return ActionResult("The game is already over.")
         if not self.has_map:
-            return ActionResult("You don't have a map yet.")
+            return ActionResult(f"You don't have a {self.labels['map']} yet.")
 
         # Reading the map is free -- it doesn't consume a turn.
-        return ActionResult(f"The treasure is at {self.world.treasure}.")
+        return ActionResult(f"You read the {self.labels['map']}: the "
+                            f"{self.labels['treasure']} is at {self.world.treasure}.")
 
     # --- helpers -----------------------------------------------------------
 

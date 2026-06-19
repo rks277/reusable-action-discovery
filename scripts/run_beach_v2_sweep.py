@@ -38,43 +38,47 @@ from dotenv import load_dotenv
 # both `scripts.*` and `lomekwi.*` resolve.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.run_beach_v2_llm import run                              # noqa: E402
-from scripts.run_beach_sweep import durability_for, total_rocks_for  # noqa: E402
 
-# --- the grid you set ---------------------------------------------------
+# --- the strip you sweep -----------------------------------------------
+# We sweep STRIP geometry: a WIDTH x ROWS beach. WIDTH is the swept axis; ROWS is
+# a fixed height (5 = the n x 5 strip; 1 = a 1-D strip). Everything is calibrated
+# to the cell count area = WIDTH * ROWS.
 MODELS = [
-    # Local Gemma via Ollama (the ":" in each id routes to the ollama provider;
-    # edit the family tag to match `ollama list`, e.g. gemma3, if needed).
-    ("ollama", "gemma4:1b"),
-    ("ollama", "gemma4:4b"),
-    ("ollama", "gemma4:12b"),
-    # Anthropic models unhooked for now -- bring back later.
-    # ("anthropic", "claude-opus-4-8"),
-    # ("anthropic", "claude-sonnet-4-6"),
-    # ("anthropic", "claude-haiku-4-5-20251001"),
+    ("anthropic", "claude-haiku-4-5-20251001"),
+    ("anthropic", "claude-sonnet-4-6"),
+    ("anthropic", "claude-opus-4-8"),
+    # Local Gemma via Ollama -- unhooked for now, bring back later.
+    # ("ollama", "gemma4:1b"),
+    # ("ollama", "gemma4:4b"),
+    # ("ollama", "gemma4:12b"),
     # ("openai", "gpt-5"),
     # ("google", "gemini-2.5-pro"),
 ]
-# swept axes
-GRID_VALUES = [4, 5, 6]      # n x n beach (grid_size); the search/grind space
-PAPERS_VALUES = [2, 3, 4, 5]  # scraps needed to form the map (papers_needed)
-REPS = 10                     # runs per cell; rep r => seed=r
+# swept axes: full (n x m) grid, ONE rep per cell (one episode per (n, m)).
+WIDTH_VALUES = list(range(1, 11))    # width n = 1..10
+ROWS = None                          # None => SQUARE (n x n, area = n^2);
+                                     # int => n x ROWS strip (area = n * ROWS)
+PAPERS_VALUES = list(range(1, 11))   # m = scraps to form the map = 1..10
+REPS = 1                             # one rep across the grid; rep r => seed=r
 
-# Optional constant overrides. Leave as None to DERIVE per cell (recommended, so
-# the levers stay calibrated to grid/papers); set an int to pin it everywhere.
-DURABILITY = None          # int to fix shovel digs, else durability_for(grid)
-TOTAL_ROCKS = None         # int to fix rock count, else total_rocks_for(grid)
+# Per-cell calibration, all from area = WIDTH * ROWS. Leave the *_FRAC knobs and
+# set the pinned override to None to derive; set an int override to fix a value.
+USE_DURABILITY = False     # False -> unbreakable shovel: BUDGET is the ONLY cap.
+                           # True  -> shovel breaks after `dur` digs (the old 2-cap world).
+DURABILITY = None          # int to pin digs, else round(DURABILITY_FRAC * area)
+TOTAL_ROCKS = None         # int to pin rocks, else round(ROCK_DENSITY * area)
+BUDGET = None              # int to pin budget, else round(BUDGET_FRAC * area)
 
-# Action budget (toolworld-style total-action cap, SEPARATE from shovel
-# durability which still caps digs). Leave BUDGET=None to derive per cell as
-# round(BUDGET_FRAC * area), floored at total_rocks + 2 so a thorough builder can
-# always inspect every rock + use map + dig without starving. 0.5*area sits just
-# above the worst-case build cost but well below the area, so it removes the
-# slack that budget=area gives without ever punishing an honest builder.
-BUDGET = None              # int to pin the budget, else round(BUDGET_FRAC * area)
-BUDGET_FRAC = 0.5          # derived budget = round(area * this), area = grid*grid
+DURABILITY_FRAC = 0.2      # digs   = round(area * this)  -- caps brute-force (if USE_DURABILITY)
+ROCK_DENSITY = 0.4         # rocks  = round(area * this)  -- search difficulty
+# Budget is a toolworld-style TOTAL-action cap, separate from durability. Floored
+# at total_rocks + 2 so a thorough builder can inspect every rock + use map + dig
+# without starving; 0.5*area sits just above worst-case build but below area.
+BUDGET_FRAC = 0.5          # budget = round(area * this), floored at rocks + 2
 
 HINT = True
-MAX_TURNS = 200            # generous; durability/budget are the real caps
+OBFUSCATE = True           # letter-obfuscate sand/rock/treasure/map/paper per cell
+MAX_TURNS = 300            # generous; durability/budget are the real caps
 
 # per-provider in-flight episode cap (bounds rate-limit / token bursts).
 # ollama is local (one server) -> keep it small to avoid thrashing.
@@ -83,62 +87,84 @@ CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2}
 
 async def main():
     load_dotenv()
+    # `--model <substr>` runs only the matching roster entries (keeps the full
+    # MODELS list in the script while letting one run target a single model).
+    roster = MODELS
+    if "--model" in sys.argv:
+        want = sys.argv[sys.argv.index("--model") + 1]
+        roster = [(p, m) for (p, m) in MODELS if want in m]
+        if not roster:
+            raise SystemExit(f"--model {want!r} matched no entry in MODELS")
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_dir = Path("runs") / f"beach_v2_sweep_{ts}"
+    out_dir = Path("runs") / "beach_v2" / f"beach_v2_sweep_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "episodes.jsonl"
     out_path.write_text("")
 
-    # Expand cells over the swept axes; resolve per-cell durability/total_rocks
-    # (constant override or derived) and CLAMP the rock count to the grid: it can
-    # never exceed every cell but the one rock-free treasure cell, so a count
-    # that would overflow just fills the whole grid with rocks. A (grid, papers)
-    # combo is dropped only if even a full grid can't hold the P paper rocks.
+    # Expand cells over the swept axes (WIDTH x PAPERS); resolve per-cell rocks /
+    # durability / budget from area = WIDTH * rows, where rows = WIDTH when ROWS is
+    # None (SQUARE n x n) else ROWS (n x ROWS strip). Rocks are clamped to the grid
+    # (never more than every cell but the rock-free treasure cell); a (width,
+    # papers) combo is dropped if even a full grid can't hold the P paper rocks.
+    geom = "square (n x n)" if ROWS is None else f"strip (n x {ROWS})"
     cells, skipped = [], []
-    for prov, model in MODELS:
-        for grid in GRID_VALUES:
+    for prov, model in roster:
+        for width in WIDTH_VALUES:
+            rows_eff = width if ROWS is None else ROWS
             for papers in PAPERS_VALUES:
-                cap = grid * grid - 1   # all cells but the rock-free treasure cell
-                rocks = TOTAL_ROCKS if TOTAL_ROCKS is not None else total_rocks_for(grid)
+                area = width * rows_eff
+                cap = area - 1   # all cells but the rock-free treasure cell
+                rocks = (TOTAL_ROCKS if TOTAL_ROCKS is not None
+                         else round(ROCK_DENSITY * area))
                 rocks = min(rocks, cap)   # overflow -> entire grid is rocks
-                dur = DURABILITY if DURABILITY is not None else durability_for(grid)
+                if not USE_DURABILITY:
+                    dur = None            # unbreakable shovel -> budget is the only cap
+                elif DURABILITY is not None:
+                    dur = DURABILITY
+                else:
+                    dur = max(1, round(DURABILITY_FRAC * area))
                 if rocks < papers:        # can't place the P paper rocks -> infeasible
-                    skipped.append((grid, papers, rocks))
+                    skipped.append((width, papers, rocks))
                     continue
-                area = grid * grid
                 budget = (BUDGET if BUDGET is not None
                           else max(round(BUDGET_FRAC * area), rocks + 2))
                 for rep in range(REPS):
-                    cells.append((prov, model, grid, papers, rocks, dur, budget, rep))
+                    cells.append((prov, model, width, rows_eff, papers, rocks,
+                                  dur, budget, rep))
 
     print(f"Writing to {out_path}\n"
-          f"Grid: {len(MODELS)} models x grid in {GRID_VALUES} x papers in "
-          f"{PAPERS_VALUES} x {REPS} reps = {len(cells)} episodes "
-          f"(durability={DURABILITY or 'f(grid)'}, "
-          f"total_rocks={TOTAL_ROCKS or 'f(grid)'}, "
-          f"budget={BUDGET or f'round({BUDGET_FRAC}*area)'})", flush=True)
+          f"{geom} sweep: {len(roster)} model(s) {[m for _,m in roster]} x width in "
+          f"{WIDTH_VALUES} x papers in {PAPERS_VALUES} x {REPS} reps = "
+          f"{len(cells)} episodes\n"
+          f"  per cell: durability="
+          f"{'OFF (budget-only)' if not USE_DURABILITY else (DURABILITY or f'round({DURABILITY_FRAC}*area)')}, "
+          f"rocks={TOTAL_ROCKS or f'round({ROCK_DENSITY}*area)'}, "
+          f"budget={BUDGET or f'round({BUDGET_FRAC}*area)'}", flush=True)
     if skipped:
         uniq = sorted(set(skipped))
-        print(f"  skipped {len(uniq)} infeasible (grid, papers) combo(s) "
+        print(f"  skipped {len(uniq)} infeasible (width, papers) combo(s) "
               f"[rocks don't fit grid]: "
-              + ", ".join(f"grid{g}/P{p}/rocks{r}" for g, p, r in uniq), flush=True)
+              + ", ".join(f"w{w}/P{p}/rocks{r}" for w, p, r in uniq), flush=True)
 
-    sems = {p: asyncio.Semaphore(CONCURRENCY[p]) for p, _ in MODELS}
+    sems = {p: asyncio.Semaphore(CONCURRENCY[p]) for p, _ in roster}
     lock = asyncio.Lock()
 
-    async def one(prov, model, grid, papers, rocks, dur, budget, rep):
+    async def one(prov, model, width, rows_eff, papers, rocks, dur, budget, rep):
         async with sems[prov]:
             t0 = time.time()
-            cfg = {"model": model, "grid_size": grid, "seed": rep,
+            cfg = {"model": model, "grid_size": width, "rows": rows_eff, "seed": rep,
                    "papers_needed": papers, "total_rocks": rocks,
                    "shovel_durability": dur, "budget": budget, "hint": HINT}
             try:
                 result, trace = await run(
-                    model, grid_size=grid, seed=rep, papers_needed=papers,
+                    model, grid_size=width, rows=rows_eff, seed=rep, papers_needed=papers,
                     total_rocks=rocks, shovel_durability=dur, hint=HINT,
-                    max_turns=MAX_TURNS, budget=budget)
+                    max_turns=MAX_TURNS, budget=budget, obfuscate=OBFUSCATE,
+                    relabel_seed=width * 131 + papers * 17 + rep)
                 row = {
                     **cfg,
+                    "obfuscate": result.get("obfuscate"),
+                    "labels": result.get("labels"),
                     "treasure": result["treasure"],
                     "won": result["won"],
                     "built_map": result["built_map"],
@@ -164,8 +190,8 @@ async def main():
             async with lock:
                 with out_path.open("a") as f:
                     f.write(json.dumps(row) + "\n")
-                print(f"  {model[:24]:24s} grid={grid} P={papers} rocks={rocks} "
-                      f"dur={dur:<2} rep={rep} won={row.get('won')} "
+                print(f"  {model[:24]:24s} {width}x{rows_eff} P={papers} rocks={rocks} "
+                      f"dur={str(dur):<4} bud={budget:<3} rep={rep} won={row.get('won')} "
                       f"built_map={row.get('built_map')} digs={row.get('digs')} "
                       f"actions={row.get('total_actions')} "
                       f"{'(err)' if row.get('error') else ''}", flush=True)

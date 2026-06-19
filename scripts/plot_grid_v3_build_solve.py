@@ -13,7 +13,7 @@ E[grind]=E[build] strategy boundary is drawn on every panel.
   build  = machine constructed ("fuse into" appears in the obs)
   solve  = all doors opened within budget (the logged `solved` flag)
 
-Output: runs/grid_v3_summary/.
+Output: runs/grid_v3/grid_v3_summary/.
 
 Usage: python -m scripts.plot_grid_v3_build_solve [--gauss SIGMA]
 """
@@ -41,7 +41,7 @@ METRICS = [
 
 
 def latest_run(tag: str) -> Path:
-    cands = sorted(p for p in Path("runs").glob(f"grid_sweep_v3_{tag}_*") if p.is_dir())
+    cands = sorted(p for p in Path("runs").rglob(f"grid_sweep_v3_{tag}_*") if p.is_dir())
     if not cands:
         raise SystemExit(f"no runs/grid_sweep_v3_{tag}_* directory found")
     return cands[-1]
@@ -111,7 +111,7 @@ def main():
     fig.suptitle("toolworld v3 grid sweep — build (top) & solve (bottom) over (N, T), "
                  f"Gaussian-pooled (σ={sigma})", fontsize=13)
 
-    out_dir = Path("runs") / "grid_v3_summary"
+    out_dir = Path("runs") / "grid_v3" / "grid_v3_summary"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "fig_grid_v3_build_solve_heatmap.png"
     fig.savefig(out, dpi=140)

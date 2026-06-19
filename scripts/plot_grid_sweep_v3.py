@@ -65,7 +65,7 @@ def draw_boundary(ax, t_lo: int):
 
 
 def latest_run() -> Path:
-    cands = sorted(p for p in Path("runs").glob("grid_sweep_v3_*") if p.is_dir())
+    cands = sorted(p for p in Path("runs").rglob("grid_sweep_v3_*") if p.is_dir())
     if not cands:
         raise SystemExit("no runs/grid_sweep_v3_* directory found")
     return cands[-1]

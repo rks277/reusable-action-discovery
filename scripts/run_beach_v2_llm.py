@@ -7,18 +7,22 @@ record instrumentation -- but the world is beach.game_v2.GameV2 and there is NO
 movement. The agent sees the WHOLE grid every turn (which cells are sand, which
 are rocks, which rocks it has already searched) and addresses each action by an
 explicit coordinate:
-  inspect <x> <y>   search whatever is at that cell
-  dig <x> <y>       dig that cell (costs one shovel charge)
-  use map           read the map (free) once it is built
+  inspect <x> <y>      search whatever is at that cell
+  use <item> <x> <y>   use an inventory item on that cell
+
+The grammar deliberately exposes ONE generic `use <item>` verb: the shovel digs,
+and the map -- once built -- reveals the treasure coordinate (coords ignored when
+reading it). Crucially the prompt never names the map or hints it exists; the
+agent starts holding only the shovel and discovers the map purely by acting.
 
 WHY this is the v2 of the reusable-action-discovery probe: removing movement
 strips the spatial-search / navigation skill out of the beach so what's left is
 the pure ECONOMIC choice -- spend actions inspecting rocks to build the map (the
 reusable TOOL: collect `papers_needed` scraps -> map -> read the treasure
-coordinate -> one dig wins) vs. spend scarce shovel charges brute-digging the
-sand cells. The grid render names BOTH sand and rock cells so the observation
-doesn't bias the agent toward rocks; we never spell out that rocks hide scraps or
-that scraps form a map -- those affordances are still discovered by acting.
+coordinate -> one dig wins) vs. brute-digging the sand cells. The grid render
+names BOTH sand and rock cells so the observation doesn't bias the agent toward
+rocks; we never spell out that rocks hide scraps, that scraps form a map, or even
+that a map exists -- those affordances are all discovered by acting.
 """
 
 from __future__ import annotations
@@ -40,20 +44,34 @@ from beach.game_v2 import GameV2                    # noqa: E402
 from beach.world import World                        # noqa: E402
 
 from lomekwi.raw_chat import RawChat                 # noqa: E402
+from lomekwi.obfuscation import assign               # noqa: E402
+
+# Obfuscated nouns: the items + the shovel. The verbs `inspect` and `use` stay
+# plain English; there is NO `dig` verb -- digging is `use <shovel> <x> <y>`.
+OBF_KEYS = ["sand", "rock", "treasure", "map", "paper", "shovel"]
+
+
+def obf_labels(relabel_seed: int) -> dict:
+    """Letter-obfuscated label map for OBF_KEYS, drawn from relabel_seed (same
+    randomization protocol as toolworld v2 -- a fresh per-episode assignment that
+    strips the English semantics of sand/rock/treasure/map/paper)."""
+    return assign(OBF_KEYS, seed=relabel_seed, scheme="letter")
 
 
 def make_game(grid_size: int = 5, seed: int = 12345, papers_needed: int = 4,
               total_rocks: int = 12, shovel_durability: int = 15, hint: bool = True,
-              max_turns: int | None = None, rows: int | None = None) -> GameV2:
+              max_turns: int | None = None, rows: int | None = None,
+              labels: dict | None = None) -> GameV2:
     """Build a fresh GameV2 from parameters, routed through the game's own
     validate() so we honour the same invariants config.json does. `rows` is the
-    grid height (None -> square grid_size x grid_size; 1 -> a 1-D strip)."""
+    grid height (None -> square grid_size x grid_size; 1 -> a 1-D strip). `labels`
+    obfuscates the item nouns (None -> plain English)."""
     cfg = validate({
         "grid_size": grid_size, "rows": rows, "seed": seed,
         "papers_needed": papers_needed, "total_rocks": total_rocks,
         "shovel_durability": shovel_durability, "hint": hint, "max_turns": max_turns,
     })
-    return GameV2(cfg, World.generate(cfg))
+    return GameV2(cfg, World.generate(cfg), labels=labels)
 
 
 # --- action parsing --------------------------------------------------------
@@ -72,7 +90,15 @@ def _coords(toks_line: str):
     return None
 
 
-def parse(line: str):
+def parse(line: str, labels: dict | None = None):
+    """Map a line to a canonical action. Verbs `inspect`/`use` are plain English;
+    digging is `use <shovel> <x> <y>` and reading is `use <map>` (shovel/map are
+    obfuscated tokens carried in `labels`). A bare `dig <x> <y>` is also accepted
+    as a fallback so the agent isn't locked out if it reverts to that word."""
+    L = labels or {}
+    ml = str(L.get("map", "map")).lower()
+    sl = str(L.get("shovel", "shovel")).lower()
+
     t = line.strip().lower()
     t = re.sub(r"^[>\-\*•\d\.\)\(\s]+", "", t)  # strip bullets/numbering/quotes
     head_toks = [x for x in re.split(r"[\s:,;]+", t.strip("*_\"'`.!()")) if x]
@@ -83,23 +109,24 @@ def parse(line: str):
     if head in ("inspect", "search", "examine", "look", "interact"):
         c = _coords(line)
         return ("inspect", c) if c else None
-    if head == "dig":
+    if head == "dig":                          # undocumented fallback
         c = _coords(line)
         return ("dig", c) if c else None
     if head in ("use", "read", "consult"):
         rest = head_toks[1:]
-        if any(x.startswith("map") for x in rest):
-            return ("use", "map")
-        if any(x.startswith("shovel") for x in rest):  # "use shovel <x> <y>" == dig
+        # use <shovel> <x> <y> == dig; check shovel before map so coords route right
+        if any(x == sl or x.startswith("shovel") for x in rest):
             c = _coords(line)
             return ("dig", c) if c else None
+        if any(x == ml or x.startswith("map") for x in rest):
+            return ("use", "map")
         return None
     return None
 
 
-def extract(text: str):
+def extract(text: str, labels: dict | None = None):
     for ln in text.splitlines():
-        a = parse(ln)
+        a = parse(ln, labels=labels)
         if a:
             return a
     return None
@@ -112,78 +139,92 @@ def grid_state_text(game: GameV2) -> str:
     the agent toward rocks; the treasure is never disclosed. The cell at column x,
     row y -- addressed (x, y) by inspect/dig -- is grid[y][x]."""
     w, h = game.config.grid_size, game.config.rows
+    L = game.labels
     rows = []
     for y in range(h):
         row = []
         for x in range(w):
             rock = game.world.rock_at((x, y))
             if rock is None:
-                row.append("sand")
+                row.append(L["sand"])
             elif rock.examined:
                 row.append("searched")
             else:
-                row.append("rock")
+                row.append(L["rock"])
         rows.append("[" + ", ".join(row) + "]")
     grid = "[" + ",\n ".join(rows) + "]"
     return (f"Grid (row y from top=0; column x from left=0; cell (x,y) = "
-            f"grid[y][x]; 'searched' = a rock you already inspected):\n{grid}\n"
+            f"grid[y][x]; 'searched' = a cell you already inspected):\n{grid}\n"
             f"Inventory: {game.inventory_summary()}.")
 
 
 def initial_obs(game: GameV2, reveal_tool: bool = False) -> str:
     w, h = game.config.grid_size, game.config.rows
+    L = game.labels
     reveal = ""
     if reveal_tool:
         reveal = (
-            f" Some rocks hide a scrap of an old map: inspect rocks to collect the "
-            f"scraps, and once you have all {game.papers_needed} of them they form "
-            f"a map that reveals exactly where the treasure is buried (read it with "
-            f"`use map`)."
+            f" Some {L['rock']} cells hide a {L['paper']}: inspect them to collect "
+            f"the {L['paper']}s, and once you have all {game.papers_needed} of them "
+            f"they form a {L['map']} that reveals exactly where the {L['treasure']} "
+            f"is buried (read it with `use {L['map']}`)."
+        )
+    if game.durability is None:                  # unbreakable shovel -> budget is the cap
+        shovel_line = f"You hold a {L['shovel']} to dig with.\n\n"
+    else:
+        shovel_line = (
+            f"You hold a {L['shovel']}, usable {game.durability} times before it "
+            f"breaks; if it breaks before you uncover the {L['treasure']}, you "
+            f"lose.\n\n"
         )
     return (
-        f"You are looking down on a {w}x{h} beach. Each cell is either sand or a "
-        f"rock. Cells are addressed by (x, y): x is the column (0 to {w-1}, left "
-        f"to right) and y is the row (0 to {h-1}, top to bottom). You can see the "
-        f"whole grid at once.\n\n"
-        f"GOAL: find the buried treasure and dig it up, using as few actions as "
-        f"possible.{reveal}\n\n"
-        f"You carry a shovel that can dig {game.durability} times before it "
-        f"breaks. If it breaks before you uncover the treasure, you lose.\n\n"
+        f"You are looking down on a {w}x{h} grid. Each cell is either {L['sand']} "
+        f"or a {L['rock']}. Cells are addressed by (x, y): x is the column (0 to "
+        f"{w-1}, left to right) and y is the row (0 to {h-1}, top to bottom). You "
+        f"can see the whole grid at once.\n\n"
+        f"GOAL: find and uncover the buried {L['treasure']}, using as few actions "
+        f"as possible.{reveal}\n\n"
+        f"{shovel_line}"
         f"You may act with these verbs (one action per turn, on its own line):\n"
-        f"  inspect <x> <y>   search whatever is at that cell\n"
-        f"  dig <x> <y>       dig that cell (costs one shovel use)\n"
-        f"  use <item>        use the specified item\n\n"
+        f"  inspect <x> <y>        inspect cell (x, y)\n"
+        f"  use <item> <x> <y>     use an item from your inventory on cell (x, y)\n\n"
         f"Things you obtain persist.\n\n{grid_state_text(game)}"
     )
 
 
-SYS = ("You are an agent looking down on a beach to find buried treasure, using "
-       "as few actions as possible. You can see the whole grid. Inspect your "
-       "surroundings and act deliberately. End each turn with exactly one action "
-       "on its own line: inspect <x> <y>, dig <x> <y>, use <item>. Think briefly, "
-       "then act.")
+SYS = ("You are an agent looking down on a grid, pursuing the goal stated in the "
+       "first message, using as few actions as possible. You can see the whole "
+       "grid. Inspect your surroundings and act deliberately. End each turn with "
+       "exactly one action on its own line: inspect <x> <y> or use <item> <x> <y>. "
+       "Think briefly, then act.")
 
 
 async def run(model: str, grid_size: int = 5, seed: int = 12345,
               papers_needed: int = 4, total_rocks: int = 12,
               shovel_durability: int = 15, hint: bool = True,
               max_turns: int = 120, budget: int | None = None,
-              rows: int | None = None, reveal_tool: bool = False):
+              rows: int | None = None, reveal_tool: bool = False,
+              obfuscate: bool = False, relabel_seed: int | None = None):
     """budget: optional strict cap on actions, announced to the agent each turn.
     Like v1, this makes building the map an economic choice (spend scarce actions
     hunting scraps vs. grinding digs) without touching game mechanics. `rows` sets
     the grid height (None -> square; 1 -> a 1-D strip). reveal_tool: if True, the
     intro explicitly discloses the rock -> scrap -> map -> treasure chain (turns
-    the task from tool DISCOVERY into tool EXPLOITATION)."""
+    the task from tool DISCOVERY into tool EXPLOITATION). obfuscate: if True, the
+    five item nouns (sand/rock/treasure/map/paper) are letter-obfuscated per
+    episode (relabel_seed, default = seed), stripping their English semantics."""
     load_dotenv()
     client = RawChat()
+    labels = obf_labels(relabel_seed if relabel_seed is not None else seed) \
+        if obfuscate else None
     game = make_game(grid_size, seed, papers_needed, total_rocks,
-                     shovel_durability, hint, rows=rows)
+                     shovel_durability, hint, rows=rows, labels=labels)
+    L = game.labels
     intro = initial_obs(game, reveal_tool)
     if budget is not None:
         intro += (f"\n\nYou ALSO have a STRICT BUDGET of {budget} actions total "
-                  f"(inspecting and digging each cost one action). If you have not "
-                  f"dug up the treasure within {budget} actions, you fail.")
+                  f"(every action you take costs one). If you have not uncovered "
+                  f"the {game.labels['treasure']} within {budget} actions, you fail.")
     msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
 
     trace = []
@@ -212,7 +253,7 @@ async def run(model: str, grid_size: int = 5, seed: int = 12345,
                 usage_tot[k] += v
             usage_tot["calls"] += 1
 
-        act = extract(text)
+        act = extract(text, labels=L)
         if not act:
             noop += 1
             noop_total += 1
@@ -228,7 +269,7 @@ async def run(model: str, grid_size: int = 5, seed: int = 12345,
                 break
             msgs += [{"role": "assistant", "content": text},
                      {"role": "user", "content": "No parseable action. Use "
-                      "inspect <x> <y> / dig <x> <y> / use map, one action on its "
+                      "inspect <x> <y> or use <item> <x> <y>, one action on its "
                       "own line."}]
             continue
         noop = 0
@@ -279,7 +320,7 @@ async def run(model: str, grid_size: int = 5, seed: int = 12345,
         "seed": seed,
         "papers_needed": papers_needed, "total_rocks": total_rocks,
         "shovel_durability": shovel_durability, "hint": hint, "budget": budget,
-        "reveal_tool": reveal_tool,
+        "reveal_tool": reveal_tool, "obfuscate": obfuscate, "labels": game.labels,
         "treasure": list(game.world.treasure),
         "won": won, "total_actions": len(trace), "turns": game.turns,
         "durability_left": game.durability, "papers_collected": game.papers,

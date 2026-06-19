@@ -36,7 +36,7 @@ METRICS = [
 
 
 def latest(tag: str) -> Path:
-    cands = sorted(p for p in Path("runs").glob(f"grid_sweep_v3_{tag}_*") if p.is_dir())
+    cands = sorted(p for p in Path("runs").rglob(f"grid_sweep_v3_{tag}_*") if p.is_dir())
     if not cands:
         raise SystemExit(f"no runs/grid_sweep_v3_{tag}_* dir found")
     return cands[-1]
@@ -88,7 +88,8 @@ def main():
     fig.suptitle("toolworld v3 build chain -- cross-model comparison "
                  "(gaussian-pooled, T>=2; dashed = E[grind]=E[build])", fontsize=14)
 
-    out = Path("runs") / "fig_grid_v3_compare.png"
+    out = Path("runs") / "grid_v3" / "fig_grid_v3_compare.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=130); fig.savefig(out.with_suffix(".pdf"))
     plt.close(fig)
     print(f"  wrote {out}")

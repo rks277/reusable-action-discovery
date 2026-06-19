@@ -1,4 +1,4 @@
-"""Run run_beach_sweep under a hard USD cost cap.
+"""Run any sweep under a hard USD cost cap.
 
 Launches the sweep as a child process group, polls its episodes.jsonl as rows
 are written, estimates cumulative cost with analyze_beach_sweep.cost_of (the same
@@ -6,6 +6,12 @@ Anthropic list pricing + cache accounting the analyzer uses), and SIGTERMs the
 whole group the instant cumulative cost crosses CAP. In-flight episodes already
 dispatched when the cap trips may still bill a little -- that overshoot is
 unavoidable (the API calls are already out), but no new episodes are launched.
+
+Usage:
+  python scripts/_beach_sweep_capped.py <cap_usd> <run_glob> <module> [args...]
+e.g.
+  python scripts/_beach_sweep_capped.py 15 'runs/beach_v2_sweep_*' \
+      scripts.run_beach_v2_sweep --model claude-haiku-4-5-20251001
 """
 
 import glob
@@ -19,16 +25,18 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.analyze_beach_sweep import cost_of
 
-CAP = 60.0
 POLL = 2.0
+CAP = float(sys.argv[1])
+RUN_GLOB = sys.argv[2]
+SWEEP_CMD = sys.argv[3:]  # module + its args, run via `python -u -m <module> ...`
 
-before = set(glob.glob("runs/beach_sweep_*"))
-proc = subprocess.Popen([sys.executable, "-u", "-m", "scripts.run_beach_sweep"],
+before = set(glob.glob(RUN_GLOB))
+proc = subprocess.Popen([sys.executable, "-u", "-m", *SWEEP_CMD],
                         start_new_session=True)
 
 
 def newest_run_dir():
-    new = set(glob.glob("runs/beach_sweep_*")) - before
+    new = set(glob.glob(RUN_GLOB)) - before
     return max(new, key=os.path.getmtime) if new else None
 
 

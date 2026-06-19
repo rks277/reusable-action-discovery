@@ -43,7 +43,8 @@ class Config:
       forms exactly one map.
     - ``total_rocks``: total rocks on the map, including the P paper rocks.
     - ``shovel_durability``: number of times the shovel can be used before it
-      breaks (0 durability without a win = game over).
+      breaks (0 durability without a win = game over). ``None`` = unlimited:
+      the shovel never breaks, so the action budget is the only cap on digging.
     - ``hint``: when True, notify the player the moment a map auto-forms.
     - ``max_turns``: optional cap on successful actions (``None`` = unlimited).
     """
@@ -53,7 +54,7 @@ class Config:
     seed: int
     papers_needed: int
     total_rocks: int
-    shovel_durability: int
+    shovel_durability: "int | None"
     hint: bool
     max_turns: "int | None"
 
@@ -73,7 +74,9 @@ def validate(data: dict) -> Config:
     seed = _require_int(data["seed"], "seed")
     papers_needed = _require_int(data["papers_needed"], "papers_needed")
     total_rocks = _require_int(data["total_rocks"], "total_rocks")
-    shovel_durability = _require_int(data["shovel_durability"], "shovel_durability")
+    shovel_durability = data["shovel_durability"]
+    if shovel_durability is not None:  # None = unlimited (unbreakable shovel)
+        shovel_durability = _require_int(shovel_durability, "shovel_durability")
 
     hint = data["hint"]
     if not isinstance(hint, bool):
@@ -91,8 +94,8 @@ def validate(data: dict) -> Config:
         raise ConfigError("'rows' must be >= 1")
     if papers_needed < 1:
         raise ConfigError("'papers_needed' must be >= 1")
-    if shovel_durability < 1:
-        raise ConfigError("'shovel_durability' must be >= 1")
+    if shovel_durability is not None and shovel_durability < 1:
+        raise ConfigError("'shovel_durability' must be >= 1 (or null for unlimited)")
     if total_rocks < papers_needed:
         raise ConfigError(
             f"'total_rocks' ({total_rocks}) must be >= 'papers_needed' "
