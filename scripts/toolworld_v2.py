@@ -208,7 +208,8 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
               playground: bool = False,
               playground_context: str | None = None,
               world_override: dict | None = None,
-              forced_prefix: list | None = None):
+              forced_prefix: list | None = None,
+              reject_multi_action: bool = False):
     """budget: if set, a strict cap on the number of actions. The agent is told
     the cap and its remaining count each turn, so building the tool becomes an
     economic CHOICE (spend scarce actions hunting the recipe vs. brute-force).
@@ -282,6 +283,9 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
     noop_total = 0       # cumulative no-ops (parse failures + API errors)
     refusals = 0         # no-ops that were safety refusals (stop_reason=refusal)
     unparsed = []        # raw responses we couldn't turn into an action
+    multi_rej = 0        # consecutive multi-action rejections (reject_multi_action)
+    multi_rej_total = 0  # cumulative multi-action turns rejected with feedback
+    rejected = []        # raw multi-action responses we bounced back
     usage_tot = {k: 0 for k in RawChat.USAGE_FIELDS}
     usage_tot["calls"] = 0
     stale = 0                # executed actions since last real state progress
@@ -331,6 +335,25 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
             for k, v in client.last_usage.items():
                 usage_tot[k] += v
             usage_tot["calls"] += 1
+        # opt-in: reject multi-action turns with feedback instead of silently
+        # executing only the first parseable line (which drops a build/combine
+        # buried in a verbose plan). Bounded: after 3 consecutive rejections we
+        # fall back to executing the first action so the episode can't stall.
+        if reject_multi_action:
+            n_acts = sum(1 for ln in text.splitlines() if parse(ln))
+            if n_acts >= 2 and multi_rej < 3:
+                multi_rej += 1
+                multi_rej_total += 1
+                rejected.append({"turn": t, "n_actions": n_acts, "text": text})
+                print(f"  [t{t+1}] MULTI-ACTION ({n_acts}) rejected -> reprompt",
+                      flush=True)
+                msgs += [{"role": "assistant", "content": text},
+                         {"role": "user", "content":
+                          f"You wrote {n_acts} actions, but only ONE action is "
+                          "allowed per turn. Reply with exactly one action "
+                          "(examine/combine/use) on its own line, nothing else."}]
+                continue
+        multi_rej = 0
         act = extract(text)
         if not act:
             noop += 1
@@ -430,6 +453,7 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         "total_actions": len(trace), "budget": budget,
         "built_machine": s.has_machine, "build_turn": build_turn,
         "noop_total": noop_total, "refusals": refusals, "unparsed": unparsed,
+        "multi_action_rejections": multi_rej_total, "rejected": rejected,
         "usage": usage_tot, "stopped_reason": stopped_reason,
         "nudged": nudged, "nudge_turn": nudge_turn,
     }

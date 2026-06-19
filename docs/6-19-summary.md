@@ -196,3 +196,73 @@ world: gathering progress carries the build through).
 | WoodWorld panels (same order; 2 rows) | `figs/woodworld/qwen/fig_woodworld_{recognition,curiosity,efficiency,solve}_qwen2.5-1.5b_qwen2.5-3b_qwen2.5-7b_haiku_sonnet_opus_nohint_N10-90.*` |
 | panel scripts made variadic + non-claude labels | `scripts/plot_{recognition,efficiency_natural,held_both,solve}_panels.py`, `scripts/plot_woodworld_panels.py` |
 | local serving routing | `lomekwi/raw_chat.py` (`gemma`→google added; `ollama` path); `scripts/sweep_config.py` (`OSS_MODELS`) |
+
+
+# The ToolWorld recognition inversion is REAL — an "interface artifact" hypothesis, tested and FALSIFIED (6-19)
+
+## TL;DR
+
+1. **Result first:** we hypothesized the ToolWorld recognition inversion (R = P(built | held both)
+   FALLS with capability: Haiku 0.86 → Sonnet 0.58 → Opus 0.36, while WoodWorld R *rises*) was a
+   single-action-parser artifact that silently drops Opus's build. **A rerun forcing one action per
+   turn FALSIFIED this: Opus R = 0.37 (vs 0.36), unchanged.** The inversion is a **genuine
+   recognition failure**, not an interface confound.
+2. **Cross-world theory, by elimination (still stands).** Three economic explanations for the
+   direction-flip were ruled out: **bypass availability/quality** (WoodWorld's gather-bypass is
+   *better*, ~0.8 vs 0.3, yet it's the world *without* the inversion); **hostility** (the
+   `iso_recipe` WoodWorld we ran is *non-hostile* — `stick+stick→axe`, sticks free); **build-search
+   cost** (`iso_recipe` was *built* to test it and still didn't invert, R rises 0.31→0.79).
+3. **What Opus actually does.** Across the 79 (old) / 76 (new) declined episodes (held both, didn't
+   build): Opus **essentially never proposes the correct combine** — only **1/79 (old)** and
+   **0/76 (new)** ever emit `combine <recipe pair>` as a parseable line. It issues hundreds of
+   combines (323 old / 245 new), **none the recipe pair**; it combines byproducts with KEYS
+   (`y+m_1`, `k+m_1`) and wrong pairs, acting on a confused/confabulated recipe model. Contrast
+   **Haiku: 287/287 built episodes issued the exact combine cleanly.** Low-N / smoke episodes DO
+   build (`combine y k → fuse`), so it's mis-identification, not inability.
+4. **My earlier "56/79 narrated the correct combine" was an analysis bug.** That heuristic flagged
+   the word "combine" + both recipe letters appearing *anywhere* in the text — but `y`/`k` are all
+   over the observations, so it was a false positive. The strict parser-based check (above) is the
+   correct measure.
+5. **The forward-simulation phenomena are real but causally irrelevant to R.** Opus does
+   auto-roll-out the transcript (hallucinating env replies + role tokens) far more in ToolWorld
+   (self-rollout 15% vs WoodWorld 4%; multi-action 12% vs 4%), gated by ToolWorld's determinism. But
+   since Opus wasn't proposing the right combine anyway, removing the multi-action drop changed
+   nothing. **Vindicates the confabulation hypothesis** (Opus invents a wrong recipe and acts on it),
+   not the interface hypothesis.
+
+## Method + result
+
+- Added an **opt-in** `--reject-multi-action` flag (`scripts/toolworld_v2.py` + `run_haiku_region_sweep.py`):
+  turns with ≥2 parseable actions are bounced back with "exactly one action per turn" (bounded: falls
+  back to first action after 3 consecutive rejections). Default off, so it can't contaminate other
+  sweeps. Records `multi_action_rejections`.
+- **Rerun:** Opus ToolWorld, reject-multi-action, conc 12, **175/180 cells** (cost-capped at $45),
+  **904 rejections fired** (flag worked). **R = 0.37, E = 0.77, solve = 0.28** — statistically
+  indistinguishable from the old drop-first run (R 0.36 / E 0.73 / solve 0.29). Inversion intact.
+- Single-action ladder panels (qwen→Haiku→Sonnet→single-action-Opus) in
+  `figs/toolworld/_panels/single_action/` — recognition surface for Opus is unchanged at 0.37.
+
+## Open question (the real one)
+
+WHY does Opus combine byproducts with *keys* / miss the byproduct–byproduct recipe — key-clutter at
+higher N, the obfuscated item labels, or a prior that "keys are the active ingredient"? That is the
+genuine recognition phenomenon to chase next.
+
+## Caveats
+
+- One Opus ToolWorld run per condition (the 0/76, 1/79, Haiku 287/287 contrasts are stark but
+  single-run).
+- The reject-rerun hit the $45 cap at 175/180 cells; 5 missing cells don't move the pooled R.
+- This corrects an earlier draft of this section that reported the artifact hypothesis as the
+  finding — it was a prediction that the rerun then falsified.
+
+## Artifacts
+
+| kind | path |
+|---|---|
+| Opus ToolWorld run analyzed (old, no flag) | `runs/opus_region_sweep_p200_r1_Nle20_20260615_220600/` |
+| reject-multi-action flag | `scripts/toolworld_v2.py` (`reject_multi_action`), `scripts/run_haiku_region_sweep.py` (`--reject-multi-action`) |
+| Opus reject rerun (in progress) | `runs/opus_region_sweep_p180_r1_Nle20_20260619_122424/` + `runs/local_logs/opus_reject_toolworld_conc12_*.log` |
+| single-action panels (pending rerun) | `figs/toolworld/_panels/single_action/` |
+| BFCL accuracy-vs-params plot (family-separated) | `scripts/plot_bfcl_scaling.py`, `figs/bfcl/fig_bfcl_accuracy_vs_params.*`, `data/external/bfcl_v4_overall_20260619.csv` |
+| metric-vs-x line graphs (param-size + BFCL-score x-axes) | `scripts/plot_metric_lines.py`, `figs/{toolworld,woodworld}/fig_metric_lines_*` |

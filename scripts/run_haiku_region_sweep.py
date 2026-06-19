@@ -68,6 +68,7 @@ PRICING = {                       # $/1M tokens: (input, output, cache_write, ca
     "haiku":  (1.0,  5.0,  1.25, 0.10),
     "sonnet": (3.0, 15.0,  3.75, 0.30),
     "opus":   (5.0, 25.0,  6.25, 0.50),
+    "gpt-5.5": (5.0, 30.0, 0.0, 0.50),   # OpenAI: no cache-write charge; cached read ~10% of input
 }
 
 
@@ -108,6 +109,9 @@ def parse_args():
                    help="kill switch: once cumulative logged cost (USD) reaches this, "
                         "stop launching new episodes (in-flight ones finish).")
     p.add_argument("--smoke", action="store_true")
+    p.add_argument("--reject-multi-action", action="store_true",
+                   help="reject turns with >=2 actions and re-prompt for one action "
+                        "(instead of silently executing only the first parseable line)")
     return p.parse_args()
 
 
@@ -184,7 +188,8 @@ async def main():
                                           drop_seed=rep, hint=cfg.HINT,
                                           max_turns=max_turns_for(budget),
                                           budget=budget, stop_on_build=False,
-                                          no_progress_window=NO_PROGRESS_WINDOW)
+                                          no_progress_window=NO_PROGRESS_WINDOW,
+                                          reject_multi_action=args.reject_multi_action)
                 row = {"model": model, "n": n, "n_types": t, "hint": cfg.HINT,
                        "budget": budget, "relabel_seed": rep, "drop_seed": rep,
                        "labels": result["labels"],
@@ -198,6 +203,7 @@ async def main():
                        "noop_total": result["noop_total"],
                        "refusals": result["refusals"],
                        "unparsed": result["unparsed"],
+                       "multi_action_rejections": result.get("multi_action_rejections", 0),
                        "usage": result["usage"],
                        "stopped_reason": result["stopped_reason"],
                        "elapsed_s": round(time.time() - t0, 2)}

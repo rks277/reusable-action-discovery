@@ -146,7 +146,14 @@ class RawChat:
             client = self._openai() if prov == "openai" else self._ollama()
             oai_msgs = [{"role": "system", "content": system}] + messages
             kwargs = dict(model=model, messages=oai_msgs)
-            if reasoning:
+            if prov == "ollama":
+                # Local thinking models (e.g. gemma4) emit a long hidden reasoning
+                # trace that overruns the token cap -> truncated mid-thought ->
+                # empty `content` (counted as a noop) and ~25-min episodes. Turn it
+                # off for parity with the no-extended-thinking Anthropic baseline;
+                # harmless for non-thinking local models (qwen2.5).
+                kwargs["reasoning_effort"] = "none"
+            elif reasoning:
                 kwargs["reasoning_effort"] = "low"
             # GPT-5 family uses max_completion_tokens; be tolerant.
             try:

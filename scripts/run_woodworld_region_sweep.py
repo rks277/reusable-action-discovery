@@ -50,6 +50,7 @@ PRICING = {  # $/1M tokens: (input, output, cache_write, cache_read)
     "haiku":  (1.0,  5.0,  1.25, 0.10),
     "sonnet": (3.0, 15.0,  3.75, 0.30),
     "opus":   (5.0, 25.0,  6.25, 0.50),
+    "gpt-5.5": (5.0, 30.0, 0.0, 0.50),   # OpenAI: no cache-write charge; cached read ~10% of input
 }
 
 
