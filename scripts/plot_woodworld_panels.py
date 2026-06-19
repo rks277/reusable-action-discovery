@@ -121,10 +121,20 @@ def _render(loaded, value_fn, keep_fn, title, cb_label, fname, bw,
                 if r.get("axe_cost")), None)
     bp, bn = boundary(axe_cost_override=tuple(axe) if axe else None, n_hi=max(n_hi, 20))
 
-    fig, axes = plt.subplots(1, len(loaded), figsize=(5 * len(loaded), 5.2), sharey=True)
-    axes = np.atleast_1d(axes)
+    _CLAUDE = ("haiku", "sonnet", "opus")
+    _rows = [r for r in ([e for e in loaded if e[0] not in _CLAUDE],
+                         [e for e in loaded if e[0] in _CLAUDE]) if r] or [loaded]
+    _ncol = max(len(r) for r in _rows)
+    fig, _axg = plt.subplots(len(_rows), _ncol, figsize=(5 * _ncol, 5.2 * len(_rows)),
+                             sharey=True, squeeze=False)
+    pairs, row_lefts = [], []
+    for _ri, _r in enumerate(_rows):
+        row_lefts.append(_axg[_ri][0])
+        for _ci in range(_ncol):
+            _ax = _axg[_ri][_ci]
+            (pairs.append((_ax, _r[_ci])) if _ci < len(_r) else _ax.axis("off"))
     mesh = None
-    for ax, (short, rows) in zip(axes, loaded):
+    for ax, (short, rows) in pairs:
         agg = defaultdict(list)
         for r in rows:
             if keep_fn(r):
@@ -156,10 +166,10 @@ def _render(loaded, value_fn, keep_fn, title, cb_label, fname, bw,
         ax.set_xlabel("gather probability p")
         ax.set_xlim(P_LO - 0.03, P_HI + 0.03)
         ax.set_ylim(n_lo - nstep / 2, n_hi + nstep / 2)
-    axes[0].set_ylabel("target wood N")
-    axes[0].legend(loc="upper right", fontsize=7, framealpha=0.9)
+    for _lax in row_lefts: _lax.set_ylabel("target wood N")
+    pairs[0][0].legend(loc="upper right", fontsize=7, framealpha=0.9)
     fig.suptitle(title, y=1.02, fontsize=13)
-    cb = fig.colorbar(mesh, ax=axes, fraction=0.025, pad=0.02)
+    cb = fig.colorbar(mesh, ax=_axg, fraction=0.025, pad=0.02)
     cb.set_label(cb_label)
     if cb_ticks is not None:
         cb.set_ticks(cb_ticks)

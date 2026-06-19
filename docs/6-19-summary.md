@@ -115,64 +115,84 @@ for *both* models. SE shrank ~1.7–1.9× (≈√reps), as expected.
 
 ---
 
-# Open-source extension: qwen2.5-7B (both worlds, 6-19)
+# Open-source extension: qwen2.5 ladder (1.5B / 3B / 7B), both worlds (6-19)
 
-Separate thread: extending the capability axis **below Haiku** with open-weight models.
-First rung is **qwen2.5:7b**, served locally via Ollama on a rented **Lambda A10** (24 GB),
-driven over the existing `ollama` provider in `lomekwi/raw_chat.py`. Region sweeps match the
-modern configs so qwen drops straight into the cross-model panels.
+Separate thread: extending the capability axis **below Haiku** with an open-weight
+**Qwen2.5 ladder** (1.5B, 3B, 7B), served locally via Ollama on a rented **Lambda A10**
+(24 GB), driven over the existing `ollama` provider in `lomekwi/raw_chat.py`. Region sweeps
+match the modern configs, so the three rungs drop straight into the cross-model panels to the
+left of Haiku (size increases rightward). The full box run (3 rungs × both worlds, plus Opus
+WoodWorld) finished overnight; everything is pulled and panels rebuilt.
 
 ## TL;DR
 
-1. **qwen-7B is a clean "weak-model floor."** It gathers and even builds at mid rates, but
-   converts that into solves far worse than any Claude tier — and the two worlds disagree on
-   *how* it fails.
-2. **ToolWorld: qwen solve = 0.00 and E_natural = 0.00.** It builds the machine ~34× (R=0.35,
-   ~Opus-level recognition) but **never once turns a build into a solve**, and solves nothing
-   overall at N≤20.
-3. **WoodWorld: qwen solve = 0.30** (vs Haiku 0.77 / Sonnet 0.80) — much weaker, but *not*
-   zero. It gathers ingredients fully (C≈0.98) and recognizes/builds at 0.51 (between Haiku
-   and Sonnet). The grind escape-hatch is what keeps WoodWorld solve > 0 where ToolWorld is 0.
-4. **Infra:** the panel scripts are now model-count-agnostic; adding more rungs is a re-run.
+1. **The qwen ladder is the "weak-model floor," and it's monotone within-family** — across
+   1.5B→3B→7B every metric rises with size, sitting at or below the Claude tiers.
+2. **ToolWorld: the whole qwen ladder solves ≈0** (1.5B 0.00, 3B 0.01, 7B 0.00) vs Haiku 0.21 /
+   Sonnet 0.33 / Opus 0.29. Recognition climbs with size (0.00→0.04→0.35) but never converts —
+   **E_natural = 0** for all three (0/4 and 0/34 built-and-solved). The sub-Haiku regime can't
+   exploit a built machine at N≤20.
+3. **ToolWorld recognition is non-monotone over the full axis:** rises across qwen
+   (0.00→0.04→0.35), **peaks at Haiku 0.87**, then *falls* across Claude tiers (Sonnet 0.64 →
+   Opus 0.36) — the known recognition inversion, now with the rising left tail the qwen rungs add.
+4. **WoodWorld: solve rises monotonically with size** (0.00→0.09→0.30→0.77→0.80→0.84) — the grind
+   escape-hatch keeps it >0 where ToolWorld is flat-0. Recognition broadly rises too (qwen-7B 0.51
+   edges *above* Haiku's 0.31 dip; Sonnet 0.63 < Opus 0.79) — the mirror of ToolWorld's inversion.
+5. **Infra:** panel scripts are model-count-agnostic and now lay **qwen on a top row, Claude on
+   a bottom row** (2×3 here); the ladder is just more dirs in size order. WoodWorld gained a
+   natural-efficiency panel (P(solved | built axe)) to match ToolWorld.
 
 ## Results
 
-**ToolWorld** — region sweep, T∈[2,10] × N≤20, 1 rep, `runs/qwen2.5:7b_region_sweep_p180_r1_Nle20_20260618_231413` (180 eps).
-Claude legs are the **1-rep** region runs (the only set with all three models — Opus has no
-multi-rep run), so these match `figs/toolworld/` 1-rep headlines, not `3rep_naturalE/`.
+**ToolWorld** — region sweep, T∈[2,10] × N≤20, 1 rep, 180 eps each
+(`runs/qwen2.5:{1.5b,3b,7b}_region_sweep_p180_r1_Nle20_*`). Claude legs are the **1-rep**
+region runs (the only set with all three Claude models — Opus has no multi-rep run), so these
+match `figs/toolworld/` 1-rep headlines, not `3rep_naturalE/`.
 
-| factor | **qwen-7B** | Haiku | Sonnet | Opus |
-|---|---|---|---|---|
-| **R** = P(built \| held both) | 0.35 | 0.87 | 0.64 | 0.36 |
-| **C** = P(held both) (industry) | 0.54 | 0.52 | 0.63 | 0.68 |
-| **E_nat** = P(solved \| built) | **0.00** | 0.43 | 0.65 | 0.73 |
-| **solve** = P(solved) | **0.00** | 0.21 | 0.33 | 0.29 |
+| factor | qwen-1.5B | qwen-3B | qwen-7B | Haiku | Sonnet | Opus |
+|---|---|---|---|---|---|---|
+| **R** = P(built \| held both) | 0.00 | 0.04 | 0.35 | 0.87 | 0.64 | 0.36 |
+| **C** = P(held both) (industry) | 0.04 | 0.61 | 0.54 | 0.52 | 0.63 | 0.68 |
+| **E_nat** = P(solved \| built) | — | 0.00 | 0.00 | 0.43 | 0.65 | 0.73 |
+| **solve** = P(solved) | 0.00 | 0.01 | 0.00 | 0.21 | 0.33 | 0.29 |
 
-**WoodWorld** — `iso_recipe` / nohint / N10-90, 1 rep, `runs/qwen2.5:7b_woodworld_region_iso_recipe_mult1.2_r1_nohint_N10-90_20260618_235345` (81 eps). **3-model** (Haiku, Sonnet, qwen) — Opus was never run on `iso_recipe`.
+(qwen-1.5B held both ingredients in only 8/180 cells → E_nat undefined, 0 builds.)
 
-| factor | **qwen-7B** | Haiku | Sonnet |
-|---|---|---|---|
-| **R** = P(built \| held ingredients) | 0.51 | 0.31 | 0.63 |
-| **C** = P(held ingredients) (curiosity) | 0.98 | 1.00 | 0.98 |
-| **solve** = P(solved) | 0.30 | 0.77 | 0.80 |
+**WoodWorld** — `iso_recipe` / nohint / N10-90, 1 rep, 81 eps each; Opus `iso_recipe` was run
+6-19 (`runs/opus_woodworld_region_iso_recipe_mult1.2_r1_nohint_N10-90_20260619_034109`, 81/81).
+
+| factor | qwen-1.5B | qwen-3B | qwen-7B | Haiku | Sonnet | Opus |
+|---|---|---|---|---|---|---|
+| **R** = P(built \| held ingredients) | 0.02 | 0.23 | 0.51 | 0.31 | 0.63 | 0.79 |
+| **C** = P(held ingredients) (curiosity) | 0.72 | 0.80 | 0.98 | 1.00 | 0.98 | 1.00 |
+| **E** = P(solved \| built axe) (natural) | 0.00 | 0.07 | 0.35 | 0.87 | 0.96 | 0.98 |
+| **solve** = P(solved) | 0.00 | 0.09 | 0.30 | 0.77 | 0.80 | 0.84 |
+
+**WoodWorld R broadly rises with capability** (qwen 0.02→0.23→0.51, Haiku 0.31 dips, Sonnet
+0.63 < Opus 0.79) — the mirror of ToolWorld's recognition *inversion*; solve rises
+monotonically across the entire ladder. **Natural efficiency E = P(solved | built axe) also
+rises monotonically** (0.00→0.07→0.35→0.87→0.96→0.98) — and unlike ToolWorld, where qwen's E
+stayed 0 even at 7B, here qwen-7B exploits a built axe ~35% of the time (the grind-friendlier
+world: gathering progress carries the build through).
 
 ## Caveats / open
 
-- **Only the 7B rung so far.** 3B and 1.5B are still running on the box (tmux `sweep`,
-  7B→3B→1.5B, ToolWorld then WoodWorld each); they slot in as additional panels via the same
-  commands once pulled.
-- **WoodWorld has no Opus** on `iso_recipe` (an ~$25–35 / ~1–2 h Anthropic-API run if wanted).
-- ToolWorld qwen `solve`/`efficiency_natural` panels are **all-zero surfaces** — the real
-  result, not a render bug.
+- **Opus WoodWorld** completed **81/81** (cost-capped at $40 but reached full coverage); it ran
+  far faster than estimated (~15–20 min at conc-12 via the API, not 1–2 h).
+- ToolWorld qwen `solve` / `efficiency_natural` panels are **near/all-zero surfaces** — the real
+  result, not a render bug (the whole sub-Haiku ladder fails to exploit at N≤20).
 - Panels are at **1 rep/cell** (qwen and the matched Claude legs); no multi-rep precision pass.
+- ToolWorld Claude legs use mixed sampling density (Haiku p100, Sonnet/Opus p200, qwen p180) —
+  all pooled by the same KDE, fine for the surface but not identical coverage.
 
 ## Artifacts
 
 | kind | path |
 |---|---|
-| qwen ToolWorld region | `runs/qwen2.5:7b_region_sweep_p180_r1_Nle20_20260618_231413/` (180 eps) |
-| qwen WoodWorld region | `runs/qwen2.5:7b_woodworld_region_iso_recipe_mult1.2_r1_nohint_N10-90_20260618_235345/` (81 eps) |
-| ToolWorld qwen panels (order: qwen→Haiku→Sonnet→Opus) | `figs/toolworld/qwen/fig_{recognition,efficiency_natural,industry,solve}_panels_Nle20.*` |
-| WoodWorld qwen panels (order: qwen→Haiku→Sonnet) | `figs/woodworld/qwen/fig_woodworld_{recognition,curiosity,solve}_*_nohint_N10-90.*` |
+| qwen ToolWorld regions (1.5B/3B/7B) | `runs/qwen2.5:{1.5b,3b,7b}_region_sweep_p180_r1_Nle20_*/` (180 eps each) |
+| qwen WoodWorld regions (1.5B/3B/7B) | `runs/qwen2.5:{1.5b,3b,7b}_woodworld_region_iso_recipe_mult1.2_r1_nohint_N10-90_*/` (81 eps each) |
+| Opus WoodWorld region | `runs/opus_woodworld_region_iso_recipe_mult1.2_r1_nohint_N10-90_20260619_034109/` (81 eps) |
+| ToolWorld panels (order: 1.5B→3B→7B→Haiku→Sonnet→Opus) | `figs/toolworld/qwen/fig_{recognition,efficiency_natural,industry,solve}_panels_Nle20.*` |
+| WoodWorld panels (same order; 2 rows) | `figs/woodworld/qwen/fig_woodworld_{recognition,curiosity,efficiency,solve}_qwen2.5-1.5b_qwen2.5-3b_qwen2.5-7b_haiku_sonnet_opus_nohint_N10-90.*` |
 | panel scripts made variadic + non-claude labels | `scripts/plot_{recognition,efficiency_natural,held_both,solve}_panels.py`, `scripts/plot_woodworld_panels.py` |
 | local serving routing | `lomekwi/raw_chat.py` (`gemma`→google added; `ollama` path); `scripts/sweep_config.py` (`OSS_MODELS`) |

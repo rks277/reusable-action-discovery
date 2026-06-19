@@ -99,6 +99,18 @@ OSS_MODELS = [
     ("ollama", "qwen2.5:7b"),
 ]
 
+# Open-weight Gemma 4 ladder, also via Ollama on the box -- a SECOND family
+# spanning the same below-Haiku range, so we can ask whether the build-vs-grind
+# disposition tracks parameter count or is family-specific. Effective params:
+# e2b ~2.3B < e4b ~4.5B < 12b. NB e2b/e4b are the edge (3n-lineage) architecture
+# while 12b is dense -- a clean effective-param ladder, not a single-architecture
+# scaling curve. The ":" in each tag routes them to the ollama backend.
+GEMMA_MODELS = [
+    ("ollama", "gemma4:e2b"),
+    ("ollama", "gemma4:e4b"),
+    ("ollama", "gemma4:12b"),
+]
+
 # Per-provider in-flight episode cap (bounds rate-limit / token bursts). A
 # single shared dict is fine -- each sweep only indexes the providers it runs.
 CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2}

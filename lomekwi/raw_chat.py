@@ -27,10 +27,13 @@ def _provider_for(model: str) -> str:
         return "anthropic"
     if m.startswith("gpt") or m.startswith("o1") or m.startswith("o3"):
         return "openai"
-    if m.startswith("gemini") or m.startswith("gemma"):
-        return "google"
+    # Ollama tags always carry a ":" (e.g. "gemma4:e2b", "qwen2.5:7b"); check this
+    # BEFORE the gemma/gemini branch so local gemma weights route to ollama, not the
+    # Google API (whose Gemma names use dashes, no colon).
     if ":" in m or m.startswith("qwen") or m.startswith("llama"):
         return "ollama"
+    if m.startswith("gemini") or m.startswith("gemma"):
+        return "google"
     raise ValueError(f"cannot route model {model!r}")
 
 

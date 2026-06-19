@@ -101,9 +101,20 @@ def main():
     bnd = [next((n for n in range(1, args.n_hi + 1)
                  if cfg._build_cost(n, int(round(t))) < cfg._grind_cost(n)), np.nan) for t in ts]
 
-    fig, axes = plt.subplots(1, len(loaded), figsize=(5 * len(loaded), 5.2), sharey=True)
+    _CLAUDE = ("haiku", "sonnet", "opus")
+    _rows = [r for r in ([e for e in loaded if e[0] not in _CLAUDE],
+                         [e for e in loaded if e[0] in _CLAUDE]) if r] or [loaded]
+    _ncol = max(len(r) for r in _rows)
+    fig, _axg = plt.subplots(len(_rows), _ncol, figsize=(5 * _ncol, 5.2 * len(_rows)),
+                             sharey=True, squeeze=False)
+    pairs, row_lefts = [], []
+    for _ri, _r in enumerate(_rows):
+        row_lefts.append(_axg[_ri][0])
+        for _ci in range(_ncol):
+            _ax = _axg[_ri][_ci]
+            (pairs.append((_ax, _r[_ci])) if _ci < len(_r) else _ax.axis("off"))
     mesh = None
-    for ax, (short, cells, head) in zip(axes, loaded):
+    for ax, (short, cells, head) in pairs:
         print(f"{short}: held-both cells {len(cells)} | recognition P(built|held)={head:.2f}")
         if args.smooth == "gaussian":
             gt, gn, Z = pooled(cells, args.n_hi, args.bandwidth)
@@ -129,13 +140,13 @@ def main():
                      f"(n={len(cells)})")
         ax.set_xlabel("byproduct types T")
         ax.set_xlim(T_LO - 0.5, T_HI + 0.5); ax.set_ylim(0.5, args.n_hi + 0.5)
-    axes[0].set_ylabel("number of doors N")
-    axes[0].legend(loc="upper right", fontsize=7, framealpha=0.9)
+    for _lax in row_lefts: _lax.set_ylabel("number of doors N")
+    pairs[0][0].legend(loc="upper right", fontsize=7, framealpha=0.9)
 
     smooth_note = "gaussian-pooled bw=%g" % args.bandwidth if args.smooth == "gaussian" else "raw 0/1"
     fig.suptitle(f"Recognition: P(built | held both recipe ingredients) — held-both cells only "
                  f"({smooth_note}; grind-calibrated budget; single-draw)", y=1.02, fontsize=12)
-    cb = fig.colorbar(mesh, ax=axes, fraction=0.025, pad=0.02)
+    cb = fig.colorbar(mesh, ax=_axg, fraction=0.025, pad=0.02)
     cb.set_label("P(built | held both)")
 
     out = Path(args.outdir) / f"fig_recognition_panels_Nle{args.n_hi}.png"
