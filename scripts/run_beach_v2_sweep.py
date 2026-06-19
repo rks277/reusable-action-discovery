@@ -64,8 +64,17 @@ REPS = 10                     # runs per cell; rep r => seed=r
 DURABILITY = None          # int to fix shovel digs, else durability_for(grid)
 TOTAL_ROCKS = None         # int to fix rock count, else total_rocks_for(grid)
 
+# Action budget (toolworld-style total-action cap, SEPARATE from shovel
+# durability which still caps digs). Leave BUDGET=None to derive per cell as
+# round(BUDGET_FRAC * area), floored at total_rocks + 2 so a thorough builder can
+# always inspect every rock + use map + dig without starving. 0.5*area sits just
+# above the worst-case build cost but well below the area, so it removes the
+# slack that budget=area gives without ever punishing an honest builder.
+BUDGET = None              # int to pin the budget, else round(BUDGET_FRAC * area)
+BUDGET_FRAC = 0.5          # derived budget = round(area * this), area = grid*grid
+
 HINT = True
-MAX_TURNS = 200            # generous; durability/grid are the real caps
+MAX_TURNS = 200            # generous; durability/budget are the real caps
 
 # per-provider in-flight episode cap (bounds rate-limit / token bursts).
 # ollama is local (one server) -> keep it small to avoid thrashing.
@@ -96,14 +105,18 @@ async def main():
                 if rocks < papers:        # can't place the P paper rocks -> infeasible
                     skipped.append((grid, papers, rocks))
                     continue
+                area = grid * grid
+                budget = (BUDGET if BUDGET is not None
+                          else max(round(BUDGET_FRAC * area), rocks + 2))
                 for rep in range(REPS):
-                    cells.append((prov, model, grid, papers, rocks, dur, rep))
+                    cells.append((prov, model, grid, papers, rocks, dur, budget, rep))
 
     print(f"Writing to {out_path}\n"
           f"Grid: {len(MODELS)} models x grid in {GRID_VALUES} x papers in "
           f"{PAPERS_VALUES} x {REPS} reps = {len(cells)} episodes "
           f"(durability={DURABILITY or 'f(grid)'}, "
-          f"total_rocks={TOTAL_ROCKS or 'f(grid)'})", flush=True)
+          f"total_rocks={TOTAL_ROCKS or 'f(grid)'}, "
+          f"budget={BUDGET or f'round({BUDGET_FRAC}*area)'})", flush=True)
     if skipped:
         uniq = sorted(set(skipped))
         print(f"  skipped {len(uniq)} infeasible (grid, papers) combo(s) "
@@ -113,17 +126,17 @@ async def main():
     sems = {p: asyncio.Semaphore(CONCURRENCY[p]) for p, _ in MODELS}
     lock = asyncio.Lock()
 
-    async def one(prov, model, grid, papers, rocks, dur, rep):
+    async def one(prov, model, grid, papers, rocks, dur, budget, rep):
         async with sems[prov]:
             t0 = time.time()
             cfg = {"model": model, "grid_size": grid, "seed": rep,
                    "papers_needed": papers, "total_rocks": rocks,
-                   "shovel_durability": dur, "hint": HINT}
+                   "shovel_durability": dur, "budget": budget, "hint": HINT}
             try:
                 result, trace = await run(
                     model, grid_size=grid, seed=rep, papers_needed=papers,
                     total_rocks=rocks, shovel_durability=dur, hint=HINT,
-                    max_turns=MAX_TURNS)
+                    max_turns=MAX_TURNS, budget=budget)
                 row = {
                     **cfg,
                     "treasure": result["treasure"],
