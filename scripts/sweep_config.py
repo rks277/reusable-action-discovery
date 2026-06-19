@@ -99,4 +99,4 @@ GEMMA_MODELS = [
 # Per-provider in-flight episode cap (bounds rate-limit / token bursts). A
 # single shared dict is fine -- each sweep only indexes the providers it runs.
 # ollama is local (one server) -> keep it small to avoid thrashing.
-CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2}
+CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 16}

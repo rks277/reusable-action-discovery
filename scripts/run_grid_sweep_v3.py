@@ -41,9 +41,8 @@ from lomekwi.raw_chat import _provider_for
 # the family tag to match `ollama list`, e.g. gemma3, if needed). Anthropic
 # models are unhooked for now -- kept commented to bring back later.
 MODELS = [
-    "gemma4:1b",
-    "gemma4:4b",
-    "gemma4:12b",
+    "qwen3.5:4b",
+    "qwen3.5:9b",
     # "claude-haiku-4-5-20251001",
     # "claude-sonnet-4-6",
     # "claude-opus-4-8",

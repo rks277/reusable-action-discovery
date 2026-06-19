@@ -139,8 +139,43 @@ class RawChat:
                 }
             return text
 
-        if prov in ("openai", "ollama"):
-            client = self._openai() if prov == "openai" else self._ollama()
+        if prov == "ollama":
+            # Ollama "thinking" models (e.g. qwen3.x) burn the whole token cap on
+            # hidden reasoning and return EMPTY visible content at these caps,
+            # which the toolworld parser sees as NO-OPs. The OpenAI-compat /v1
+            # endpoint ignores the `think` flag, so we hit the native /api/chat
+            # endpoint with think=False to suppress reasoning entirely and emit
+            # actions directly -- keeping these comparable to the no-extended-
+            # thinking Anthropic runs.
+            import asyncio
+            import json as _json
+            import urllib.request
+            base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+            api = base.rstrip("/")
+            if api.endswith("/v1"):
+                api = api[:-3]
+            url = api.rstrip("/") + "/api/chat"
+            body = _json.dumps({
+                "model": model, "think": False, "stream": False,
+                "messages": [{"role": "system", "content": system}] + messages,
+                "options": {"num_predict": max_tokens},
+            }).encode()
+
+            def _post():
+                req = urllib.request.Request(
+                    url, data=body, headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req) as r:
+                    return _json.load(r)
+
+            resp = await asyncio.to_thread(_post)
+            self._set_usage(
+                input_tokens=resp.get("prompt_eval_count", 0) or 0,
+                output_tokens=resp.get("eval_count", 0) or 0,
+            )
+            return (resp.get("message", {}).get("content") or "")
+
+        if prov == "openai":
+            client = self._openai()
             oai_msgs = [{"role": "system", "content": system}] + messages
             kwargs = dict(model=model, messages=oai_msgs)
             if reasoning:
