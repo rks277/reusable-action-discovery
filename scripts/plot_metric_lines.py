@@ -40,7 +40,7 @@ OSS_B = {
 CLAUDE_B = {"haiku": 40.0, "sonnet": 300.0, "opus": 2000.0}   # <-- estimates, editable
 # Proprietary frontier models also have no public size; key by the _norm() form
 # ("gpt-5.5" -> "gpt:5.5"). Pure guess, placed at the frontier near Opus.
-GPT_B = {"gpt:5.5": 1500.0}
+GPT_B = {"gpt:5.5": 1500.0, "gpt:5.4:mini": 100.0}  # "mini" -> guessed mid-tier
 ESTIMATED_B = {**CLAUDE_B, **GPT_B}                            # all size-guessed (shaded)
 PARAM_B = {**OSS_B, **ESTIMATED_B}
 
@@ -69,8 +69,10 @@ def _rows(run_dir: Path) -> tuple[str, list[dict]]:
     return short, rs
 
 
-def _ratio(num: int, den: int) -> float:
-    return num / den if den else float("nan")
+def _ratio(num: int, den: int) -> tuple[float, int]:
+    """Return (proportion, denominator n). n feeds the binomial standard error
+    sqrt(p(1-p)/n) used for error bars; denominators differ per metric."""
+    return (num / den if den else float("nan"), den)
 
 
 def metrics_toolworld(rows: list[dict]) -> dict:
@@ -126,7 +128,7 @@ def main():
         m = mfn(rows)
         pts.append((xmap[key], short, m))
         print(f"{short:14} (x={xmap[key]:>7.2f})  " +
-              "  ".join(f"{k}={m[k]:.2f}" for k in SERIES))
+              "  ".join(f"{k}={m[k][0]:.2f}(n={m[k][1]})" for k in SERIES))
     pts.sort(key=lambda x: x[0])
 
     def _disp(s: str) -> str:
@@ -136,7 +138,7 @@ def main():
         if k.startswith("gemma4:"):
             return "Gemma " + k.split(":", 1)[1]
         if k.startswith("gpt"):
-            return "GPT-" + k.split(":", 1)[1]
+            return "GPT-" + k.split(":", 1)[1].replace(":", "-")
         return s.capitalize()
 
     xs = [p for p, _, _ in pts]
@@ -148,9 +150,14 @@ def main():
 
     fig, ax = plt.subplots(figsize=(9, 5.6))
     for metric in SERIES:
-        ys = [m[metric] for _, _, m in pts]
-        ax.plot(xs, ys, marker=MARKERS[metric], color=COLORS[metric], lw=2,
-                ms=8, label=metric, markeredgecolor="black", markeredgewidth=0.6)
+        vals = [m[metric] for _, _, m in pts]
+        ys = [v for v, n in vals]
+        # binomial standard error sqrt(p(1-p)/n); nan where the metric is undefined
+        errs = [(v * (1 - v) / n) ** 0.5 if (n and v == v) else float("nan")
+                for v, n in vals]
+        ax.errorbar(xs, ys, yerr=errs, marker=MARKERS[metric], color=COLORS[metric],
+                    lw=2, ms=8, capsize=3, elinewidth=1.2, label=metric,
+                    markeredgecolor="black", markeredgewidth=0.6)
     if args.xaxis == "params":
         ax.set_xscale("log")
         ax.set_xlabel("model parameter size (billions, log scale)")
@@ -159,7 +166,7 @@ def main():
             ax.axvspan(min(est_xs) / 1.4, max(est_xs) * 1.4, color="0.85",
                        alpha=0.4, zorder=0, label="proprietary (sizes estimated)")
         title = (f"{args.world.capitalize()}: panel metrics vs. model parameter size\n"
-                 "(pooled headline per model; proprietary Claude/GPT sizes are rough estimates — see shaded band)")
+                 "(pooled headline ±1 binomial SE; proprietary Claude/GPT sizes are rough estimates — see shaded band)")
     else:
         ax.set_xlim(min(xs) - 6, max(xs) + 6)
         ax.set_xlabel("BFCL V4 Overall Accuracy, FC (%)  —  capability proxy")

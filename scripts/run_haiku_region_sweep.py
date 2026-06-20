@@ -109,6 +109,9 @@ def parse_args():
                    help="kill switch: once cumulative logged cost (USD) reaches this, "
                         "stop launching new episodes (in-flight ones finish).")
     p.add_argument("--smoke", action="store_true")
+    p.add_argument("--no-hint", action="store_true",
+                   help="disable the subtle byproduct-combine hint (overrides cfg.HINT) "
+                        "-- the apples-to-apples control vs the nohint gated WoodWorld.")
     p.add_argument("--reject-multi-action", action="store_true",
                    help="reject turns with >=2 actions and re-prompt for one action "
                         "(instead of silently executing only the first parseable line)")
@@ -122,13 +125,15 @@ async def main():
 
     model = args.model
     short = model.split("-")[1] if model.startswith("claude-") else model  # haiku/sonnet/opus
+    hint = cfg.HINT and not args.no_hint
 
     resume = os.environ.get("HAIKU_REGION_RESUME")
     if resume:
         out_dir = Path(resume)
     else:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        tag = "smoke" if smoke else f"p{args.n_points}_r{args.reps}_Nle{args.n_hi}"
+        htag = "" if hint else "nohint_"
+        tag = "smoke" if smoke else f"{htag}p{args.n_points}_r{args.reps}_Nle{args.n_hi}"
         out_dir = Path("runs") / f"{short}_region_sweep_{tag}_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "episodes.jsonl"
@@ -141,7 +146,7 @@ async def main():
     # record the sampled design for reproducibility
     (out_dir / "points.json").write_text(json.dumps(
         {"seed": args.seed, "n_points": args.n_points, "reps": args.reps,
-         "t_range": [T_LO, T_HI], "n_range": [N_LO, args.n_hi],
+         "t_range": [T_LO, T_HI], "n_range": [N_LO, args.n_hi], "hint": hint,
          "points": [list(p) for p in points],
          "budgets": {str(n): cfg.budget_for(n) for _, n in points}}, indent=2))
 
@@ -185,12 +190,12 @@ async def main():
             t0 = time.time()
             try:
                 result, trace = await run(model, n=n, n_types=t, relabel_seed=rep,
-                                          drop_seed=rep, hint=cfg.HINT,
+                                          drop_seed=rep, hint=hint,
                                           max_turns=max_turns_for(budget),
                                           budget=budget, stop_on_build=False,
                                           no_progress_window=NO_PROGRESS_WINDOW,
                                           reject_multi_action=args.reject_multi_action)
-                row = {"model": model, "n": n, "n_types": t, "hint": cfg.HINT,
+                row = {"model": model, "n": n, "n_types": t, "hint": hint,
                        "budget": budget, "relabel_seed": rep, "drop_seed": rep,
                        "labels": result["labels"],
                        "actions": [x["action"] for x in trace],

@@ -30,7 +30,7 @@ def _provider_for(model: str) -> str:
     # Ollama tags always carry a ":" (e.g. "gemma4:e2b", "qwen2.5:7b"); check this
     # BEFORE the gemma/gemini branch so local gemma weights route to ollama, not the
     # Google API (whose Gemma names use dashes, no colon).
-    if ":" in m or m.startswith("qwen") or m.startswith("llama"):
+    if ":" in m or m.startswith("qwen") or m.startswith("llama") or m.startswith("glm"):
         return "ollama"
     if m.startswith("gemini") or m.startswith("gemma"):
         return "google"
