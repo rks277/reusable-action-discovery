@@ -52,10 +52,27 @@ T_RANGE = range(2, 11)                 # T = 2..10 inclusive (T<2 has no recipe 
 SAMPLE_N = 100                         # random points over the grid
 SAMPLE_SEED = 20260618                 # fixes WHICH cells are sampled
 
+# --dense mode: a small DENSE grid run with multiple reps per cell (each rep gets a
+# distinct relabel/drop seed -> an independent world). Used for focused, statistically
+# meaningful cells rather than the 1-ep-per-cell random scatter.
+DENSE_N = [9, 10, 11]
+DENSE_T = [2, 3, 4]
+REPS = 5
+# Auto-fail an episode that makes NO state progress (no new key/type/door/machine)
+# for this many executed actions -- caps runaway "spinning" episodes.
+NO_PROGRESS_WINDOW = 20
+
 
 def sampled_points() -> list[tuple[int, int]]:
     grid = [(n, t) for n in N_RANGE for t in T_RANGE]
     return random.Random(SAMPLE_SEED).sample(grid, SAMPLE_N)
+
+
+def dense_points() -> list[tuple[int, int]]:
+    """DENSE_N x DENSE_T, each cell repeated REPS times. Reps are consecutive so
+    each gets a distinct rep index (= relabel_seed = drop_seed) -> distinct world."""
+    cells = [(n, t) for n in DENSE_N for t in DENSE_T]
+    return [c for c in cells for _ in range(REPS)]
 
 
 def max_turns_for(n: int, budget: int) -> int:
@@ -78,6 +95,12 @@ def estimate_usd(points: list[tuple[int, int]]) -> tuple[float, float]:
     return 2.0 * base, 3.0 * base
 
 
+# Grounded per-episode v3 cost (actual 100-ep runs, 2026-06-18): Haiku ~$0.12,
+# Sonnet ~$0.12, Opus ~$0.59. NOT a reprice of a cheaper model -- Opus emits far
+# more output tokens, so it is ~5x, not ~1.8x. See memory haiku-sweep-cost-model.
+PER_EP_USD = {"haiku": 0.12, "sonnet": 0.12, "opus": 0.59}
+
+
 def model_tag(model: str) -> str:
     if "sonnet" in model: return "sonnet"
     if "haiku" in model: return "haiku"
@@ -88,16 +111,11 @@ def model_tag(model: str) -> str:
 
 def print_cost_estimate(model: str, points: list[tuple[int, int]]):
     tag = model_tag(model)
-    if tag == "haiku":
-        lo, hi = estimate_usd(points)
-        print(f"  ESTIMATED COST (Haiku 4.5): ~${lo:.0f}-${hi:.0f} USD", flush=True)
-    elif tag == "sonnet":
-        print(f"  ESTIMATED COST (Sonnet 4.6): ~$15-35 USD "
-              f"(caching-dependent; could brush a $30 cap)", flush=True)
-    elif tag == "opus":
-        print(f"  ESTIMATED COST (Opus 4.8): ~$20-24 USD "
-              f"(~1.7-1.9x the Sonnet run; under the $30 cap with less headroom)",
-              flush=True)
+    if tag in PER_EP_USD:
+        est = PER_EP_USD[tag] * len(points)
+        names = {"haiku": "Haiku 4.5", "sonnet": "Sonnet 4.6", "opus": "Opus 4.8"}
+        print(f"  ESTIMATED COST ({names[tag]}): ~${est:.1f} USD "
+              f"({len(points)} eps x ${PER_EP_USD[tag]:.2f}/ep, grounded)", flush=True)
     elif _provider_for(model) == "ollama":
         print(f"  COST: local (ollama) -- no API spend", flush=True)
 
@@ -137,7 +155,7 @@ async def run_one_model(model: str, points: list[tuple[int, int]],
                 result, trace = await run(
                     model, n=n, n_types=t, relabel_seed=i, drop_seed=i,
                     hint=cfg.HINT, max_turns=max_turns_for(n, budget),
-                    budget=budget)
+                    budget=budget, no_progress_window=NO_PROGRESS_WINDOW)
                 row = {"model": model, "n": n, "n_types": t, "hint": cfg.HINT,
                        "variant": "v3_pickup", "budget": budget,
                        "relabel_seed": i, "drop_seed": i,
@@ -181,12 +199,16 @@ async def main():
         if len(roster) != 1:
             raise SystemExit("--resume requires a single model (pass --model too)")
 
-    points = sampled_points()
+    dense = "--dense" in sys.argv
+    points = dense_points() if dense else sampled_points()
     ns = [n for n, _ in points]
-    print(f"v3 grid sweep: {len(points)} points, models={roster}", flush=True)
+    mode = (f"DENSE {DENSE_N}x{DENSE_T}, {REPS} reps/cell" if dense
+            else f"random scatter, {SAMPLE_N} cells")
+    print(f"v3 grid sweep [{mode}]: {len(points)} points, models={roster}", flush=True)
     print(f"  N in [{min(ns)},{max(ns)}] (mean {sum(ns)/len(ns):.1f}), "
-          f"T in [{min(T_RANGE)},{max(T_RANGE)}]; budget=budget_for(N) "
-          f"(pickup is free)", flush=True)
+          f"T in [{min(t for _, t in points)},{max(t for _, t in points)}]; "
+          f"budget=budget_for(N) (pickup is free); "
+          f"no_progress_window={NO_PROGRESS_WINDOW}", flush=True)
     for model in roster:
         print_cost_estimate(model, points)
 
