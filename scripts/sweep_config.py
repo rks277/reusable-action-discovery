@@ -99,4 +99,10 @@ GEMMA_MODELS = [
 # Per-provider in-flight episode cap (bounds rate-limit / token bursts). A
 # single shared dict is fine -- each sweep only indexes the providers it runs.
 # ollama is local (one server) -> keep it small to avoid thrashing.
-CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 16}
+# vllm: server-side continuous batching handles many in-flight requests well, so
+# the client can push harder than ollama; tune per GPU/model (benchmark first).
+# VLLM_CONCURRENCY env overrides the vllm entry (e.g. lower it for the 72B phase).
+CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 16, "vllm": 32}
+import os as _os
+if _os.environ.get("VLLM_CONCURRENCY"):
+    CONCURRENCY["vllm"] = int(_os.environ["VLLM_CONCURRENCY"])

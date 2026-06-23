@@ -29,6 +29,12 @@ def _provider_for(model: str) -> str:
         return "openai"
     if m.startswith("gemini"):
         return "google"
+    # When VLLM_BASE_URL is set we are serving open models via a local vLLM
+    # OpenAI-compatible server (bf16/FP8/TP), so route qwen/llama/HF-repo names
+    # there instead of Ollama. Unset -> fall back to the Ollama path.
+    if os.environ.get("VLLM_BASE_URL") and (
+            m.startswith("qwen") or m.startswith("llama") or "/" in m):
+        return "vllm"
     if ":" in m or m.startswith("qwen") or m.startswith("llama"):
         return "ollama"
     raise ValueError(f"cannot route model {model!r}")
@@ -71,6 +77,15 @@ class RawChat:
                 base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
             )
         return self._clients["ollama"]
+
+    def _vllm(self):
+        if "vllm" not in self._clients:
+            from openai import AsyncOpenAI
+            self._clients["vllm"] = AsyncOpenAI(
+                api_key=os.environ.get("VLLM_API_KEY", "vllm"),
+                base_url=os.environ.get("VLLM_BASE_URL", "http://127.0.0.1:8001/v1"),
+            )
+        return self._clients["vllm"]
 
     def _google(self):
         if "google" not in self._clients:
@@ -174,18 +189,41 @@ class RawChat:
             )
             return (resp.get("message", {}).get("content") or "")
 
-        if prov == "openai":
-            client = self._openai()
+        if prov in ("openai", "vllm"):
+            # vLLM exposes the OpenAI chat-completions API; same call path, just a
+            # different client/base_url. No ollama-style `think` flag here.
+            client = self._openai() if prov == "openai" else self._vllm()
             oai_msgs = [{"role": "system", "content": system}] + messages
             kwargs = dict(model=model, messages=oai_msgs)
             if reasoning:
-                kwargs["reasoning_effort"] = "low"
-            # GPT-5 family uses max_completion_tokens; be tolerant.
-            try:
-                resp = await client.chat.completions.create(max_completion_tokens=max_tokens, **kwargs)
-            except TypeError:
-                kwargs.pop("reasoning_effort", None)
-                resp = await client.chat.completions.create(max_tokens=max_tokens, **kwargs)
+                effort = os.environ.get("OPENAI_REASONING_EFFORT", "low")
+                kwargs["reasoning_effort"] = effort
+
+            async def _create():
+                # GPT-5 family uses max_completion_tokens; be tolerant.
+                try:
+                    return await client.chat.completions.create(
+                        max_completion_tokens=max_tokens, **kwargs)
+                except TypeError:
+                    kwargs.pop("reasoning_effort", None)
+                    return await client.chat.completions.create(
+                        max_tokens=max_tokens, **kwargs)
+
+            if prov == "vllm":
+                # Local server can briefly be unreachable (restart/load). Retry a
+                # few times with backoff so a transient blip is not a lost episode.
+                import asyncio
+                attempts = int(os.environ.get("VLLM_RETRIES", "5"))
+                for a in range(attempts):
+                    try:
+                        resp = await _create()
+                        break
+                    except Exception:
+                        if a == attempts - 1:
+                            raise
+                        await asyncio.sleep(min(2 ** a, 30))
+            else:
+                resp = await _create()
             u = getattr(resp, "usage", None)
             ptd = getattr(u, "prompt_tokens_details", None)
             ctd = getattr(u, "completion_tokens_details", None)

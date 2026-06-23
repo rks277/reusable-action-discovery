@@ -57,7 +57,10 @@ SAMPLE_SEED = 20260618                 # fixes WHICH cells are sampled
 # meaningful cells rather than the 1-ep-per-cell random scatter.
 DENSE_N = [9, 10, 11]
 DENSE_T = [2, 3, 4]
-REPS = 5
+REPS = 20
+# Dense sweeps land in their own folder so all models (anthropic + qwen) sit
+# together; scatter sweeps stay at the runs/ root.
+DENSE_OUT_ROOT = Path("runs") / "grid_v3" / "dense"
 # Auto-fail an episode that makes NO state progress (no new key/type/door/machine)
 # for this many executed actions -- caps runaway "spinning" episodes.
 NO_PROGRESS_WINDOW = 20
@@ -68,11 +71,11 @@ def sampled_points() -> list[tuple[int, int]]:
     return random.Random(SAMPLE_SEED).sample(grid, SAMPLE_N)
 
 
-def dense_points() -> list[tuple[int, int]]:
-    """DENSE_N x DENSE_T, each cell repeated REPS times. Reps are consecutive so
+def dense_points(reps: int = REPS) -> list[tuple[int, int]]:
+    """DENSE_N x DENSE_T, each cell repeated `reps` times. Reps are consecutive so
     each gets a distinct rep index (= relabel_seed = drop_seed) -> distinct world."""
     cells = [(n, t) for n in DENSE_N for t in DENSE_T]
-    return [c for c in cells for _ in range(REPS)]
+    return [c for c in cells for _ in range(reps)]
 
 
 def max_turns_for(n: int, budget: int) -> int:
@@ -116,12 +119,12 @@ def print_cost_estimate(model: str, points: list[tuple[int, int]]):
         names = {"haiku": "Haiku 4.5", "sonnet": "Sonnet 4.6", "opus": "Opus 4.8"}
         print(f"  ESTIMATED COST ({names[tag]}): ~${est:.1f} USD "
               f"({len(points)} eps x ${PER_EP_USD[tag]:.2f}/ep, grounded)", flush=True)
-    elif _provider_for(model) == "ollama":
-        print(f"  COST: local (ollama) -- no API spend", flush=True)
+    elif _provider_for(model) in ("ollama", "vllm"):
+        print(f"  COST: local ({_provider_for(model)}) -- no API spend", flush=True)
 
 
 async def run_one_model(model: str, points: list[tuple[int, int]],
-                        resume_dir: Path | None):
+                        resume_dir: Path | None, out_root: Path = Path("runs")):
     """Run the sweep for a single model into its own (or a resumed) run dir."""
     tag = model_tag(model)
     concurrency = cfg.CONCURRENCY[_provider_for(model)]
@@ -129,14 +132,27 @@ async def run_one_model(model: str, points: list[tuple[int, int]],
     if resume_dir is not None:
         out_dir = resume_dir
         out_path = out_dir / "episodes.jsonl"
+        # Keep only SUCCESSFUL episodes (no "error" key); errored ones (e.g. from a
+        # server crash) are dropped so they get re-run. Rewrite the file de-duped by
+        # relabel_seed (last success wins) so resume never double-counts.
+        good: dict[int, str] = {}
+        n_err = 0
         for l in out_path.read_text().splitlines():
-            if l.strip():
-                done_idx.add(json.loads(l)["relabel_seed"])
-        print(f"\nResuming {out_path}: {len(done_idx)} done, "
+            if not l.strip():
+                continue
+            row = json.loads(l)
+            if row.get("error"):
+                n_err += 1
+                continue
+            good[row["relabel_seed"]] = l
+        out_path.write_text("\n".join(good[k] for k in sorted(good)) +
+                            ("\n" if good else ""))
+        done_idx = set(good)
+        print(f"\nResuming {out_path}: {len(done_idx)} done (dropped {n_err} errored), "
               f"{len(points) - len(done_idx)} remaining (model={model})", flush=True)
     else:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        out_dir = Path("runs") / f"grid_sweep_v3_{tag}_{ts}"
+        out_dir = out_root / f"grid_sweep_v3_{tag}_{ts}"
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "episodes.jsonl"
         out_path.write_text("")
@@ -200,9 +216,10 @@ async def main():
             raise SystemExit("--resume requires a single model (pass --model too)")
 
     dense = "--dense" in sys.argv
-    points = dense_points() if dense else sampled_points()
+    reps = int(sys.argv[sys.argv.index("--reps") + 1]) if "--reps" in sys.argv else REPS
+    points = dense_points(reps) if dense else sampled_points()
     ns = [n for n, _ in points]
-    mode = (f"DENSE {DENSE_N}x{DENSE_T}, {REPS} reps/cell" if dense
+    mode = (f"DENSE {DENSE_N}x{DENSE_T}, {reps} reps/cell" if dense
             else f"random scatter, {SAMPLE_N} cells")
     print(f"v3 grid sweep [{mode}]: {len(points)} points, models={roster}", flush=True)
     print(f"  N in [{min(ns)},{max(ns)}] (mean {sum(ns)/len(ns):.1f}), "
@@ -222,8 +239,14 @@ async def main():
     load_dotenv()
     # Models run sequentially -- ollama serves one model at a time, and per-model
     # run dirs keep results separable. Each row is deterministic in the rep index.
+    if "--out-root" in sys.argv:
+        out_root = Path(sys.argv[sys.argv.index("--out-root") + 1])
+    else:
+        out_root = DENSE_OUT_ROOT if dense else Path("runs")
+    if out_root != Path("runs"):
+        out_root.mkdir(parents=True, exist_ok=True)
     for model in roster:
-        await run_one_model(model, points, resume_dir)
+        await run_one_model(model, points, resume_dir, out_root)
     print("\nAll models done.")
 
 
