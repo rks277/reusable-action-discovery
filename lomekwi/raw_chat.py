@@ -31,7 +31,10 @@ def _provider_for(model: str) -> str:
     # BEFORE the gemma/gemini branch so local gemma weights route to ollama, not the
     # Google API (whose Gemma names use dashes, no colon).
     if ":" in m or m.startswith("qwen") or m.startswith("llama") or m.startswith("glm"):
-        return "ollama"
+        # A local open-weights model. Route to vLLM (OpenAI-compatible, batched) when
+        # LOCAL_BACKEND=vllm, else Ollama. vLLM rejects ollama's reasoning_effort arg,
+        # so it gets its own branch below.
+        return "vllm" if os.environ.get("LOCAL_BACKEND", "").lower() == "vllm" else "ollama"
     if m.startswith("gemini") or m.startswith("gemma"):
         return "google"
     raise ValueError(f"cannot route model {model!r}")
@@ -74,6 +77,15 @@ class RawChat:
                 base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
             )
         return self._clients["ollama"]
+
+    def _vllm(self):
+        if "vllm" not in self._clients:
+            from openai import AsyncOpenAI
+            self._clients["vllm"] = AsyncOpenAI(
+                api_key=os.environ.get("VLLM_API_KEY", "EMPTY"),
+                base_url=os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1"),
+            )
+        return self._clients["vllm"]
 
     def _google(self):
         if "google" not in self._clients:
@@ -142,8 +154,9 @@ class RawChat:
                 }
             return text
 
-        if prov in ("openai", "ollama"):
-            client = self._openai() if prov == "openai" else self._ollama()
+        if prov in ("openai", "ollama", "vllm"):
+            client = {"openai": self._openai, "ollama": self._ollama,
+                      "vllm": self._vllm}[prov]()
             oai_msgs = [{"role": "system", "content": system}] + messages
             kwargs = dict(model=model, messages=oai_msgs)
             if prov == "ollama":
@@ -151,7 +164,8 @@ class RawChat:
                 # trace that overruns the token cap -> truncated mid-thought ->
                 # empty `content` (counted as a noop) and ~25-min episodes. Turn it
                 # off for parity with the no-extended-thinking Anthropic baseline;
-                # harmless for non-thinking local models (qwen2.5).
+                # harmless for non-thinking local models (qwen2.5). vLLM does NOT
+                # accept this arg (400, not TypeError), so its branch omits it.
                 kwargs["reasoning_effort"] = "none"
             elif reasoning:
                 kwargs["reasoning_effort"] = "low"

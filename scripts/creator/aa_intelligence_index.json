@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "source": "Artificial Analysis Intelligence Index v4.1 (artificialanalysis.ai), scraped 2026-06-22",
+    "index_version": "v4.1",
+    "index_components": "GDPval-AA v2, tau3-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience, AA-LCR",
+    "caveats": [
+      "AA recalibrates the index between versions; v4.1 used throughout for consistency, but cross-version comparisons elsewhere (e.g. Qwen2.5-72B cited as 16 under v4.0) differ.",
+      "Proprietary entries are AA's reported effort tier (high/xhigh), NOT necessarily the default-effort setting our CREATOR runs used.",
+      "Qwen2.5 3B/7B/14B are NOT tracked by AA (404). Only 72B has an AA page. Fallback proxy = Qwen2.5 GPQA Diamond from the tech report (arxiv 2412.15115); 7B=33.8 known, others need the PDF table.",
+      "Gemini 2.5 Flash / Flash-Lite values are AA's non-reasoning variant."
+    ]
+  },
+  "models": {
+    "Qwen2.5-3B":            {"aa_index": null, "gpqa_diamond": 30.3, "mmlu_pro": 43.7, "note": "not on AA; tech-report Table 6; floor cluster (<=10 on AA scale)"},
+    "Qwen2.5-7B":            {"aa_index": null, "gpqa_diamond": 36.4, "mmlu_pro": 56.3, "note": "not on AA; tech-report Table 6; floor cluster (<=10 on AA scale)"},
+    "Qwen2.5-14B":           {"aa_index": null, "gpqa_diamond": 45.5, "mmlu_pro": 63.7, "note": "not on AA; tech-report Table 6; floor cluster (<=10 on AA scale)"},
+    "Qwen2.5-72B":           {"aa_index": 10, "gpqa_diamond": 49.0, "mmlu_pro": 71.1, "tier": "non-reasoning"},
+    "Claude-4.5-Haiku":      {"aa_index": 30, "tier": "default"},
+    "Claude-Sonnet-4.6":     {"aa_index": 47, "tier": "max effort"},
+    "Claude-Opus-4.8":       {"aa_index": 56, "tier": "adaptive, max effort"},
+    "GPT-5":                 {"aa_index": 36, "tier": "high"},
+    "GPT-5-mini":            {"aa_index": 33, "tier": "high, estimated"},
+    "GPT-5.4-nano":          {"aa_index": 38, "tier": "xhigh"},
+    "GPT-5.4-mini":          {"aa_index": 40, "tier": "xhigh"},
+    "GPT-5.4":               {"aa_index": 51, "tier": "xhigh"},
+    "GPT-5.5":               {"aa_index": 53, "tier": "high"},
+    "Gemini-2.5-flash-lite": {"aa_index": 7,  "tier": "non-reasoning, estimated"},
+    "Gemini-2.5-flash":      {"aa_index": 14, "tier": "non-reasoning"},
+    "Gemini-2.5-pro":        {"aa_index": 27, "tier": "reasoning"}
+  }
+}

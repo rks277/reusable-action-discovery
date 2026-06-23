@@ -97,6 +97,31 @@ def make_batch(item: dict, N: int = 8, seed: int = 0):
     }
 
 
+_PY_FENCE = re.compile(r"```(?:python|py)\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
+_BARE_FENCE = re.compile(r"```\s*\n(.*?)```", re.DOTALL)
+_REAL_STMT = (ast.Assign, ast.AugAssign, ast.AnnAssign, ast.For, ast.While,
+              ast.FunctionDef, ast.Import, ast.ImportFrom, ast.If)
+
+
+def wrote_code(text: str) -> bool:
+    """True iff the reply contains a fenced block that parses as real Python — i.e.
+    the model chose to externalize its work as code at all (the project's
+    code-use disposition), regardless of whether it abstracted a reusable tool.
+    A fenced block with only a bare literal / number dump does not count."""
+    blocks = _PY_FENCE.findall(text or "") or _BARE_FENCE.findall(text or "")
+    for b in blocks:
+        try:
+            tree = ast.parse(b)
+        except SyntaxError:
+            continue
+        for n in ast.walk(tree):
+            if isinstance(n, _REAL_STMT):
+                return True
+            if isinstance(n, ast.Expr) and isinstance(n.value, ast.Call):
+                return True
+    return False
+
+
 _LOOP_NODES = (ast.For, ast.While, ast.AsyncFor,
                ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
 

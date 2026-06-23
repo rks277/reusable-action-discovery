@@ -15,7 +15,7 @@ import re
 import time
 
 from scripts.creator.creator_ablation import classify_asked, fmt_val
-from scripts.creator.creator_batch import reused
+from scripts.creator.creator_batch import reused, wrote_code
 from scripts.creator.creator_exec import _NUM, _to_float, correct_within_tol, extract_code
 
 T_ANNOUNCE = 400  # announced token budget (perceived scarcity; not hard-enforced)
@@ -23,7 +23,7 @@ MAX_TOKENS = 2000  # generous, so the announcement is purely psychological (no t
 
 SYS = (
     "You are given several word problems that share the same underlying structure. "
-    "Solve ALL of them and report each answer. Show your calculations as Python code. "
+    "Solve ALL of them and report each answer. "
     "End your reply with one line per problem, in order:\n"
     "ANSWER_1: <number>\nANSWER_2: <number>\n...(through the last problem)\n"
     f"You have a budget of about {T_ANNOUNCE} output tokens for your entire reply, so be "
@@ -77,7 +77,8 @@ async def run_batch(client, model: str, item: dict, idx: int, batch: dict,
 
     full = "\n\n".join(texts)
     code = extract_code(full)
-    built = reused(code)
+    built = wrote_code(full)        # recognition = chose to externalize work as Python
+    reused_tool = reused(code)      # secondary: did it abstract one reusable function
     ans = _parse_answers(full)
     n_correct = sum(1 for i in range(1, N + 1) if correct_within_tol(ans.get(i), golds[i - 1]))
 
@@ -88,6 +89,7 @@ async def run_batch(client, model: str, item: dict, idx: int, batch: dict,
         "withheld_name": batch["withheld_name"],
         "asked": asked,
         "built": built,
+        "reused_tool": reused_tool,
         "n_correct": n_correct,
         "all_correct": n_correct == N,
         "frac_correct": round(n_correct / N, 3),
