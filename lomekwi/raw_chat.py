@@ -18,7 +18,7 @@ def _is_reasoning(model: str) -> bool:
     the token budget before any visible text. They return empty at low caps."""
     m = model.lower()
     return (m.startswith("gpt-5") or m.startswith("o1") or m.startswith("o3")
-            or m.startswith("gemini-2.5"))
+            or m.startswith("gemini-2.5") or m.startswith("gemini-3"))
 
 
 def _provider_for(model: str) -> str:
@@ -30,7 +30,8 @@ def _provider_for(model: str) -> str:
     # Ollama tags always carry a ":" (e.g. "gemma4:e2b", "qwen2.5:7b"); check this
     # BEFORE the gemma/gemini branch so local gemma weights route to ollama, not the
     # Google API (whose Gemma names use dashes, no colon).
-    if ":" in m or m.startswith("qwen") or m.startswith("llama") or m.startswith("glm"):
+    if (":" in m or m.startswith("qwen") or m.startswith("llama") or m.startswith("glm")
+            or m.startswith("mistral") or m.startswith("mixtral")):
         # A local open-weights model. Route to vLLM (OpenAI-compatible, batched) when
         # LOCAL_BACKEND=vllm, else Ollama. vLLM rejects ollama's reasoning_effort arg,
         # so it gets its own branch below.
@@ -168,7 +169,8 @@ class RawChat:
                 # accept this arg (400, not TypeError), so its branch omits it.
                 kwargs["reasoning_effort"] = "none"
             elif reasoning:
-                kwargs["reasoning_effort"] = "low"
+                # default "low"; override per-run via OPENAI_REASONING_EFFORT (e.g. "minimal").
+                kwargs["reasoning_effort"] = os.environ.get("OPENAI_REASONING_EFFORT", "low")
             # GPT-5 family uses max_completion_tokens; be tolerant.
             try:
                 resp = await client.chat.completions.create(max_completion_tokens=max_tokens, **kwargs)
@@ -197,9 +199,12 @@ class RawChat:
                 contents.append(types.Content(role=role, parts=[types.Part(text=m["content"])]))
             cfg_kw = dict(system_instruction=system, max_output_tokens=max_tokens)
             if reasoning:
-                # cap thinking so visible output isn't starved (and cost is bounded)
+                # Gemini 3.x ignores small positive budgets (treats <min as advisory) but
+                # honors 0 = OFF (true no-thinking, matching the Anthropic baseline). Pro-tier
+                # models reject 0; fall back to a small positive budget for them.
+                budget = int(os.environ.get("GEMINI_THINKING_BUDGET", "512"))
                 try:
-                    cfg_kw["thinking_config"] = types.ThinkingConfig(thinking_budget=512)
+                    cfg_kw["thinking_config"] = types.ThinkingConfig(thinking_budget=budget)
                 except Exception:
                     pass
             cfg = types.GenerateContentConfig(**cfg_kw)

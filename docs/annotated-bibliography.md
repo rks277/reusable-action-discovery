@@ -48,6 +48,16 @@ measured — never disposition (`P(builds | could profit)`) isolated from abilit
   Consulted as the unconditional-compression case: `compress()` runs every loop and
   the model cannot opt out; measures % held-out tasks solved.
 
+- **WildToolBench — "Benchmarking LLM Tool-Use in the Wild"** (Yu et al.; ICLR
+  2026, `2604.06185`).
+  Consulted as the contrast case in the C·R·E overlay: its recognition is
+  **discriminative** (select-the-right-tool from a provided menu + abstain on
+  chitchat) and its curiosity is clarify-under-uncertainty (epistemic ask-user, not
+  exploration) — the opposite of ToolWorld's *generative* recognition. Its
+  efficiency axis (parallel / sequential / dependency-flow / arg-filling
+  orchestration) is the well-developed one. No model exceeds ~15% accuracy.
+  *Caveat: future-dated arXiv ID.*
+
 - **DreamCoder** (ACM DOI `10.1145/3453483.3454080`, PLDI 2021).
   Consulted as the symbolic wake-sleep abstraction baseline whose "spontaneity" is
   architectural (MDL objective), not an LLM choice — only loosely comparable.
@@ -63,18 +73,27 @@ measured — never disposition (`P(builds | could profit)`) isolated from abilit
   self-assessment), but disposition and ability are collapsed into one pipeline and
   only accuracy (GAIA) is reported.
 
-- **TroVE — Inducing Verifiable & Efficient Toolboxes** (`2410.20274`).
-  Consulted for the reuse-failure result: learned functions reused in just **3 of
-  3,201** test questions — an Efficiency-collapse finding.
+- **TroVE — Inducing Verifiable & Efficient Toolboxes** (Wang, Fried, Neubig;
+  ICML 2024, `2401.12869`).
+  The named tool-induction system: a forced toolbox-induction step, scored on
+  accuracy + library size.
 
-- **Compute-matched re-evaluation of tool-library gains** (`2507.22069`).
+- **"Library Learning Doesn't: The Curious Case of the Single-Use 'Library'"**
+  (Berlot-Attwell, Rudzicz, Si; MATH-AI Workshop @ NeurIPS 2024, `2410.20274`).
+  The actual source of the reuse-failure result we cited: learned functions reused
+  in just **3 of 3,201** test questions — an Efficiency-collapse finding. *(Earlier
+  drafts mislabeled this arXiv ID as TroVE itself; corrected here.)*
+
+- **"A Compute-Matched Re-Evaluation of TroVE on MATH"** (Sesterhenn,
+  Berlot-Attwell, Zenkner, Bartelt; `2507.22069`).
   Consulted as the source tracing claimed library-learning gains to
   self-correction / self-consistency, *not* reuse (library-sharing ablation
-  matched/exceeded baseline, Bonferroni p<0.05).
+  matched/exceeded baseline, Bonferroni p<0.05). arXiv-only.
 
-- **LEGO-Prover case study** (`2504.03048`).
+- **"LLM Library Learning Fails: A LEGO-Prover Case Study"** (Berlot-Attwell,
+  Rudzicz, Si; `2504.03048`).
   Consulted as corroboration of the reuse-failure cluster: LEGO-Prover reused
-  exactly one lemma, once.
+  exactly one lemma, once. arXiv-only.
 
 ## 2. UltraTool — the nearest-neighbor benchmark
 *Consulted as the strongest "someone already did this" objection, and to show it
@@ -178,11 +197,15 @@ capability — is unclaimed. See [6-16-summary.md](6-16-summary.md).*
 - **PHYRE — Bakhtin et al. 2019** (`1908.05656`).
   Physical-reasoning tool placement: place a body so a goal state emerges after
   simulation.
-- **Virtual Tools game — Allen et al. 2020** (`2312.10728`).
-  Choose one of several tools to place; heavy exploration emphasis.
-- **KinDER — 2026** (`2604.25788`).
-  25 procedurally-generated robot-reasoning envs, one explicitly tool use.
-  *Caveat: future-dated arXiv ID.*
+- **Virtual Tools game — Allen, Smith & Tenenbaum, PNAS 2020** (`1907.09620`).
+  Choose one of several tools to place; heavy exploration emphasis. *(Earlier drafts
+  pointed at `2312.10728`, which is a different paper — "Benchmarks for Physical
+  Reasoning AI", Melnik et al.; the intended source is the PNAS Virtual Tools
+  paper.)*
+- **KinDER: A Physical Reasoning Benchmark for Robot Learning and Planning — 2026**
+  (`2604.25788`).
+  Procedurally-generated robot-reasoning envs, one explicitly tool use.
+  *Caveat: future-dated arXiv ID, arXiv-only; author list unverified.*
 - **CRAFT** (`2309.17428`).
   Consulted in the tool-creation taxonomy: write/define a tool for a *stated*
   problem — closest LLM bucket, but the agent is told the task and that a tool
@@ -203,7 +226,11 @@ MetaTool**.
   on solid IDs.
 - The C·R·E and inverse-capability mappings are *interpretive overlays* — the source
   papers do not frame themselves in those terms.
-- MineDojo and NetHack arXiv IDs (`2206.08853`, `2006.13760`) are standard
-  references not present verbatim in our docs; verify before quoting.
+- `2603.09654` (contested context-vs-scale) did not cleanly match its described
+  framing on lookup — it appears to be a parametric-vs-contextual-knowledge
+  write-up; author/venue unverified, treat with caution.
 - UltraTool Table-2 figures come from verified *secondary* extraction — confirm
   against the published PDF before quoting in a paper.
+- Published venues and `.bib` keys are in [refs.bib](refs.bib); arXiv-only items
+  (Alita, the two reuse-failure follow-ups, GPT-4 report, MIRAGE-Bench, the
+  hallucination survey, AgentHallu, KinDER, `2603.09654`) have no journal entry.

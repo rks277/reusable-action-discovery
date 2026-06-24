@@ -76,3 +76,56 @@ To put Qwen on the model-size axis in the plotters, add entries to `scripts.plot
   native `<invoke>` fallback is Claude-specific and won't help Qwen. Check the probe transcripts.
 - **Concurrency:** 48 is a starting point; vLLM continuous batching can often take more. Raise until
   GPU util plateaus.
+
+---
+
+## Mistral-Large-2 123B (DENSE) — single 2×H100 box, FP8
+
+Goal: a genuine ~123B **dense** point (all params active) — the largest dense model that fits one
+2×H100 (160 GB). FP8 weights ≈ 123 GB; KV+overhead fits the remaining ~37 GB at low concurrency.
+
+**Box:** 1× node with **2×H100-80GB (NVLink)**, ~250 GB disk, CUDA 12.x.
+
+**Prereq — gated weights:** `mistralai/Mistral-Large-Instruct-2407` is **gated** on HF (Mistral
+Research License). Need an **HF token that has accepted the license** on the model page. Set
+`HF_TOKEN=...` on the box before serving. (Alt: `...-2411` is the updated Large-2; either works.)
+
+### 1. Setup (on box)
+```bash
+pip install -U "vllm==0.23.*"
+export HF_TOKEN=<token-with-mistral-large-2-access>
+export VLLM_USE_FLASHINFER_SAMPLER=0          # dodge ninja/nvcc JIT crash (as in Qwen runs)
+```
+
+### 2. Serve (FP8, TP=2)
+```bash
+python -m vllm.entrypoints.openai.api_server \
+  --model mistralai/Mistral-Large-Instruct-2407 \
+  --served-model-name mistral-large-2 \
+  --quantization fp8 --kv-cache-dtype fp8 \
+  --tensor-parallel-size 2 \
+  --max-model-len 16384 \
+  --gpu-memory-utilization 0.93 \
+  --port 8000
+```
+Weights ~123 GB / 160 GB → ~77% just for weights; `kv-cache-dtype fp8` + capped context keeps KV in
+budget. If it OOMs on load, drop `--max-model-len` to 12288 or `--gpu-memory-utilization` to 0.90.
+
+### 3. Tunnel (cloud SG blocks 8000)
+```bash
+ssh -N -L 18000:localhost:8000 ubuntu@<box-ip>
+```
+
+### 4. Run v5 (laptop)
+```bash
+set -a; . ./.env; set +a
+LOCAL_BACKEND=vllm VLLM_BASE_URL=http://localhost:18000/v1 VLLM_API_KEY=EMPTY \
+PYTHONPATH=. python -m scripts.creator.run_creator_eval_hard_sweep \
+  --models mistral-large-2 --n 20 --limit 400 \
+  --tool-policy costly --withhold --concurrency 6 \
+  --judge claude-haiku-4-5-20251001
+```
+`mistral-large-2` routes to vLLM (raw_chat `_provider_for` now matches `mistral*`); non-reasoning,
+so no `reasoning_effort` is sent. **Concurrency 6** to start (KV is tight on 2×H100) — raise if GPU
+util has headroom. Plots: it's already in `plot_creator_eval_metrics.SIZE_MAP`? No — add
+`("mistral-large", ("Mistral-Large-2", 123))` (dense → 123B is both total and active).

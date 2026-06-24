@@ -225,6 +225,47 @@ because it confidently *fills the gap itself*.
 
 ---
 
+## Measurement caveat — `max_tokens=4000` truncation (NEW)
+
+`max_tokens=4000` per call was sized for OUTPUT ("generous: N=100 needs ~100 answer lines"), is a
+*required* Anthropic API arg, and a runaway cap — it was never meant as a reasoning lever. But for
+OpenAI reasoning models the budget is **shared** by hidden reasoning + visible output, so heavy
+reasoning starves the 20-answer list. Episodes emitting <half their answers: **gpt-5-nano 25%,
+gpt-5 20%, gemini-3.5-flash 20%, gemini-2.5-pro 10%** (Claude ~0, thinking off).
+
+Crucially, **the model never sees `max_tokens`, so raising it cannot change behavior** — it only
+changes whether output is truncated. So this corrupts **Solve / Efficiency** (truncated answer
+lists score wrong), **NOT** the tool-use disposition. Recognition and Curiosity are essentially
+immune (decided early/short), except a minor OpenAI edge case: truncation *mid-reasoning* → empty
+visible output → no `EVALUATE` seen → small R undercount. ⇒ **gpt-5-nano's R=0.25 is largely real
+behavior; its low Solve is partly a truncation artifact.** Clean fix: bump reasoning models to
+8–16k and re-run (expect R/C ~unchanged, Solve/E rise). See [[creator-max-tokens-truncation]].
+
+---
+
+## gpt-5-nano — a default-framing recognition gap (NEW)
+
+gpt-5-nano posts the study's lowest recognition (R 0.25), but it's a *different* mechanism from
+the capable-overconfidence decline (Sonnet/Opus). Reading its reasoning via the OpenAI Responses-API
+**summaries** (`scripts/creator/diagnose_nano_reasoning.py`), contrasted against gpt-5.4-nano
+(R 0.76, same vendor/tier) on the same problems:
+
+- **gpt-5.4-nano** inserts a method-selection step — *"20 values… daunting… use Python… vectorize"* —
+  representing the task as a programmatic batch.
+- **gpt-5-nano** skips it and dives into row-by-row hand arithmetic — *"Row 1, total 14313, divides
+  to ≈4…"*, even hand-bracketing √2073.828 across 20 rows. Keyword tally: mentions tool/Python 0.44
+  vs 0.72; in hand-grind frame 0.60 vs 0.32.
+
+So gpt-5-nano rarely *considers and rejects* the executor — it **never frames the task as code**.
+It writes valid loops in the ~25–36% where it does use the tool → disposition, not inability. Since
+gpt-5.4-nano fixes it at the same size, this reads as a **gpt-5-nano post-training default**
+("answer directly / don't reach for tools" — sensible for a cheap nano) that misfires on adversarial
+deceptive-arithmetic batches. It is the recognition axis at its degenerate low end (confounded by
+low raw competence + the truncation artifact), which is why it's excluded from the cross-family
+decline figure. See [[creator-gpt5nano-frame-gap]].
+
+---
+
 ## Conclusion & open paths
 
 1. **A real executor restores recognition (v4)**; **a costed tool + gate + hard arithmetic

@@ -63,6 +63,10 @@ async def main():
     ap.add_argument("--limit", type=int, default=400)
     ap.add_argument("--tool-policy", default="free", choices=["free", "costly", "budget1"])
     ap.add_argument("--withhold", action="store_true", help="re-enable Curiosity gate (blank one shared input)")
+    ap.add_argument("--gap-visibility", default="hidden", choices=["hidden", "marked", "announced"],
+                    help="how perceptible the withheld input is (gate only): hidden=silently omitted "
+                         "(orig), marked=show '<VAR>=?' per row, announced=marked + prompt names the "
+                         "gap. Lifts weak-model Curiosity so Recognition is measurable at small sizes.")
     ap.add_argument("--concurrency", type=int, default=10,
                     help="parallel episodes; 10 for Anthropic, 32-64 for a vLLM box")
     ap.add_argument("--judge", default=None,
@@ -92,7 +96,8 @@ async def main():
             t0 = time.time()
             try:
                 row = await run_eval_tool(client, model, item, idx, batch, args.n,
-                                          tool_policy=args.tool_policy, judge_model=args.judge)
+                                          tool_policy=args.tool_policy, judge_model=args.judge,
+                                          gap_visibility=args.gap_visibility)
             except Exception as e:
                 row = {"model": model, "item_idx": idx, "N": args.n,
                        "error": f"{type(e).__name__}: {e}", "elapsed_s": round(time.time() - t0, 2)}

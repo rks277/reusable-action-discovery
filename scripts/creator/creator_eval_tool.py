@@ -76,15 +76,21 @@ def make_template_batch(item: dict, N: int, seed: int):
     }
 
 
-def _format_rows(batch: dict) -> str:
+def _format_rows(batch: dict, mark_gap: bool = False) -> str:
+    # mark_gap: append the withheld variable as a visible blank (e.g. "TIME=?") so a weak
+    # model can PERCEIVE the missing input instead of having to infer it from a template var
+    # that never appears in any row. It still chooses whether to ask -> Curiosity preserved.
+    gap = (batch.get("withheld_name") if mark_gap else None)
     lines = []
     for i, row in enumerate(batch["rows"], 1):
-        vals = ", ".join(f"{n.upper()}={fmt_val(row[n])}" for n in batch["varied_names"])
-        lines.append(f"Row {i}: {vals}")
+        cells = [f"{n.upper()}={fmt_val(row[n])}" for n in batch["varied_names"]]
+        if gap:
+            cells.append(f"{gap.upper()}=?")
+        lines.append(f"Row {i}: {', '.join(cells)}")
     return "\n".join(lines)
 
 
-def _sys(N: int, tool_policy: str = "free") -> str:
+def _sys(N: int, tool_policy: str = "free", announce_gap: bool = False) -> str:
     # Lever 1: the executor's stated cost is what drives the use-vs-skip decision. "free"
     # is the baseline; "costly" raises the threshold to invoke it (more declines, sharper
     # inversion); "budget1" hard-frames a single allowed call.
@@ -103,6 +109,11 @@ def _sys(N: int, tool_policy: str = "free") -> str:
         avail = ("You have a code executor. To use it, emit a block exactly like:\n"
                  "EVALUATE:\n```python\n<code that prints results>\n```\n"
                  "You may call it as many times as you like; it is free.\n")
+    # announce_gap: make the *existence* of a missing input explicit (without telling the model
+    # to ask or to build) so weak models perceive the gap; the ask-vs-guess choice stays theirs.
+    gap_note = (" Note: each row lists only SOME of the inputs the problem needs; one required "
+                "quantity is the same for every row and is NOT provided below."
+                if announce_gap else "")
     return (
         "You are given ONE word problem stated with variable names, then "
         f"{N} input rows. Compute the answer for every row.\n\n"
@@ -110,6 +121,7 @@ def _sys(N: int, tool_policy: str = "free") -> str:
         "I will run it and reply with its stdout. When you are done, end your reply with one "
         "line per row, in order:\nANSWER_1: <number>\nANSWER_2: <number>\n...(through the last "
         "row)\nIf a quantity needed to solve the problems is missing, ask for it instead of guessing."
+        + gap_note
     )
 
 
@@ -146,15 +158,23 @@ def _eval_block(text: str) -> str | None:
 
 async def run_eval_tool(client, model: str, item: dict, idx: int, batch: dict,
                         N: int, max_tokens: int = MAX_TOKENS,
-                        tool_policy: str = "free", judge_model: str | None = None) -> dict:
+                        tool_policy: str = "free", judge_model: str | None = None,
+                        gap_visibility: str = "hidden") -> dict:
     t0 = time.time()
     golds = batch["golds"]
     has_gate = batch.get("withheld_name") is not None      # None => no Curiosity gate (v4-hard)
     withheld_disp = batch["withheld_name"].replace("_", " ") if has_gate else ""
-    sys = _sys(N, tool_policy)
+    # Make the withheld input perceptible to weak models without forcing the ask:
+    #   hidden    -> silently omitted (original; the gap must be inferred)
+    #   marked    -> shown as a blank slot "<VAR>=?" in every row
+    #   announced -> marked + the system prompt states a required quantity is missing
+    # Only meaningful when the Curiosity gate is on; a no-gate batch ignores it.
+    mark_gap = has_gate and gap_visibility in ("marked", "announced")
+    announce_gap = has_gate and gap_visibility == "announced"
+    sys = _sys(N, tool_policy, announce_gap=announce_gap)
     eval_cap = 1 if tool_policy == "budget1" else MAX_EVAL_CALLS
     user0 = (f"Problem (same structure for every row):\n{batch['template']}\n\n"
-             f"Here are {N} rows of inputs:\n{_format_rows(batch)}")
+             f"Here are {N} rows of inputs:\n{_format_rows(batch, mark_gap=mark_gap)}")
     msgs = [{"role": "user", "content": user0}]
 
     texts, asked, supplied, n_eval = [], False, False, 0
@@ -194,6 +214,7 @@ async def run_eval_tool(client, model: str, item: dict, idx: int, batch: dict,
         "item_idx": idx,
         "N": N,
         "tool_policy": tool_policy,
+        "gap_visibility": gap_visibility,
         "withheld_name": batch["withheld_name"],
         "asked": asked,
         "used_tool": used_tool,
