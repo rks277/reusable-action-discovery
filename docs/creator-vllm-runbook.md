@@ -1,5 +1,25 @@
 # CREATOR v5 on Qwen via vLLM (H100 box) — runbook
 
+> **MCP CREATOR harness (tool-calling, `scripts/creator/mcp_creator/`)** — the rigorous
+> explore-then-test eval needs vLLM **function-calling** enabled. Serve Qwen with:
+> ```bash
+> vllm serve Qwen/Qwen2.5-7B-Instruct --host 0.0.0.0 --port 8000 \
+>   --gpu-memory-utilization 0.92 --max-model-len 32768 \
+>   --enable-auto-tool-choice --tool-call-parser hermes
+> ```
+> (`hermes` is the Qwen2.5 tool template; for Llama-3.x use `--tool-call-parser llama3_json`.)
+> Then locally: `pip install mcp` once, and run the real-MCP backend over the tunnel:
+> ```bash
+> LOCAL_BACKEND=vllm VLLM_BASE_URL=http://localhost:18000/v1 VLLM_API_KEY=EMPTY \
+> PYTHONPATH=. python -m scripts.creator.mcp_creator.run_sweep \
+>   --backend mcp --models Qwen/Qwen2.5-7B-Instruct --n 20 --limit 50 \
+>   --token-cap 50000 --concurrency 32
+> ```
+> `--backend inproc` runs the identical tool logic with no MCP wire / no vLLM (Claude smoke).
+> Analyze/plot: `python -m scripts.creator.mcp_creator.analyze runs/mcp_creator_<ts>/` and
+> `... .plot --runs runs/mcp_creator_<ts>/ --outdir figs/creator/mcp`.
+
+
 Architecture: the **sweep runs locally** (this repo) and makes HTTP calls to the **vLLM box**
 (serves the Qwen weights) for the model, and to **Anthropic** for the tiny ask-classifier judge
 (Haiku, ~8 tokens/ambiguous-episode). So the box only needs to serve vLLM; the Anthropic key

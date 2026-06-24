@@ -9,8 +9,20 @@ messages: list of {"role": "user"|"assistant", "content": str}
 
 from __future__ import annotations
 
+import json
 import os
+from dataclasses import dataclass, field
 from typing import Any
+
+
+@dataclass
+class ChatTurn:
+    """One assistant turn from a tool-calling chat. `tool_calls` items are normalized to
+    {"id", "name", "arguments" (raw str), "args" (parsed dict or None)}; args is None when
+    the model emitted malformed JSON (the caller counts these)."""
+    content: str = ""
+    tool_calls: list[dict] = field(default_factory=list)
+    finish_reason: str | None = None
 
 
 def _is_reasoning(model: str) -> bool:
@@ -224,3 +236,119 @@ class RawChat:
             return "".join(getattr(p, "text", "") or "" for p in parts)
 
         raise ValueError(prov)
+
+    async def chat_tools(self, model: str, system: str, messages: list[dict],
+                         tools: list[dict], max_tokens: int = 1200,
+                         tool_choice: str = "auto") -> ChatTurn:
+        """Tool-calling chat. `messages` are OpenAI-format (incl. assistant tool_calls and
+        role="tool" results); translated to Anthropic blocks when needed. Sets last_usage
+        identically to chat(). Returns a ChatTurn (.content, .tool_calls, .finish_reason)."""
+        prov = _provider_for(model)
+        self.last_usage = None
+        self.last_debug = None
+
+        if prov in ("openai", "ollama", "vllm"):
+            client = {"openai": self._openai, "ollama": self._ollama,
+                      "vllm": self._vllm}[prov]()
+            oai_msgs = [{"role": "system", "content": system}] + messages
+            kwargs = dict(model=model, messages=oai_msgs, tools=tools, tool_choice=tool_choice)
+            try:
+                resp = await client.chat.completions.create(max_completion_tokens=max_tokens, **kwargs)
+            except TypeError:
+                resp = await client.chat.completions.create(max_tokens=max_tokens, **kwargs)
+            u = getattr(resp, "usage", None)
+            ptd = getattr(u, "prompt_tokens_details", None)
+            ctd = getattr(u, "completion_tokens_details", None)
+            self._set_usage(
+                input_tokens=getattr(u, "prompt_tokens", 0),
+                output_tokens=getattr(u, "completion_tokens", 0),
+                cache_read_tokens=getattr(ptd, "cached_tokens", 0),
+                reasoning_tokens=getattr(ctd, "reasoning_tokens", 0),
+            )
+            choice = resp.choices[0]
+            msg = choice.message
+            return ChatTurn(content=msg.content or "",
+                            tool_calls=_norm_oai_tool_calls(getattr(msg, "tool_calls", None)),
+                            finish_reason=getattr(choice, "finish_reason", None))
+
+        if prov == "anthropic":
+            resp = await self._anthropic().messages.create(
+                model=model, max_tokens=max_tokens, system=system,
+                messages=_oai_msgs_to_anthropic(messages),
+                tools=_oai_tools_to_anthropic(tools),
+            )
+            u = getattr(resp, "usage", None)
+            self._set_usage(
+                input_tokens=getattr(u, "input_tokens", 0),
+                output_tokens=getattr(u, "output_tokens", 0),
+                cache_read_tokens=getattr(u, "cache_read_input_tokens", 0),
+                cache_write_tokens=getattr(u, "cache_creation_input_tokens", 0),
+            )
+            content, tcs = "", []
+            for b in (resp.content or []):
+                if getattr(b, "type", None) == "text":
+                    content += b.text
+                elif getattr(b, "type", None) == "tool_use":
+                    tcs.append({"id": b.id, "name": b.name,
+                                "arguments": json.dumps(b.input), "args": dict(b.input)})
+            return ChatTurn(content=content, tool_calls=tcs,
+                            finish_reason=getattr(resp, "stop_reason", None))
+
+        raise ValueError(f"chat_tools: unsupported provider {prov!r}")
+
+
+def _norm_oai_tool_calls(tool_calls) -> list[dict]:
+    out = []
+    for tc in (tool_calls or []):
+        raw = tc.function.arguments or ""
+        try:
+            parsed = json.loads(raw) if raw.strip() else {}
+        except json.JSONDecodeError:
+            parsed = None  # malformed JSON args -> caller counts as malformed
+        out.append({"id": tc.id, "name": tc.function.name, "arguments": raw, "args": parsed})
+    return out
+
+
+def _oai_tools_to_anthropic(tools: list[dict]) -> list[dict]:
+    out = []
+    for t in tools:
+        f = t["function"]
+        out.append({"name": f["name"], "description": f.get("description", ""),
+                    "input_schema": f.get("parameters", {"type": "object", "properties": {}})})
+    return out
+
+
+def _oai_msgs_to_anthropic(messages: list[dict]) -> list[dict]:
+    """OpenAI-format history -> Anthropic content-block messages. Consecutive role="tool"
+    results are merged into one user turn (Anthropic requires all tool_results for a given
+    assistant turn in a single following user message)."""
+    out, i, n = [], 0, len(messages)
+    while i < n:
+        m = messages[i]
+        role = m["role"]
+        if role == "tool":
+            blocks = []
+            while i < n and messages[i]["role"] == "tool":
+                t = messages[i]
+                blocks.append({"type": "tool_result", "tool_use_id": t["tool_call_id"],
+                               "content": str(t["content"])})
+                i += 1
+            out.append({"role": "user", "content": blocks})
+            continue
+        if role == "user":
+            out.append({"role": "user", "content": m["content"]})
+        elif role == "assistant":
+            blocks = []
+            if m.get("content"):
+                blocks.append({"type": "text", "text": m["content"]})
+            for tc in (m.get("tool_calls") or []):
+                args = tc["function"]["arguments"]
+                try:
+                    inp = json.loads(args) if args else {}
+                except json.JSONDecodeError:
+                    inp = {}
+                blocks.append({"type": "tool_use", "id": tc["id"],
+                               "name": tc["function"]["name"], "input": inp})
+            out.append({"role": "assistant", "content": blocks or ""})
+        i += 1
+    return out
