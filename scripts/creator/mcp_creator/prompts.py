@@ -36,7 +36,9 @@ any mix; nothing here favors one approach.
 disables write_script for the rest of the episode (run_script stays available). So if you intend \
 to write any script, you must do it BEFORE calling begin_test — you cannot write scripts once the \
 test has begun. (You may also call begin_test right away if you prefer.)
-- Submit with submit_answers: a list of {n} numbers in problem order. You may resubmit to revise.
+- Submit with submit_answers: a list of {n} numbers in problem order. This is FINAL — submitting \
+ENDS the episode immediately (no resubmits, no further actions), so submit only once every answer \
+is ready.
 
 TOKEN BUDGET: you have a HARD cap of {token_cap:,} total tokens (input + output, summed across \
 all turns) for this whole episode. When it runs out, the episode ends and whatever you have \

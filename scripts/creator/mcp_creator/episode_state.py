@@ -151,8 +151,8 @@ class EpisodeState:
             return {"ok": False, "error": f"answers must be a list of {self.n_test} numbers "
                     f"(in problem order), or an object mapping problem number -> number."}
         self.submitted = parsed
-        return {"ok": True, "message": f"Recorded {len(parsed)} answers. You may resubmit to "
-                "overwrite. The episode ends when you stop or the token budget is exhausted."}
+        return {"ok": True, "message": f"Recorded {len(parsed)} answers. This is FINAL — the "
+                "episode ends now."}
 
     # ----------------------------------------------------------------- scoring
     def score(self) -> dict:
@@ -292,7 +292,9 @@ def TOOL_SCHEMAS(keys: list[str]) -> list[dict]:
             "name": "submit_answers",
             "description": ("Submit your final answers (TEST PHASE ONLY — refused before "
                             "begin_test). Provide a list of numbers in problem order (problem 1 "
-                            "first), one per test problem. You may resubmit to overwrite."),
+                            "first), one per test problem. This is FINAL: submitting ENDS the "
+                            "episode immediately — you cannot submit again or act further, so "
+                            "make sure every answer is ready first."),
             "parameters": {"type": "object", "properties": {
                 "answers": {"type": "array", "items": {"type": "number"},
                             "description": "20 numeric answers in problem order"},

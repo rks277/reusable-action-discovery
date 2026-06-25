@@ -22,11 +22,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from concurrent.futures import ThreadPoolExecutor
+
 from lomekwi.raw_chat import RawChat
 from scripts.creator.creator_batch import _spans
 from scripts.creator.creator_heldout import parse_inputs
 from scripts.creator.mcp_creator.backends import make_backend
 from scripts.creator.mcp_creator.driver import run_episode
+from scripts.creator.mcp_creator.episode_state import build_episode
 
 DATA = Path("external/CC.jsonl")
 CLAUDE = {"haiku": "claude-haiku-4-5-20251001",
@@ -38,10 +41,33 @@ def _feasible(item: dict) -> bool:
     return len(inputs) >= 1 and _spans(item["question"], inputs) is not None
 
 
-def usable_items(limit: int) -> list[tuple[int, dict]]:
+def usable_items(limit: int, n_test: int, base_seed: int) -> list[tuple[int, dict]]:
+    """Items that pass the cheap span check AND actually build into an episode (i.e.
+    make_hard_batch yields n_test+1 distinct finite rows; some items overflow/degenerate
+    under hard-resampling — e.g. compound interest, M/M/1 queue — and must be dropped, or
+    the MCP server would exit on startup -> 'McpError: Connection closed'). The buildable
+    set is deterministic in (n_test, base_seed), so it's cached and reused across rungs."""
     items = [(i, json.loads(l)) for i, l in enumerate(DATA.read_text().splitlines()) if l.strip()]
-    feas = [(i, d) for i, d in items if _feasible(d)]
-    return feas[:limit] if limit else feas
+    cand = [(i, d) for i, d in items if _feasible(d)]
+    cache = Path(f"runs/mcp_feasible_N{n_test}_seed{base_seed}.json")
+    if cache.exists():
+        good = set(json.loads(cache.read_text()))
+        valid = [(i, d) for i, d in cand if i in good]
+    else:
+        pool = cand if not limit else cand[:int(limit * 1.7) + 25]   # over-provision for drops
+
+        def buildable(it):
+            i, d = it
+            try:
+                return build_episode(d, i, base_seed + i, n_test) is not None
+            except Exception:
+                return False
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            flags = list(ex.map(buildable, pool))
+        valid = [it for it, ok in zip(pool, flags) if ok]
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps([i for i, _ in valid]))
+    return valid[:limit] if limit else valid
 
 
 async def main():
@@ -59,7 +85,7 @@ async def main():
 
     load_dotenv()
     models = [CLAUDE.get(m, m) for m in args.models]
-    usable = usable_items(args.limit)
+    usable = usable_items(args.limit, args.n, args.seed)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_dir = Path("runs") / f"mcp_creator_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)

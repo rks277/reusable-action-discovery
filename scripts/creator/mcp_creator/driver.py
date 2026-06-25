@@ -1,7 +1,14 @@
 """Agent loop for one MCP CREATOR episode: drives a tool-calling model against a backend
 (in-proc or real MCP), enforces a HARD cumulative token cap (the only place it can be
 enforced — vLLM caps per-request, MCP has no token accounting), and never crashes on a
-malformed/odd tool call (counts it instead). Returns a flat record dict."""
+malformed/odd tool call (counts it instead). Returns a flat record dict.
+
+SUBMIT IS TERMINAL (changed 2026-06-24): the episode ENDS the instant the model makes its
+first successful submit_answers call — no re-submits, no post-submit tool calls. This makes
+spent_tokens a true efficiency measure (previously a model could submit correct answers then
+keep burning budget / overshoot the cap; see CHANGES.md). The token cap is still checked
+between turns, so a turn that crosses the cap completes (minor overshoot) — but most episodes
+now end at submit, before the cap."""
 
 from __future__ import annotations
 
@@ -35,6 +42,7 @@ async def run_episode(client: RawChat, model: str, backend, *, token_cap: int = 
     spent = 0
     n_turns = n_tool_calls = n_malformed = n_unknown = consecutive_no_tool = 0
     usage_estimated = False
+    submitted_done = False
     last_finish = None
 
     while n_turns < max_turns:
@@ -85,6 +93,14 @@ async def run_episode(client: RawChat, model: str, backend, *, token_cap: int = 
             result = {**result, "tokens_remaining": max(0, token_cap - spent)}
             messages.append({"role": "tool", "tool_call_id": tc["id"],
                              "content": json.dumps(result)})
+            # SUBMIT IS TERMINAL: first successful submit ends the episode immediately —
+            # skip any remaining tool calls in this turn and stop the loop.
+            if tc["name"] == "submit_answers" and result.get("ok"):
+                submitted_done = True
+                break
+
+        if submitted_done:
+            break
 
     score = await backend.results()
     record = {
