@@ -40,6 +40,8 @@ async def main():
     ap.add_argument("--magnitude", type=float, default=1.0,
                     help="input-size scale (calibrate with calibrate.py; <1 = easier by hand)")
     ap.add_argument("--seed", type=int, default=0, help="dataset seed")
+    ap.add_argument("--shuffle", action="store_true",
+                    help="random sample of the feasible pool instead of first-N-in-order")
     ap.add_argument("--reps", type=int, default=1, help="sessions per model (varies nothing but "
                     "the sampling of the model; same dataset)")
     ap.add_argument("--token-cap", type=int, default=200_000, help="cumulative tokens per session")
@@ -54,7 +56,7 @@ async def main():
 
     load_dotenv()
     models = [CLAUDE.get(m, m) for m in args.models]
-    problems = load_or_build(args.n, args.sig_figs, args.seed, args.magnitude)
+    problems = load_or_build(args.n, args.sig_figs, args.seed, args.magnitude, args.shuffle)
     budget = write_budget(len(problems))
     announce_cap = not args.no_token_cap
     cap = args.safety_cap if args.no_token_cap else args.token_cap
@@ -93,7 +95,8 @@ async def main():
                 print(f"  {done}/{total}  {lbl} rep{rep}: "
                       f"solve={row.get('n_correct')}/{row.get('N')} "
                       f"scripts={row.get('n_scripts_written')} "
-                      f"reuse={row.get('mean_reuse')} tok={row.get('spent_tokens')} "
+                      f"persist={row.get('persistence')} reuse={row.get('reusability')} "
+                      f"tok={row.get('spent_tokens')} "
                       f"{'(err)' if row.get('error') else ''}", flush=True)
 
     await asyncio.gather(*(one(m, r) for m in models for r in range(args.reps)))

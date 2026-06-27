@@ -50,7 +50,7 @@ class SessionState:
         if not self.records:
             self.records = [{"idx": p["idx"], "item_idx": p.get("item_idx"),
                              "used_script": False, "scripts_run": [], "n_run_calls": 0,
-                             "submitted": False, "answer": None, "correct": False}
+                             "runs": [], "submitted": False, "answer": None, "correct": False}
                             for p in self.problems]
 
     @property
@@ -105,15 +105,17 @@ class SessionState:
         stdout, err = _run(harness)
         if err:
             return {"ok": False, "error": _friendly_error(err), "stdout": (stdout or "")[:1000]}
-        # success: attribute this run to the current problem (drives reusability + used_script)
+        val = _parse_answer(stdout or "")
+        # success: attribute this run to the current problem (drives persistence + used_script,
+        # and the run's return value is kept so score() can attribute *benefit* to the script)
         if not self.done:
             rec = self.records[self.cur]
             rec["used_script"] = True
             rec["n_run_calls"] += 1
             if name not in rec["scripts_run"]:
                 rec["scripts_run"].append(name)
+            rec["runs"].append({"script": name, "ret": val})
             self.attribution.setdefault(name, set()).add(self.cur)
-        val = _parse_answer(stdout or "")
         return {"ok": True, "return_value": val, "stdout": (stdout or "").strip()[:1000]}
 
     def op_list_scripts(self) -> dict:
@@ -149,7 +151,24 @@ class SessionState:
         n_correct = sum(1 for r in recs if r["correct"])
         used = [r for r in recs if r["used_script"]]
         not_used = [r for r in recs if not r["used_script"]]
-        reuse_counts = {name: len(idxs) for name, idxs in self.attribution.items()}
+        # persistence: distinct problems each written script was RUN on (breadth of application)
+        persistence_counts = {name: len(idxs) for name, idxs in self.attribution.items()}
+        # reusability: distinct problems each script was BENEFICIAL toward — i.e. the script's
+        # output was correct AND was the submitted (correct) answer. Averaged over the same scripts
+        # as persistence, so scripts that were run but never paid off count as 0.
+        benef_attr: dict[str, set] = {}
+        for r in recs:
+            if not r["correct"]:
+                continue
+            prob = self.problems[r["idx"]]
+            for run in r.get("runs", []):
+                ret = run["ret"]
+                if ret is None:
+                    continue
+                if (correct_to_sigfigs(r["answer"], ret, prob["sig_figs"])
+                        and correct_to_sigfigs(ret, prob["gold"], prob["sig_figs"])):
+                    benef_attr.setdefault(run["script"], set()).add(r["idx"])
+        reusability_counts = {name: len(benef_attr.get(name, set())) for name in self.attribution}
         return {
             "N": self.n,
             "budget": self.budget,
@@ -164,10 +183,14 @@ class SessionState:
                 if used else None,
             "eff_solve_by_hand": round(sum(r["correct"] for r in not_used) / len(not_used), 4)
                 if not_used else None,
-            # reusability: # distinct problems each written script was applied to
-            "reuse_counts": reuse_counts,
-            "mean_reuse": round(sum(reuse_counts.values()) / len(reuse_counts), 3)
-                if reuse_counts else None,
+            # persistence = breadth of application (run on); reusability = breadth of *beneficial*
+            # application (correct output submitted as the answer)
+            "persistence_counts": persistence_counts,
+            "persistence": round(sum(persistence_counts.values()) / len(persistence_counts), 3)
+                if persistence_counts else None,
+            "reusability_counts": reusability_counts,
+            "reusability": round(sum(reusability_counts.values()) / len(reusability_counts), 3)
+                if reusability_counts else None,
             "n_refused_tool_calls": self.n_refused,
             "records": recs,
         }

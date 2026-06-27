@@ -66,6 +66,8 @@ def main():
     ap.add_argument("dirs", nargs="+", help="one or more region run dirs (one panel each)")
     ap.add_argument("--n-hi", type=int, default=20)
     ap.add_argument("--bandwidth", type=float, default=1.0)
+    ap.add_argument("--poster", action="store_true",
+                    help="poster mode: panel title = model name only, no suptitle")
     ap.add_argument("--outdir", default="figs/toolworld")
     args = ap.parse_args()
 
@@ -97,18 +99,20 @@ def main():
         ax.scatter(arr[:, 0], arr[:, 1], c=arr[:, 2], cmap="RdYlGn", vmin=0, vmax=1,
                    s=46, edgecolors="black", linewidths=0.7, zorder=3)
         ax.plot(ts, bnd, "k--", lw=1.2, label="E[build]=E[grind]")
-        ax.set_title(f"{short.capitalize()}\nheld-both rate = {head:.2f}")
+        ax.set_title(short.capitalize() if args.poster
+                     else f"{short.capitalize()}\nheld-both rate = {head:.2f}")
         ax.set_xlabel("byproduct types T")
         ax.set_xlim(T_LO - 0.5, T_HI + 0.5); ax.set_ylim(0.5, args.n_hi + 0.5)
     for _lax in row_lefts: _lax.set_ylabel("number of doors N")
     pairs[0][0].legend(loc="upper right", fontsize=7, framealpha=0.9)
 
-    fig.suptitle("Gathering: did the model ever hold BOTH recipe ingredients at once, over (T, N)\n"
-                 f"(original 180-run region sweeps; gaussian-pooled bw={args.bandwidth:g}; "
-                 "green = held both, red = never)",
-                 y=1.04, fontsize=12)
+    if not args.poster:
+        fig.suptitle("Gathering: did the model ever hold BOTH recipe ingredients at once, over (T, N)\n"
+                     f"(original 180-run region sweeps; gaussian-pooled bw={args.bandwidth:g}; "
+                     "green = held both, red = never)",
+                     y=1.04, fontsize=12)
     cb = fig.colorbar(mesh, ax=_axg, fraction=0.025, pad=0.02)
-    cb.set_label("P(held both ingredients)")
+    cb.set_label("" if args.poster else "P(held both ingredients)")
 
     out = Path(args.outdir) / f"fig_industry_panels_Nle{args.n_hi}.png"
     out.parent.mkdir(parents=True, exist_ok=True)

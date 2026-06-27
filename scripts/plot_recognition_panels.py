@@ -90,6 +90,11 @@ def main():
     ap.add_argument("--n-hi", type=int, default=20)
     ap.add_argument("--smooth", choices=["none", "gaussian"], default="gaussian")
     ap.add_argument("--bandwidth", type=float, default=1.0)
+    ap.add_argument("--hide-dropped", action="store_true",
+                    help="omit the small 'x' markers for never-held-both cells "
+                         "(matches the efficiency heatmaps)")
+    ap.add_argument("--poster", action="store_true",
+                    help="poster mode: panel title = model name only, no suptitle")
     ap.add_argument("--outdir", default="figs/toolworld")
     args = ap.parse_args()
 
@@ -131,23 +136,25 @@ def main():
         held_keys = set(cells)
         dropped = [(t, n) for t in range(T_LO, T_HI + 1) for n in range(1, args.n_hi + 1)
                    if (t, n) not in held_keys]
-        if dropped:
+        if dropped and not args.hide_dropped:
             dv = np.array(dropped, float)
             ax.scatter(dv[:, 0], dv[:, 1], marker="x", c="0.45", s=26, linewidths=0.8,
                        zorder=2, label="never held both (dropped)")
         ax.plot(ts, bnd, "k--", lw=1.2, label="E[build]=E[grind]")
-        ax.set_title(f"{short.capitalize()}\nrecognition P(built | held) = {head:.2f}  "
-                     f"(n={len(cells)})")
+        ax.set_title(short.capitalize() if args.poster
+                     else f"{short.capitalize()}\nrecognition P(built | held) = {head:.2f}  "
+                          f"(n={len(cells)})")
         ax.set_xlabel("byproduct types T")
         ax.set_xlim(T_LO - 0.5, T_HI + 0.5); ax.set_ylim(0.5, args.n_hi + 0.5)
     for _lax in row_lefts: _lax.set_ylabel("number of doors N")
     pairs[0][0].legend(loc="upper right", fontsize=7, framealpha=0.9)
 
     smooth_note = "gaussian-pooled bw=%g" % args.bandwidth if args.smooth == "gaussian" else "raw 0/1"
-    fig.suptitle(f"Recognition: P(built | held both recipe ingredients) — held-both cells only "
-                 f"({smooth_note}; grind-calibrated budget; single-draw)", y=1.02, fontsize=12)
+    if not args.poster:
+        fig.suptitle(f"Recognition: P(built | held both recipe ingredients) — held-both cells only "
+                     f"({smooth_note}; grind-calibrated budget; single-draw)", y=1.02, fontsize=12)
     cb = fig.colorbar(mesh, ax=_axg, fraction=0.025, pad=0.02)
-    cb.set_label("P(built | held both)")
+    cb.set_label("" if args.poster else "P(built | held both)")
 
     out = Path(args.outdir) / f"fig_recognition_panels_Nle{args.n_hi}.png"
     out.parent.mkdir(parents=True, exist_ok=True)

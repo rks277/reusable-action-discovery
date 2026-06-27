@@ -38,14 +38,13 @@ def main():
     ax.pcolormesh(T_VALUES, N_VALUES, grid, cmap=cmap, vmin=0, vmax=1,
                   shading="nearest")
 
-    ax.set_xlabel("byproduct types T")
+    ax.set_xlabel("shard types T")
     ax.set_ylabel("number of doors N")
-    ax.set_title("Cheaper path in expectation\n(green: build < grind, grey: grind ≤ build)")
     ax.set_xticks(T_VALUES[::2])
 
     fig.tight_layout()
-    out = Path("figs/toolworld/fig_build_vs_grind_region.png")
-    out.parent.mkdir(exist_ok=True)
+    out = Path("figs/poster/fig_build_vs_grind_region.png")
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150)
     fig.savefig(out.with_suffix(".pdf"))
     print(f"wrote {out} and {out.with_suffix('.pdf')}")

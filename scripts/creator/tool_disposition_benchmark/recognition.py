@@ -40,7 +40,8 @@ async def main():
     sess_path = run_dir / "sessions.jsonl" if run_dir.is_dir() else run_dir
     max_tokens = int(sys.argv[2]) if len(sys.argv) > 2 else 4096
     cfg = json.loads((sess_path.parent / "config.json").read_text())
-    problems = load_or_build(cfg["n"], cfg["sig_figs"], cfg["seed"], cfg.get("magnitude", 1.0))
+    problems = load_or_build(cfg["n"], cfg["sig_figs"], cfg["seed"], cfg.get("magnitude", 1.0),
+                             cfg.get("shuffle", False))
     by_idx = {p["idx"]: p for p in problems}
 
     load_dotenv()

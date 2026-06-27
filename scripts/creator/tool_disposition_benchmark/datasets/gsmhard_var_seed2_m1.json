@@ -1,0 +1,3550 @@
+[
+  {
+    "idx": 0,
+    "src_idx": 1,
+    "backfill": false,
+    "keys": [
+      "ICE_CREAM_INITIAL",
+      "ICE_CREAM_DISCOUNT",
+      "ICE_CREAM_TUBS",
+      "MILK_PACKETS"
+    ],
+    "template": "A tub of ice cream costing $ICE_CREAM_INITIAL is now sold at $ICE_CREAM_DISCOUNT. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy ICE_CREAM_TUBS tubs of ice cream and MILK_PACKETS packets of milk?",
+    "require_int": false,
+    "source_target": 5.3333333333,
+    "n_inputs": 4,
+    "n_varied": 4,
+    "example": {
+      "inputs": {
+        "ICE_CREAM_INITIAL": 1852,
+        "ICE_CREAM_DISCOUNT": 1674,
+        "ICE_CREAM_TUBS": 7123,
+        "MILK_PACKETS": 7567
+      },
+      "gold": 1270416.3333333333,
+      "question": "A tub of ice cream costing $1852 is now sold at $1674. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 7123 tubs of ice cream and 7567 packets of milk?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 3737,
+          "ICE_CREAM_DISCOUNT": 539,
+          "ICE_CREAM_TUBS": 7261,
+          "MILK_PACKETS": 6861
+        },
+        "gold": 23222965.0,
+        "question": "A tub of ice cream costing $3737 is now sold at $539. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 7261 tubs of ice cream and 6861 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 9599,
+          "ICE_CREAM_DISCOUNT": 3778,
+          "ICE_CREAM_TUBS": 8352,
+          "MILK_PACKETS": 3236
+        },
+        "gold": 48618070.666666664,
+        "question": "A tub of ice cream costing $9599 is now sold at $3778. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 8352 tubs of ice cream and 3236 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 9099,
+          "ICE_CREAM_DISCOUNT": 6448,
+          "ICE_CREAM_TUBS": 953,
+          "MILK_PACKETS": 531
+        },
+        "gold": 2526580.0,
+        "question": "A tub of ice cream costing $9099 is now sold at $6448. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 953 tubs of ice cream and 531 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 4523,
+          "ICE_CREAM_DISCOUNT": 279,
+          "ICE_CREAM_TUBS": 3463,
+          "MILK_PACKETS": 6039
+        },
+        "gold": 14698985.0,
+        "question": "A tub of ice cream costing $4523 is now sold at $279. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 3463 tubs of ice cream and 6039 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 9056,
+          "ICE_CREAM_DISCOUNT": 4816,
+          "ICE_CREAM_TUBS": 1566,
+          "MILK_PACKETS": 9266
+        },
+        "gold": 6642928.666666667,
+        "question": "A tub of ice cream costing $9056 is now sold at $4816. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 1566 tubs of ice cream and 9266 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 8220,
+          "ICE_CREAM_DISCOUNT": 779,
+          "ICE_CREAM_TUBS": 5533,
+          "MILK_PACKETS": 2067
+        },
+        "gold": 41171742.0,
+        "question": "A tub of ice cream costing $8220 is now sold at $779. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 5533 tubs of ice cream and 2067 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 8336,
+          "ICE_CREAM_DISCOUNT": 2503,
+          "ICE_CREAM_TUBS": 5728,
+          "MILK_PACKETS": 7478
+        },
+        "gold": 33413916.666666668,
+        "question": "A tub of ice cream costing $8336 is now sold at $2503. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 5728 tubs of ice cream and 7478 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 8219,
+          "ICE_CREAM_DISCOUNT": 4341,
+          "ICE_CREAM_TUBS": 8016,
+          "MILK_PACKETS": 8266
+        },
+        "gold": 31088803.333333332,
+        "question": "A tub of ice cream costing $8219 is now sold at $4341. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 8016 tubs of ice cream and 8266 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 6895,
+          "ICE_CREAM_DISCOUNT": 1543,
+          "ICE_CREAM_TUBS": 8176,
+          "MILK_PACKETS": 903
+        },
+        "gold": 43758253.0,
+        "question": "A tub of ice cream costing $6895 is now sold at $1543. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 8176 tubs of ice cream and 903 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 7325,
+          "ICE_CREAM_DISCOUNT": 4815,
+          "ICE_CREAM_TUBS": 698,
+          "MILK_PACKETS": 5951
+        },
+        "gold": 1753963.6666666667,
+        "question": "A tub of ice cream costing $7325 is now sold at $4815. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 698 tubs of ice cream and 5951 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 8041,
+          "ICE_CREAM_DISCOUNT": 4039,
+          "ICE_CREAM_TUBS": 9144,
+          "MILK_PACKETS": 3670
+        },
+        "gold": 36595511.333333336,
+        "question": "A tub of ice cream costing $8041 is now sold at $4039. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 9144 tubs of ice cream and 3670 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 6498,
+          "ICE_CREAM_DISCOUNT": 4341,
+          "ICE_CREAM_TUBS": 6063,
+          "MILK_PACKETS": 4313
+        },
+        "gold": 13079328.666666666,
+        "question": "A tub of ice cream costing $6498 is now sold at $4341. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 6063 tubs of ice cream and 4313 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 5915,
+          "ICE_CREAM_DISCOUNT": 2842,
+          "ICE_CREAM_TUBS": 7509,
+          "MILK_PACKETS": 8645
+        },
+        "gold": 23078038.666666668,
+        "question": "A tub of ice cream costing $5915 is now sold at $2842. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 7509 tubs of ice cream and 8645 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 5020,
+          "ICE_CREAM_DISCOUNT": 1985,
+          "ICE_CREAM_TUBS": 2804,
+          "MILK_PACKETS": 1916
+        },
+        "gold": 8510778.666666666,
+        "question": "A tub of ice cream costing $5020 is now sold at $1985. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 2804 tubs of ice cream and 1916 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 4615,
+          "ICE_CREAM_DISCOUNT": 933,
+          "ICE_CREAM_TUBS": 1270,
+          "MILK_PACKETS": 7820
+        },
+        "gold": 4678746.666666667,
+        "question": "A tub of ice cream costing $4615 is now sold at $933. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 1270 tubs of ice cream and 7820 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 6630,
+          "ICE_CREAM_DISCOUNT": 1677,
+          "ICE_CREAM_TUBS": 7162,
+          "MILK_PACKETS": 3221
+        },
+        "gold": 35474459.666666664,
+        "question": "A tub of ice cream costing $6630 is now sold at $1677. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 7162 tubs of ice cream and 3221 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 4560,
+          "ICE_CREAM_DISCOUNT": 3131,
+          "ICE_CREAM_TUBS": 4906,
+          "MILK_PACKETS": 8495
+        },
+        "gold": 7013505.666666667,
+        "question": "A tub of ice cream costing $4560 is now sold at $3131. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 4906 tubs of ice cream and 8495 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 3260,
+          "ICE_CREAM_DISCOUNT": 399,
+          "ICE_CREAM_TUBS": 3196,
+          "MILK_PACKETS": 5885
+        },
+        "gold": 9145717.666666666,
+        "question": "A tub of ice cream costing $3260 is now sold at $399. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 3196 tubs of ice cream and 5885 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 9404,
+          "ICE_CREAM_DISCOUNT": 3018,
+          "ICE_CREAM_TUBS": 8456,
+          "MILK_PACKETS": 2724
+        },
+        "gold": 54000924.0,
+        "question": "A tub of ice cream costing $9404 is now sold at $3018. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 8456 tubs of ice cream and 2724 packets of milk?"
+      },
+      {
+        "inputs": {
+          "ICE_CREAM_INITIAL": 7925,
+          "ICE_CREAM_DISCOUNT": 4482,
+          "ICE_CREAM_TUBS": 6951,
+          "MILK_PACKETS": 4633
+        },
+        "gold": 23933837.333333332,
+        "question": "A tub of ice cream costing $7925 is now sold at $4482. A packet of milk was sold at a discount of $0.3333333333333333. How much will you save if you buy 6951 tubs of ice cream and 4633 packets of milk?"
+      }
+    ]
+  },
+  {
+    "idx": 1,
+    "src_idx": 2,
+    "backfill": false,
+    "keys": [
+      "MILK",
+      "ROACH_TRAPS"
+    ],
+    "template": "John buys milk for MILK dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for ROACH_TRAPS dollars.  If there is a 10% tax on all nonfood items how much did everything cost.",
+    "require_int": true,
+    "source_target": 16.0,
+    "n_inputs": 6,
+    "n_varied": 2,
+    "example": {
+      "inputs": {
+        "MILK": 7954,
+        "ROACH_TRAPS": 694
+      },
+      "gold": 8727.0,
+      "question": "John buys milk for 7954 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 694 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+    },
+    "tests": [
+      {
+        "inputs": {
+          "MILK": 8763,
+          "ROACH_TRAPS": 4344
+        },
+        "gold": 13551.0,
+        "question": "John buys milk for 8763 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 4344 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 6880,
+          "ROACH_TRAPS": 694
+        },
+        "gold": 7653.0,
+        "question": "John buys milk for 6880 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 694 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 6807,
+          "ROACH_TRAPS": 5994
+        },
+        "gold": 13410.0,
+        "question": "John buys milk for 6807 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 5994 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 7572,
+          "ROACH_TRAPS": 2104
+        },
+        "gold": 9896.0,
+        "question": "John buys milk for 7572 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 2104 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 7157,
+          "ROACH_TRAPS": 1474
+        },
+        "gold": 8788.0,
+        "question": "John buys milk for 7157 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 1474 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 7212,
+          "ROACH_TRAPS": 4124
+        },
+        "gold": 11758.0,
+        "question": "John buys milk for 7212 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 4124 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 673,
+          "ROACH_TRAPS": 6104
+        },
+        "gold": 7397.0,
+        "question": "John buys milk for 673 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 6104 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 9705,
+          "ROACH_TRAPS": 4664
+        },
+        "gold": 14845.0,
+        "question": "John buys milk for 9705 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 4664 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 9470,
+          "ROACH_TRAPS": 1364
+        },
+        "gold": 10980.0,
+        "question": "John buys milk for 9470 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 1364 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 7528,
+          "ROACH_TRAPS": 2534
+        },
+        "gold": 10325.0,
+        "question": "John buys milk for 7528 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 2534 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 1219,
+          "ROACH_TRAPS": 5124
+        },
+        "gold": 6865.0,
+        "question": "John buys milk for 1219 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 5124 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 6486,
+          "ROACH_TRAPS": 1124
+        },
+        "gold": 7732.0,
+        "question": "John buys milk for 6486 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 1124 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 2875,
+          "ROACH_TRAPS": 2674
+        },
+        "gold": 5826.0,
+        "question": "John buys milk for 2875 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 2674 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 3264,
+          "ROACH_TRAPS": 354
+        },
+        "gold": 3663.0,
+        "question": "John buys milk for 3264 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 354 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 5159,
+          "ROACH_TRAPS": 6484
+        },
+        "gold": 12301.0,
+        "question": "John buys milk for 5159 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 6484 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 5137,
+          "ROACH_TRAPS": 2204
+        },
+        "gold": 7571.0,
+        "question": "John buys milk for 5137 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 2204 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 2148,
+          "ROACH_TRAPS": 5224
+        },
+        "gold": 7904.0,
+        "question": "John buys milk for 2148 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 5224 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 5964,
+          "ROACH_TRAPS": 144
+        },
+        "gold": 6132.0,
+        "question": "John buys milk for 5964 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 144 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 6203,
+          "ROACH_TRAPS": 3794
+        },
+        "gold": 10386.0,
+        "question": "John buys milk for 6203 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 3794 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      },
+      {
+        "inputs": {
+          "MILK": 2069,
+          "ROACH_TRAPS": 6014
+        },
+        "gold": 8694.0,
+        "question": "John buys milk for 2069 dollars, eggs for 3 dollars, light bulbs for 3 dollars, cups for 3 dollars, and roach traps for 6014 dollars.  If there is a 10% tax on all nonfood items how much did everything cost."
+      }
+    ]
+  },
+  {
+    "idx": 2,
+    "src_idx": 3,
+    "backfill": false,
+    "keys": [
+      "INDRAS_LETTERS"
+    ],
+    "template": "Indras has INDRAS_LETTERS letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?",
+    "require_int": true,
+    "source_target": 12088759.0,
+    "n_inputs": 1,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "INDRAS_LETTERS": 1784
+      },
+      "gold": 2680.0,
+      "question": "Indras has 1784 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 9282
+        },
+        "gold": 13927.0,
+        "question": "Indras has 9282 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 4570
+        },
+        "gold": 6859.0,
+        "question": "Indras has 4570 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 3266
+        },
+        "gold": 4903.0,
+        "question": "Indras has 3266 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 4590
+        },
+        "gold": 6889.0,
+        "question": "Indras has 4590 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 6624
+        },
+        "gold": 9940.0,
+        "question": "Indras has 6624 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 1056
+        },
+        "gold": 1588.0,
+        "question": "Indras has 1056 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 678
+        },
+        "gold": 1021.0,
+        "question": "Indras has 678 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 5032
+        },
+        "gold": 7552.0,
+        "question": "Indras has 5032 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 7586
+        },
+        "gold": 11383.0,
+        "question": "Indras has 7586 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 420
+        },
+        "gold": 634.0,
+        "question": "Indras has 420 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 8654
+        },
+        "gold": 12985.0,
+        "question": "Indras has 8654 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 8836
+        },
+        "gold": 13258.0,
+        "question": "Indras has 8836 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 8758
+        },
+        "gold": 13141.0,
+        "question": "Indras has 8758 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 8956
+        },
+        "gold": 13438.0,
+        "question": "Indras has 8956 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 5396
+        },
+        "gold": 8098.0,
+        "question": "Indras has 5396 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 7238
+        },
+        "gold": 10861.0,
+        "question": "Indras has 7238 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 9874
+        },
+        "gold": 14815.0,
+        "question": "Indras has 9874 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 2176
+        },
+        "gold": 3268.0,
+        "question": "Indras has 2176 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 8638
+        },
+        "gold": 12961.0,
+        "question": "Indras has 8638 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      },
+      {
+        "inputs": {
+          "INDRAS_LETTERS": 1196
+        },
+        "gold": 1798.0,
+        "question": "Indras has 1196 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?"
+      }
+    ]
+  },
+  {
+    "idx": 3,
+    "src_idx": 4,
+    "backfill": false,
+    "keys": [
+      "PEOPLE_INITIAL"
+    ],
+    "template": "At 8:00, PEOPLE_INITIAL people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?",
+    "require_int": true,
+    "source_target": 472033.0,
+    "n_inputs": 1,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "PEOPLE_INITIAL": 8705
+      },
+      "gold": 1741.0,
+      "question": "At 8:00, 8705 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 4905
+        },
+        "gold": 981.0,
+        "question": "At 8:00, 4905 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 4510
+        },
+        "gold": 902.0,
+        "question": "At 8:00, 4510 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 1880
+        },
+        "gold": 376.0,
+        "question": "At 8:00, 1880 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 7380
+        },
+        "gold": 1476.0,
+        "question": "At 8:00, 7380 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 8345
+        },
+        "gold": 1669.0,
+        "question": "At 8:00, 8345 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 2900
+        },
+        "gold": 580.0,
+        "question": "At 8:00, 2900 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 4995
+        },
+        "gold": 999.0,
+        "question": "At 8:00, 4995 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 335
+        },
+        "gold": 67.0,
+        "question": "At 8:00, 335 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 4310
+        },
+        "gold": 862.0,
+        "question": "At 8:00, 4310 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 2640
+        },
+        "gold": 528.0,
+        "question": "At 8:00, 2640 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 3245
+        },
+        "gold": 649.0,
+        "question": "At 8:00, 3245 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 9615
+        },
+        "gold": 1923.0,
+        "question": "At 8:00, 9615 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 6345
+        },
+        "gold": 1269.0,
+        "question": "At 8:00, 6345 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 7915
+        },
+        "gold": 1583.0,
+        "question": "At 8:00, 7915 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 7285
+        },
+        "gold": 1457.0,
+        "question": "At 8:00, 7285 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 7420
+        },
+        "gold": 1484.0,
+        "question": "At 8:00, 7420 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 8915
+        },
+        "gold": 1783.0,
+        "question": "At 8:00, 8915 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 7000
+        },
+        "gold": 1400.0,
+        "question": "At 8:00, 7000 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 4130
+        },
+        "gold": 826.0,
+        "question": "At 8:00, 4130 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      },
+      {
+        "inputs": {
+          "PEOPLE_INITIAL": 695
+        },
+        "gold": 139.0,
+        "question": "At 8:00, 695 people lined up at a polling station to cast their vote on election day. By midday 2/5 of the people had voted and by 16:00 2/3 of the remaining people had voted. What's the number of those who had not voted by 16:00?"
+      }
+    ]
+  },
+  {
+    "idx": 4,
+    "src_idx": 6,
+    "backfill": false,
+    "keys": [
+      "GUESTS_PER_MEMBER",
+      "PIZZA_COST"
+    ],
+    "template": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings GUESTS_PER_MEMBER guests. A pizza will serve 3 people. If each pizza costs $PIZZA_COST, how many dollars will Maddy spend?",
+    "require_int": true,
+    "source_target": 142137795.0,
+    "n_inputs": 5,
+    "n_varied": 2,
+    "example": {
+      "inputs": {
+        "GUESTS_PER_MEMBER": 2592,
+        "PIZZA_COST": 5771
+      },
+      "gold": 59862583.0,
+      "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 2592 guests. A pizza will serve 3 people. If each pizza costs $5771, how many dollars will Maddy spend?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 1817,
+          "PIZZA_COST": 2129
+        },
+        "gold": 15484217.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 1817 guests. A pizza will serve 3 people. If each pizza costs $2129, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 7050,
+          "PIZZA_COST": 4556
+        },
+        "gold": 128501980.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 7050 guests. A pizza will serve 3 people. If each pizza costs $4556, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 3084,
+          "PIZZA_COST": 9441
+        },
+        "gold": 116511381.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 3084 guests. A pizza will serve 3 people. If each pizza costs $9441, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 1705,
+          "PIZZA_COST": 814
+        },
+        "gold": 5555550.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 1705 guests. A pizza will serve 3 people. If each pizza costs $814, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 3495,
+          "PIZZA_COST": 6005
+        },
+        "gold": 83979925.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 3495 guests. A pizza will serve 3 people. If each pizza costs $6005, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 4426,
+          "PIZZA_COST": 9741
+        },
+        "gold": 172503369.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 4426 guests. A pizza will serve 3 people. If each pizza costs $9741, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 9381,
+          "PIZZA_COST": 3980
+        },
+        "gold": 149365420.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 9381 guests. A pizza will serve 3 people. If each pizza costs $3980, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 2428,
+          "PIZZA_COST": 3639
+        },
+        "gold": 35360163.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 2428 guests. A pizza will serve 3 people. If each pizza costs $3639, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 2255,
+          "PIZZA_COST": 4530
+        },
+        "gold": 40883250.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 2255 guests. A pizza will serve 3 people. If each pizza costs $4530, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 8980,
+          "PIZZA_COST": 7901
+        },
+        "gold": 283843425.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 8980 guests. A pizza will serve 3 people. If each pizza costs $7901, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 9317,
+          "PIZZA_COST": 2980
+        },
+        "gold": 111073540.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 9317 guests. A pizza will serve 3 people. If each pizza costs $2980, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 3483,
+          "PIZZA_COST": 2997
+        },
+        "gold": 41769189.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 3483 guests. A pizza will serve 3 people. If each pizza costs $2997, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 3826,
+          "PIZZA_COST": 8042
+        },
+        "gold": 123114978.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 3826 guests. A pizza will serve 3 people. If each pizza costs $8042, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 975,
+          "PIZZA_COST": 5206
+        },
+        "gold": 20329430.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 975 guests. A pizza will serve 3 people. If each pizza costs $5206, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 2849,
+          "PIZZA_COST": 8411
+        },
+        "gold": 95893811.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 2849 guests. A pizza will serve 3 people. If each pizza costs $8411, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 4334,
+          "PIZZA_COST": 6534
+        },
+        "gold": 113306094.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 4334 guests. A pizza will serve 3 people. If each pizza costs $6534, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 6422,
+          "PIZZA_COST": 4808
+        },
+        "gold": 123531944.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 6422 guests. A pizza will serve 3 people. If each pizza costs $4808, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 3914,
+          "PIZZA_COST": 2968
+        },
+        "gold": 46481848.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 3914 guests. A pizza will serve 3 people. If each pizza costs $2968, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 7978,
+          "PIZZA_COST": 4914
+        },
+        "gold": 156840138.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 7978 guests. A pizza will serve 3 people. If each pizza costs $4914, how many dollars will Maddy spend?"
+      },
+      {
+        "inputs": {
+          "GUESTS_PER_MEMBER": 1343,
+          "PIZZA_COST": 3351
+        },
+        "gold": 18018327.0,
+        "question": "Maddy is buying pizza for her cousin's soccer game. There are 12368962 team members and 3 coaches. Each team member brings 1343 guests. A pizza will serve 3 people. If each pizza costs $3351, how many dollars will Maddy spend?"
+      }
+    ]
+  },
+  {
+    "idx": 5,
+    "src_idx": 7,
+    "backfill": false,
+    "keys": [
+      "ADULTS"
+    ],
+    "template": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their ADULTS children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?",
+    "require_int": true,
+    "source_target": 3204826.0,
+    "n_inputs": 4,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "ADULTS": 2136
+      },
+      "gold": 801.0,
+      "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 2136 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "ADULTS": 5780
+        },
+        "gold": 2168.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 5780 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 985
+        },
+        "gold": 370.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 985 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 2902
+        },
+        "gold": 1089.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 2902 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 8868
+        },
+        "gold": 3326.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 8868 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 5757
+        },
+        "gold": 2159.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 5757 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 2090
+        },
+        "gold": 784.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 2090 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 4435
+        },
+        "gold": 1663.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 4435 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 2260
+        },
+        "gold": 848.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 2260 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 8404
+        },
+        "gold": 3152.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 8404 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 4210
+        },
+        "gold": 1579.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 4210 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 4193
+        },
+        "gold": 1573.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 4193 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 8826
+        },
+        "gold": 3310.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 8826 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 9298
+        },
+        "gold": 3487.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 9298 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 5572
+        },
+        "gold": 2090.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 5572 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 5763
+        },
+        "gold": 2161.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 5763 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 2493
+        },
+        "gold": 935.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 2493 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 4786
+        },
+        "gold": 1795.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 4786 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 1737
+        },
+        "gold": 652.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 1737 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 1243
+        },
+        "gold": 466.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 1243 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      },
+      {
+        "inputs": {
+          "ADULTS": 7558
+        },
+        "gold": 2835.0,
+        "question": "Calvin is making soup for his family for dinner. He has a pot with enough soup to fill four adult's bowls or eight child's bowls. He is an adult and will be eating with his adult wife and their 7558 children. If everyone eats one bowl at a meal, how many times will each child be able to have a bowl of soup for lunch from the leftover soup?"
+      }
+    ]
+  },
+  {
+    "idx": 6,
+    "src_idx": 8,
+    "backfill": false,
+    "keys": [
+      "DENISE_PAGES_YESTERDAY",
+      "DANIEL_PAGES_YESTERDAY"
+    ],
+    "template": "Denise and Daniel are reading the same book. Yesterday, Denise read DENISE_PAGES_YESTERDAY pages while Daniel read DANIEL_PAGES_YESTERDAY pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?",
+    "require_int": true,
+    "source_target": 15.0,
+    "n_inputs": 3,
+    "n_varied": 2,
+    "example": {
+      "inputs": {
+        "DENISE_PAGES_YESTERDAY": 5251,
+        "DANIEL_PAGES_YESTERDAY": 6295
+      },
+      "gold": 5256.0,
+      "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 5251 pages while Daniel read 6295 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 3997,
+          "DANIEL_PAGES_YESTERDAY": 7339
+        },
+        "gold": 4002.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 3997 pages while Daniel read 7339 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 7485,
+          "DANIEL_PAGES_YESTERDAY": 7994
+        },
+        "gold": 7490.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 7485 pages while Daniel read 7994 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 9514,
+          "DANIEL_PAGES_YESTERDAY": 2146
+        },
+        "gold": 9519.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 9514 pages while Daniel read 2146 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 432,
+          "DANIEL_PAGES_YESTERDAY": 1593
+        },
+        "gold": 437.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 432 pages while Daniel read 1593 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 3924,
+          "DANIEL_PAGES_YESTERDAY": 5346
+        },
+        "gold": 3929.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 3924 pages while Daniel read 5346 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 6818,
+          "DANIEL_PAGES_YESTERDAY": 5783
+        },
+        "gold": 6823.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 6818 pages while Daniel read 5783 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 3623,
+          "DANIEL_PAGES_YESTERDAY": 1582
+        },
+        "gold": 3628.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 3623 pages while Daniel read 1582 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 2284,
+          "DANIEL_PAGES_YESTERDAY": 5880
+        },
+        "gold": 2289.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 2284 pages while Daniel read 5880 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 8073,
+          "DANIEL_PAGES_YESTERDAY": 3203
+        },
+        "gold": 8078.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 8073 pages while Daniel read 3203 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 2230,
+          "DANIEL_PAGES_YESTERDAY": 303
+        },
+        "gold": 2235.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 2230 pages while Daniel read 303 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 6024,
+          "DANIEL_PAGES_YESTERDAY": 3976
+        },
+        "gold": 6029.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 6024 pages while Daniel read 3976 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 3327,
+          "DANIEL_PAGES_YESTERDAY": 3332
+        },
+        "gold": 3332.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 3327 pages while Daniel read 3332 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 6030,
+          "DANIEL_PAGES_YESTERDAY": 3836
+        },
+        "gold": 6035.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 6030 pages while Daniel read 3836 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 952,
+          "DANIEL_PAGES_YESTERDAY": 6235
+        },
+        "gold": 957.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 952 pages while Daniel read 6235 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 3330,
+          "DANIEL_PAGES_YESTERDAY": 3953
+        },
+        "gold": 3335.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 3330 pages while Daniel read 3953 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 2025,
+          "DANIEL_PAGES_YESTERDAY": 5795
+        },
+        "gold": 2030.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 2025 pages while Daniel read 5795 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 1912,
+          "DANIEL_PAGES_YESTERDAY": 5928
+        },
+        "gold": 1917.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 1912 pages while Daniel read 5928 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 5722,
+          "DANIEL_PAGES_YESTERDAY": 5016
+        },
+        "gold": 5727.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 5722 pages while Daniel read 5016 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 300,
+          "DANIEL_PAGES_YESTERDAY": 7961
+        },
+        "gold": 305.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 300 pages while Daniel read 7961 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      },
+      {
+        "inputs": {
+          "DENISE_PAGES_YESTERDAY": 8732,
+          "DANIEL_PAGES_YESTERDAY": 8317
+        },
+        "gold": 8737.0,
+        "question": "Denise and Daniel are reading the same book. Yesterday, Denise read 8732 pages while Daniel read 8317 pages. Today, Denise read 5 more than as many pages as what Daniel read yesterday, while Daniel was not able to read any pages today. How many more pages did Denise read more than Daniel?"
+      }
+    ]
+  },
+  {
+    "idx": 7,
+    "src_idx": 9,
+    "backfill": false,
+    "keys": [
+      "JANEY_BOOKS",
+      "JANEY_BOOKS_EXTRA"
+    ],
+    "template": "Janey has JANEY_BOOKS_EXTRA more than twice the number of books that Sally has. If Janey has JANEY_BOOKS books, how many does Sally have?",
+    "require_int": true,
+    "source_target": 4064050.0,
+    "n_inputs": 2,
+    "n_varied": 2,
+    "example": {
+      "inputs": {
+        "JANEY_BOOKS": 9849,
+        "JANEY_BOOKS_EXTRA": 6243
+      },
+      "gold": 1803.0,
+      "question": "Janey has 6243 more than twice the number of books that Sally has. If Janey has 9849 books, how many does Sally have?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "JANEY_BOOKS": 9000,
+          "JANEY_BOOKS_EXTRA": 630
+        },
+        "gold": 4185.0,
+        "question": "Janey has 630 more than twice the number of books that Sally has. If Janey has 9000 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 5948,
+          "JANEY_BOOKS_EXTRA": 592
+        },
+        "gold": 2678.0,
+        "question": "Janey has 592 more than twice the number of books that Sally has. If Janey has 5948 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 8745,
+          "JANEY_BOOKS_EXTRA": 2937
+        },
+        "gold": 2904.0,
+        "question": "Janey has 2937 more than twice the number of books that Sally has. If Janey has 8745 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 6508,
+          "JANEY_BOOKS_EXTRA": 4880
+        },
+        "gold": 814.0,
+        "question": "Janey has 4880 more than twice the number of books that Sally has. If Janey has 6508 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 6915,
+          "JANEY_BOOKS_EXTRA": 2429
+        },
+        "gold": 2243.0,
+        "question": "Janey has 2429 more than twice the number of books that Sally has. If Janey has 6915 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 5065,
+          "JANEY_BOOKS_EXTRA": 771
+        },
+        "gold": 2147.0,
+        "question": "Janey has 771 more than twice the number of books that Sally has. If Janey has 5065 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 8243,
+          "JANEY_BOOKS_EXTRA": 4467
+        },
+        "gold": 1888.0,
+        "question": "Janey has 4467 more than twice the number of books that Sally has. If Janey has 8243 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 4251,
+          "JANEY_BOOKS_EXTRA": 1813
+        },
+        "gold": 1219.0,
+        "question": "Janey has 1813 more than twice the number of books that Sally has. If Janey has 4251 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 7535,
+          "JANEY_BOOKS_EXTRA": 3695
+        },
+        "gold": 1920.0,
+        "question": "Janey has 3695 more than twice the number of books that Sally has. If Janey has 7535 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 8158,
+          "JANEY_BOOKS_EXTRA": 1984
+        },
+        "gold": 3087.0,
+        "question": "Janey has 1984 more than twice the number of books that Sally has. If Janey has 8158 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 7318,
+          "JANEY_BOOKS_EXTRA": 1182
+        },
+        "gold": 3068.0,
+        "question": "Janey has 1182 more than twice the number of books that Sally has. If Janey has 7318 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 6910,
+          "JANEY_BOOKS_EXTRA": 3296
+        },
+        "gold": 1807.0,
+        "question": "Janey has 3296 more than twice the number of books that Sally has. If Janey has 6910 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 8712,
+          "JANEY_BOOKS_EXTRA": 5148
+        },
+        "gold": 1782.0,
+        "question": "Janey has 5148 more than twice the number of books that Sally has. If Janey has 8712 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 9097,
+          "JANEY_BOOKS_EXTRA": 2163
+        },
+        "gold": 3467.0,
+        "question": "Janey has 2163 more than twice the number of books that Sally has. If Janey has 9097 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 7717,
+          "JANEY_BOOKS_EXTRA": 977
+        },
+        "gold": 3370.0,
+        "question": "Janey has 977 more than twice the number of books that Sally has. If Janey has 7717 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 9672,
+          "JANEY_BOOKS_EXTRA": 1962
+        },
+        "gold": 3855.0,
+        "question": "Janey has 1962 more than twice the number of books that Sally has. If Janey has 9672 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 9943,
+          "JANEY_BOOKS_EXTRA": 3003
+        },
+        "gold": 3470.0,
+        "question": "Janey has 3003 more than twice the number of books that Sally has. If Janey has 9943 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 7663,
+          "JANEY_BOOKS_EXTRA": 5023
+        },
+        "gold": 1320.0,
+        "question": "Janey has 5023 more than twice the number of books that Sally has. If Janey has 7663 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 6366,
+          "JANEY_BOOKS_EXTRA": 1994
+        },
+        "gold": 2186.0,
+        "question": "Janey has 1994 more than twice the number of books that Sally has. If Janey has 6366 books, how many does Sally have?"
+      },
+      {
+        "inputs": {
+          "JANEY_BOOKS": 4278,
+          "JANEY_BOOKS_EXTRA": 2762
+        },
+        "gold": 758.0,
+        "question": "Janey has 2762 more than twice the number of books that Sally has. If Janey has 4278 books, how many does Sally have?"
+      }
+    ]
+  },
+  {
+    "idx": 8,
+    "src_idx": 10,
+    "backfill": false,
+    "keys": [
+      "EMIL_AGE_NOW",
+      "EMIL_AGE_LATER"
+    ],
+    "template": "Emil is EMIL_AGE_NOW years old now. When he turns EMIL_AGE_LATER, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?",
+    "require_int": true,
+    "source_target": 3725355.0,
+    "n_inputs": 2,
+    "n_varied": 2,
+    "example": {
+      "inputs": {
+        "EMIL_AGE_NOW": 9864,
+        "EMIL_AGE_LATER": 8272
+      },
+      "gold": 23864.0,
+      "question": "Emil is 9864 years old now. When he turns 8272, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 2399,
+          "EMIL_AGE_LATER": 4576
+        },
+        "gold": 7086.0,
+        "question": "Emil is 2399 years old now. When he turns 4576, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 3940,
+          "EMIL_AGE_LATER": 8294
+        },
+        "gold": 12027.0,
+        "question": "Emil is 3940 years old now. When he turns 8294, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 2854,
+          "EMIL_AGE_LATER": 3642
+        },
+        "gold": 7529.0,
+        "question": "Emil is 2854 years old now. When he turns 3642, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 6218,
+          "EMIL_AGE_LATER": 5924
+        },
+        "gold": 15398.0,
+        "question": "Emil is 6218 years old now. When he turns 5924, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 5960,
+          "EMIL_AGE_LATER": 9926
+        },
+        "gold": 16883.0,
+        "question": "Emil is 5960 years old now. When he turns 9926, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 1240,
+          "EMIL_AGE_LATER": 5560
+        },
+        "gold": 5260.0,
+        "question": "Emil is 1240 years old now. When he turns 5560, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 5795,
+          "EMIL_AGE_LATER": 9696
+        },
+        "gold": 16438.0,
+        "question": "Emil is 5795 years old now. When he turns 9696, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 7909,
+          "EMIL_AGE_LATER": 1920
+        },
+        "gold": 16778.0,
+        "question": "Emil is 7909 years old now. When he turns 1920, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 7731,
+          "EMIL_AGE_LATER": 4160
+        },
+        "gold": 17542.0,
+        "question": "Emil is 7731 years old now. When he turns 4160, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 572,
+          "EMIL_AGE_LATER": 3066
+        },
+        "gold": 2677.0,
+        "question": "Emil is 572 years old now. When he turns 3066, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 2719,
+          "EMIL_AGE_LATER": 4194
+        },
+        "gold": 7535.0,
+        "question": "Emil is 2719 years old now. When he turns 4194, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 6058,
+          "EMIL_AGE_LATER": 4840
+        },
+        "gold": 14536.0,
+        "question": "Emil is 6058 years old now. When he turns 4840, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 4744,
+          "EMIL_AGE_LATER": 1274
+        },
+        "gold": 10125.0,
+        "question": "Emil is 4744 years old now. When he turns 1274, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 6946,
+          "EMIL_AGE_LATER": 4836
+        },
+        "gold": 16310.0,
+        "question": "Emil is 6946 years old now. When he turns 4836, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 5422,
+          "EMIL_AGE_LATER": 9132
+        },
+        "gold": 15410.0,
+        "question": "Emil is 5422 years old now. When he turns 9132, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 8479,
+          "EMIL_AGE_LATER": 9324
+        },
+        "gold": 21620.0,
+        "question": "Emil is 8479 years old now. When he turns 9324, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 6212,
+          "EMIL_AGE_LATER": 8234
+        },
+        "gold": 16541.0,
+        "question": "Emil is 6212 years old now. When he turns 8234, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 8906,
+          "EMIL_AGE_LATER": 3202
+        },
+        "gold": 19413.0,
+        "question": "Emil is 8906 years old now. When he turns 3202, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 1006,
+          "EMIL_AGE_LATER": 2320
+        },
+        "gold": 3172.0,
+        "question": "Emil is 1006 years old now. When he turns 2320, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      },
+      {
+        "inputs": {
+          "EMIL_AGE_NOW": 225,
+          "EMIL_AGE_LATER": 6302
+        },
+        "gold": 3601.0,
+        "question": "Emil is 225 years old now. When he turns 6302, he will be half the age of his dad but twice as old as his brother.  What is the sum of the ages of his dad and his brother now?"
+      }
+    ]
+  },
+  {
+    "idx": 9,
+    "src_idx": 11,
+    "backfill": false,
+    "keys": [
+      "PAILS_AFTERNOON"
+    ],
+    "template": "Baldur gets water from a well. He gets 9558390 pails of water every morning and PAILS_AFTERNOON pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?",
+    "require_int": true,
+    "source_target": 47791980.0,
+    "n_inputs": 3,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "PAILS_AFTERNOON": 1671
+      },
+      "gold": 47800305.0,
+      "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 1671 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 5814
+        },
+        "gold": 47821020.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 5814 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 5312
+        },
+        "gold": 47818510.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 5312 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 2909
+        },
+        "gold": 47806495.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 2909 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 3930
+        },
+        "gold": 47811600.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 3930 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 761
+        },
+        "gold": 47795755.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 761 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 2855
+        },
+        "gold": 47806225.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 2855 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 2263
+        },
+        "gold": 47803265.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 2263 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 338
+        },
+        "gold": 47793640.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 338 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 926
+        },
+        "gold": 47796580.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 926 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 5387
+        },
+        "gold": 47818885.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 5387 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 3168
+        },
+        "gold": 47807790.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 3168 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 6792
+        },
+        "gold": 47825910.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 6792 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 818
+        },
+        "gold": 47796040.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 818 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 9168
+        },
+        "gold": 47837790.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 9168 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 9602
+        },
+        "gold": 47839960.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 9602 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 2003
+        },
+        "gold": 47801965.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 2003 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 6317
+        },
+        "gold": 47823535.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 6317 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 7632
+        },
+        "gold": 47830110.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 7632 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 9072
+        },
+        "gold": 47837310.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 9072 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      },
+      {
+        "inputs": {
+          "PAILS_AFTERNOON": 9019
+        },
+        "gold": 47837045.0,
+        "question": "Baldur gets water from a well. He gets 9558390 pails of water every morning and 9019 pails of water every afternoon. If each pail contains 9558390 liters of water, how many liters of water does he get every day?"
+      }
+    ]
+  },
+  {
+    "idx": 10,
+    "src_idx": 12,
+    "backfill": false,
+    "keys": [
+      "QUARTERS"
+    ],
+    "template": "Carrie was given ten twenties and QUARTERS quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch.",
+    "require_int": true,
+    "source_target": 155.0,
+    "n_inputs": 2,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "QUARTERS": 5160
+      },
+      "gold": 1410.0,
+      "question": "Carrie was given ten twenties and 5160 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+    },
+    "tests": [
+      {
+        "inputs": {
+          "QUARTERS": 5212
+        },
+        "gold": 1423.0,
+        "question": "Carrie was given ten twenties and 5212 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 5912
+        },
+        "gold": 1598.0,
+        "question": "Carrie was given ten twenties and 5912 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 244
+        },
+        "gold": 181.0,
+        "question": "Carrie was given ten twenties and 244 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 7204
+        },
+        "gold": 1921.0,
+        "question": "Carrie was given ten twenties and 7204 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 7036
+        },
+        "gold": 1879.0,
+        "question": "Carrie was given ten twenties and 7036 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 4204
+        },
+        "gold": 1171.0,
+        "question": "Carrie was given ten twenties and 4204 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 2116
+        },
+        "gold": 649.0,
+        "question": "Carrie was given ten twenties and 2116 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 7696
+        },
+        "gold": 2044.0,
+        "question": "Carrie was given ten twenties and 7696 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 5044
+        },
+        "gold": 1381.0,
+        "question": "Carrie was given ten twenties and 5044 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 2220
+        },
+        "gold": 675.0,
+        "question": "Carrie was given ten twenties and 2220 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 9004
+        },
+        "gold": 2371.0,
+        "question": "Carrie was given ten twenties and 9004 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 1704
+        },
+        "gold": 546.0,
+        "question": "Carrie was given ten twenties and 1704 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 780
+        },
+        "gold": 315.0,
+        "question": "Carrie was given ten twenties and 780 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 5664
+        },
+        "gold": 1536.0,
+        "question": "Carrie was given ten twenties and 5664 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 9080
+        },
+        "gold": 2390.0,
+        "question": "Carrie was given ten twenties and 9080 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 4480
+        },
+        "gold": 1240.0,
+        "question": "Carrie was given ten twenties and 4480 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 4540
+        },
+        "gold": 1255.0,
+        "question": "Carrie was given ten twenties and 4540 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 3756
+        },
+        "gold": 1059.0,
+        "question": "Carrie was given ten twenties and 3756 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 6504
+        },
+        "gold": 1746.0,
+        "question": "Carrie was given ten twenties and 6504 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      },
+      {
+        "inputs": {
+          "QUARTERS": 6632
+        },
+        "gold": 1778.0,
+        "question": "Carrie was given ten twenties and 6632 quarters by her aunt to use for lunch. If she spent all the quarters and 3/5 of the twenties, calculate the total amount of money she paid for the lunch."
+      }
+    ]
+  },
+  {
+    "idx": 11,
+    "src_idx": 14,
+    "backfill": false,
+    "keys": [
+      "CROSSWORD_TIME",
+      "SUDOKU_TIME",
+      "CROSSWORD_PUZZLES",
+      "SUDOKU_PUZZLES"
+    ],
+    "template": "It takes Carmen CROSSWORD_TIME minutes to finish a crossword puzzle and SUDOKU_TIME minutes to finish a sudoku puzzle.  Over the weekend she solved CROSSWORD_PUZZLES crossword puzzles and SUDOKU_PUZZLES sudoku puzzles.  How much time did she spend playing these games?",
+    "require_int": true,
+    "source_target": 7530960.0,
+    "n_inputs": 4,
+    "n_varied": 4,
+    "example": {
+      "inputs": {
+        "CROSSWORD_TIME": 1129,
+        "SUDOKU_TIME": 4017,
+        "CROSSWORD_PUZZLES": 3695,
+        "SUDOKU_PUZZLES": 3354
+      },
+      "gold": 17644673.0,
+      "question": "It takes Carmen 1129 minutes to finish a crossword puzzle and 4017 minutes to finish a sudoku puzzle.  Over the weekend she solved 3695 crossword puzzles and 3354 sudoku puzzles.  How much time did she spend playing these games?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 6660,
+          "SUDOKU_TIME": 5858,
+          "CROSSWORD_PUZZLES": 5023,
+          "SUDOKU_PUZZLES": 2428
+        },
+        "gold": 47676404.0,
+        "question": "It takes Carmen 6660 minutes to finish a crossword puzzle and 5858 minutes to finish a sudoku puzzle.  Over the weekend she solved 5023 crossword puzzles and 2428 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 3724,
+          "SUDOKU_TIME": 8264,
+          "CROSSWORD_PUZZLES": 4275,
+          "SUDOKU_PUZZLES": 3239
+        },
+        "gold": 42687196.0,
+        "question": "It takes Carmen 3724 minutes to finish a crossword puzzle and 8264 minutes to finish a sudoku puzzle.  Over the weekend she solved 4275 crossword puzzles and 3239 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 8896,
+          "SUDOKU_TIME": 6484,
+          "CROSSWORD_PUZZLES": 4898,
+          "SUDOKU_PUZZLES": 8011
+        },
+        "gold": 95515932.0,
+        "question": "It takes Carmen 8896 minutes to finish a crossword puzzle and 6484 minutes to finish a sudoku puzzle.  Over the weekend she solved 4898 crossword puzzles and 8011 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 1698,
+          "SUDOKU_TIME": 4189,
+          "CROSSWORD_PUZZLES": 2324,
+          "SUDOKU_PUZZLES": 8874
+        },
+        "gold": 41119338.0,
+        "question": "It takes Carmen 1698 minutes to finish a crossword puzzle and 4189 minutes to finish a sudoku puzzle.  Over the weekend she solved 2324 crossword puzzles and 8874 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 6816,
+          "SUDOKU_TIME": 3058,
+          "CROSSWORD_PUZZLES": 3750,
+          "SUDOKU_PUZZLES": 9580
+        },
+        "gold": 54855640.0,
+        "question": "It takes Carmen 6816 minutes to finish a crossword puzzle and 3058 minutes to finish a sudoku puzzle.  Over the weekend she solved 3750 crossword puzzles and 9580 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 8369,
+          "SUDOKU_TIME": 5984,
+          "CROSSWORD_PUZZLES": 3248,
+          "SUDOKU_PUZZLES": 844
+        },
+        "gold": 32233008.0,
+        "question": "It takes Carmen 8369 minutes to finish a crossword puzzle and 5984 minutes to finish a sudoku puzzle.  Over the weekend she solved 3248 crossword puzzles and 844 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 3423,
+          "SUDOKU_TIME": 9046,
+          "CROSSWORD_PUZZLES": 8553,
+          "SUDOKU_PUZZLES": 2949
+        },
+        "gold": 55953573.0,
+        "question": "It takes Carmen 3423 minutes to finish a crossword puzzle and 9046 minutes to finish a sudoku puzzle.  Over the weekend she solved 8553 crossword puzzles and 2949 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 2824,
+          "SUDOKU_TIME": 7354,
+          "CROSSWORD_PUZZLES": 1510,
+          "SUDOKU_PUZZLES": 2270
+        },
+        "gold": 20957820.0,
+        "question": "It takes Carmen 2824 minutes to finish a crossword puzzle and 7354 minutes to finish a sudoku puzzle.  Over the weekend she solved 1510 crossword puzzles and 2270 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 3835,
+          "SUDOKU_TIME": 3765,
+          "CROSSWORD_PUZZLES": 2672,
+          "SUDOKU_PUZZLES": 2826
+        },
+        "gold": 20887010.0,
+        "question": "It takes Carmen 3835 minutes to finish a crossword puzzle and 3765 minutes to finish a sudoku puzzle.  Over the weekend she solved 2672 crossword puzzles and 2826 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 7783,
+          "SUDOKU_TIME": 5526,
+          "CROSSWORD_PUZZLES": 2720,
+          "SUDOKU_PUZZLES": 8019
+        },
+        "gold": 65482754.0,
+        "question": "It takes Carmen 7783 minutes to finish a crossword puzzle and 5526 minutes to finish a sudoku puzzle.  Over the weekend she solved 2720 crossword puzzles and 8019 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 3801,
+          "SUDOKU_TIME": 6000,
+          "CROSSWORD_PUZZLES": 2211,
+          "SUDOKU_PUZZLES": 976
+        },
+        "gold": 14260011.0,
+        "question": "It takes Carmen 3801 minutes to finish a crossword puzzle and 6000 minutes to finish a sudoku puzzle.  Over the weekend she solved 2211 crossword puzzles and 976 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 3050,
+          "SUDOKU_TIME": 4179,
+          "CROSSWORD_PUZZLES": 2453,
+          "SUDOKU_PUZZLES": 9160
+        },
+        "gold": 45761290.0,
+        "question": "It takes Carmen 3050 minutes to finish a crossword puzzle and 4179 minutes to finish a sudoku puzzle.  Over the weekend she solved 2453 crossword puzzles and 9160 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 3571,
+          "SUDOKU_TIME": 8801,
+          "CROSSWORD_PUZZLES": 9873,
+          "SUDOKU_PUZZLES": 3180
+        },
+        "gold": 63243663.0,
+        "question": "It takes Carmen 3571 minutes to finish a crossword puzzle and 8801 minutes to finish a sudoku puzzle.  Over the weekend she solved 9873 crossword puzzles and 3180 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 7982,
+          "SUDOKU_TIME": 5461,
+          "CROSSWORD_PUZZLES": 6868,
+          "SUDOKU_PUZZLES": 1078
+        },
+        "gold": 60707334.0,
+        "question": "It takes Carmen 7982 minutes to finish a crossword puzzle and 5461 minutes to finish a sudoku puzzle.  Over the weekend she solved 6868 crossword puzzles and 1078 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 9076,
+          "SUDOKU_TIME": 9134,
+          "CROSSWORD_PUZZLES": 5614,
+          "SUDOKU_PUZZLES": 9575
+        },
+        "gold": 138410714.0,
+        "question": "It takes Carmen 9076 minutes to finish a crossword puzzle and 9134 minutes to finish a sudoku puzzle.  Over the weekend she solved 5614 crossword puzzles and 9575 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 8636,
+          "SUDOKU_TIME": 5267,
+          "CROSSWORD_PUZZLES": 302,
+          "SUDOKU_PUZZLES": 4527
+        },
+        "gold": 26451781.0,
+        "question": "It takes Carmen 8636 minutes to finish a crossword puzzle and 5267 minutes to finish a sudoku puzzle.  Over the weekend she solved 302 crossword puzzles and 4527 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 8522,
+          "SUDOKU_TIME": 5116,
+          "CROSSWORD_PUZZLES": 9181,
+          "SUDOKU_PUZZLES": 2051
+        },
+        "gold": 88733398.0,
+        "question": "It takes Carmen 8522 minutes to finish a crossword puzzle and 5116 minutes to finish a sudoku puzzle.  Over the weekend she solved 9181 crossword puzzles and 2051 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 9949,
+          "SUDOKU_TIME": 3414,
+          "CROSSWORD_PUZZLES": 7195,
+          "SUDOKU_PUZZLES": 9547
+        },
+        "gold": 104176513.0,
+        "question": "It takes Carmen 9949 minutes to finish a crossword puzzle and 3414 minutes to finish a sudoku puzzle.  Over the weekend she solved 7195 crossword puzzles and 9547 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 247,
+          "SUDOKU_TIME": 2934,
+          "CROSSWORD_PUZZLES": 5729,
+          "SUDOKU_PUZZLES": 748
+        },
+        "gold": 3609695.0,
+        "question": "It takes Carmen 247 minutes to finish a crossword puzzle and 2934 minutes to finish a sudoku puzzle.  Over the weekend she solved 5729 crossword puzzles and 748 sudoku puzzles.  How much time did she spend playing these games?"
+      },
+      {
+        "inputs": {
+          "CROSSWORD_TIME": 6362,
+          "SUDOKU_TIME": 8733,
+          "CROSSWORD_PUZZLES": 7845,
+          "SUDOKU_PUZZLES": 2389
+        },
+        "gold": 70773027.0,
+        "question": "It takes Carmen 6362 minutes to finish a crossword puzzle and 8733 minutes to finish a sudoku puzzle.  Over the weekend she solved 7845 crossword puzzles and 2389 sudoku puzzles.  How much time did she spend playing these games?"
+      }
+    ]
+  },
+  {
+    "idx": 12,
+    "src_idx": 16,
+    "backfill": false,
+    "keys": [
+      "HOURS_PER_ARTICLE"
+    ],
+    "template": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of HOURS_PER_ARTICLE hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days.",
+    "require_int": true,
+    "source_target": 107803668.0,
+    "n_inputs": 2,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "HOURS_PER_ARTICLE": 908
+      },
+      "gold": 24471432636.0,
+      "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 908 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+    },
+    "tests": [
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 1605
+        },
+        "gold": 43256221785.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 1605 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 4439
+        },
+        "gold": 119635120563.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 4439 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 3697
+        },
+        "gold": 99637540149.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 3697 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 3337
+        },
+        "gold": 89935210029.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 3337 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 6421
+        },
+        "gold": 173051838057.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 6421 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 8510
+        },
+        "gold": 229352303670.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 8510 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 8725
+        },
+        "gold": 235146750825.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 8725 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 8201
+        },
+        "gold": 221024470317.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 8201 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 6646
+        },
+        "gold": 179115794382.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 6646 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 1248
+        },
+        "gold": 33634744416.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 1248 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 5473
+        },
+        "gold": 147502368741.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 5473 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 3358
+        },
+        "gold": 90501179286.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 3358 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 7940
+        },
+        "gold": 213990280980.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 7940 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 6192
+        },
+        "gold": 166880078064.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 6192 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 4547
+        },
+        "gold": 122545819599.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 4547 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 5283
+        },
+        "gold": 142381694511.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 5283 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 4381
+        },
+        "gold": 118071967377.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 4381 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 990
+        },
+        "gold": 26681407830.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 990 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 6811
+        },
+        "gold": 183562695687.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 6811 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      },
+      {
+        "inputs": {
+          "HOURS_PER_ARTICLE": 2362
+        },
+        "gold": 63658065954.0,
+        "question": "Meredith is a freelance blogger who writes about health topics and submits to clients each day as her permanent job. A blog article takes an average of 2362 hours to research and write about. Last week, she wrote 5182869 articles on Monday and  2/5182869 times more articles on Tuesday than on Monday. On Wednesday, she wrote twice the number of articles she wrote on Tuesday. Calculate the total number of hours she spent writing articles in the three days."
+      }
+    ]
+  },
+  {
+    "idx": 13,
+    "src_idx": 17,
+    "backfill": false,
+    "keys": [
+      "DRESS_SHIRTS_PER_SUIT",
+      "SUIT_COST",
+      "DRESS_SHIRT_COST"
+    ],
+    "template": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys DRESS_SHIRTS_PER_SUIT dress shirts per suit.  The suits cost $SUIT_COST each and the dress pants cost 1/5 that cost.  The dress shirts were $DRESS_SHIRT_COST each.  How much did everything cost?",
+    "require_int": true,
+    "source_target": 249430800.0,
+    "n_inputs": 5,
+    "n_varied": 3,
+    "example": {
+      "inputs": {
+        "DRESS_SHIRTS_PER_SUIT": 1277,
+        "SUIT_COST": 7461,
+        "DRESS_SHIRT_COST": 9433
+      },
+      "gold": 2601779102.0,
+      "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 1277 dress shirts per suit.  The suits cost $7461 each and the dress pants cost 1/5 that cost.  The dress shirts were $9433 each.  How much did everything cost?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 1521,
+          "SUIT_COST": 702,
+          "DRESS_SHIRT_COST": 6475
+        },
+        "gold": 331950294.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 1521 dress shirts per suit.  The suits cost $702 each and the dress pants cost 1/5 that cost.  The dress shirts were $6475 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 5635,
+          "SUIT_COST": 2225,
+          "DRESS_SHIRT_COST": 3713
+        },
+        "gold": 949200250.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 5635 dress shirts per suit.  The suits cost $2225 each and the dress pants cost 1/5 that cost.  The dress shirts were $3713 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 8190,
+          "SUIT_COST": 3924,
+          "DRESS_SHIRT_COST": 3328
+        },
+        "gold": 1577575728.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 8190 dress shirts per suit.  The suits cost $3924 each and the dress pants cost 1/5 that cost.  The dress shirts were $3328 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 678,
+          "SUIT_COST": 6678,
+          "DRESS_SHIRT_COST": 4870
+        },
+        "gold": 2253934416.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 678 dress shirts per suit.  The suits cost $6678 each and the dress pants cost 1/5 that cost.  The dress shirts were $4870 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 4070,
+          "SUIT_COST": 4684,
+          "DRESS_SHIRT_COST": 1565
+        },
+        "gold": 1621462748.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 4070 dress shirts per suit.  The suits cost $4684 each and the dress pants cost 1/5 that cost.  The dress shirts were $1565 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 4958,
+          "SUIT_COST": 8654,
+          "DRESS_SHIRT_COST": 9733
+        },
+        "gold": 3360640228.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 4958 dress shirts per suit.  The suits cost $8654 each and the dress pants cost 1/5 that cost.  The dress shirts were $9733 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 5810,
+          "SUIT_COST": 5067,
+          "DRESS_SHIRT_COST": 7731
+        },
+        "gold": 2134313424.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 5810 dress shirts per suit.  The suits cost $5067 each and the dress pants cost 1/5 that cost.  The dress shirts were $7731 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 6832,
+          "SUIT_COST": 8230,
+          "DRESS_SHIRT_COST": 9949
+        },
+        "gold": 3416783240.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 6832 dress shirts per suit.  The suits cost $8230 each and the dress pants cost 1/5 that cost.  The dress shirts were $9949 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 1354,
+          "SUIT_COST": 7627,
+          "DRESS_SHIRT_COST": 1979
+        },
+        "gold": 2563322304.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 1354 dress shirts per suit.  The suits cost $7627 each and the dress pants cost 1/5 that cost.  The dress shirts were $1979 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 8730,
+          "SUIT_COST": 9095,
+          "DRESS_SHIRT_COST": 8051
+        },
+        "gold": 3727594640.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 8730 dress shirts per suit.  The suits cost $9095 each and the dress pants cost 1/5 that cost.  The dress shirts were $8051 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 5113,
+          "SUIT_COST": 6596,
+          "DRESS_SHIRT_COST": 8505
+        },
+        "gold": 2628505562.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 5113 dress shirts per suit.  The suits cost $6596 each and the dress pants cost 1/5 that cost.  The dress shirts were $8505 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 8389,
+          "SUIT_COST": 2933,
+          "DRESS_SHIRT_COST": 294
+        },
+        "gold": 1000097336.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 8389 dress shirts per suit.  The suits cost $2933 each and the dress pants cost 1/5 that cost.  The dress shirts were $294 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 6620,
+          "SUIT_COST": 5838,
+          "DRESS_SHIRT_COST": 4782
+        },
+        "gold": 2258123736.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 6620 dress shirts per suit.  The suits cost $5838 each and the dress pants cost 1/5 that cost.  The dress shirts were $4782 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 3134,
+          "SUIT_COST": 7999,
+          "DRESS_SHIRT_COST": 8655
+        },
+        "gold": 2931491128.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 3134 dress shirts per suit.  The suits cost $7999 each and the dress pants cost 1/5 that cost.  The dress shirts were $8655 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 6278,
+          "SUIT_COST": 6430,
+          "DRESS_SHIRT_COST": 3416
+        },
+        "gold": 2352894440.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 6278 dress shirts per suit.  The suits cost $6430 each and the dress pants cost 1/5 that cost.  The dress shirts were $3416 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 8491,
+          "SUIT_COST": 1492,
+          "DRESS_SHIRT_COST": 1224
+        },
+        "gold": 600127264.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 8491 dress shirts per suit.  The suits cost $1492 each and the dress pants cost 1/5 that cost.  The dress shirts were $1224 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 6078,
+          "SUIT_COST": 6401,
+          "DRESS_SHIRT_COST": 4291
+        },
+        "gold": 2389600352.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 6078 dress shirts per suit.  The suits cost $6401 each and the dress pants cost 1/5 that cost.  The dress shirts were $4291 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 2619,
+          "SUIT_COST": 1006,
+          "DRESS_SHIRT_COST": 1985
+        },
+        "gold": 386554582.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 2619 dress shirts per suit.  The suits cost $1006 each and the dress pants cost 1/5 that cost.  The dress shirts were $1985 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 9887,
+          "SUIT_COST": 4662,
+          "DRESS_SHIRT_COST": 1631
+        },
+        "gold": 1711707634.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 9887 dress shirts per suit.  The suits cost $4662 each and the dress pants cost 1/5 that cost.  The dress shirts were $1631 each.  How much did everything cost?"
+      },
+      {
+        "inputs": {
+          "DRESS_SHIRTS_PER_SUIT": 4762,
+          "SUIT_COST": 3881,
+          "DRESS_SHIRT_COST": 7601
+        },
+        "gold": 1652671552.0,
+        "question": "James buys a new wardrobe.  He buys 1662810 suits and 1662810 dress pants.  He also buys 4762 dress shirts per suit.  The suits cost $3881 each and the dress pants cost 1/5 that cost.  The dress shirts were $7601 each.  How much did everything cost?"
+      }
+    ]
+  },
+  {
+    "idx": 14,
+    "src_idx": 19,
+    "backfill": false,
+    "keys": [
+      "TOTAL_BOOKS",
+      "SOFIE_EXTRA_BOOKS"
+    ],
+    "template": "Together, Sofie, Anne, and Fawn have TOTAL_BOOKS books. If Sofie has SOFIE_EXTRA_BOOKS more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?",
+    "require_int": true,
+    "source_target": 1086022.0,
+    "n_inputs": 4,
+    "n_varied": 2,
+    "example": {
+      "inputs": {
+        "TOTAL_BOOKS": 4361,
+        "SOFIE_EXTRA_BOOKS": 3355
+      },
+      "gold": 1453.0,
+      "question": "Together, Sofie, Anne, and Fawn have 4361 books. If Sofie has 3355 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 4214,
+          "SOFIE_EXTRA_BOOKS": 4411
+        },
+        "gold": 1404.0,
+        "question": "Together, Sofie, Anne, and Fawn have 4214 books. If Sofie has 4411 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 3500,
+          "SOFIE_EXTRA_BOOKS": 7048
+        },
+        "gold": 1166.0,
+        "question": "Together, Sofie, Anne, and Fawn have 3500 books. If Sofie has 7048 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 7286,
+          "SOFIE_EXTRA_BOOKS": 6852
+        },
+        "gold": 2428.0,
+        "question": "Together, Sofie, Anne, and Fawn have 7286 books. If Sofie has 6852 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 3941,
+          "SOFIE_EXTRA_BOOKS": 4786
+        },
+        "gold": 1313.0,
+        "question": "Together, Sofie, Anne, and Fawn have 3941 books. If Sofie has 4786 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 3329,
+          "SOFIE_EXTRA_BOOKS": 3789
+        },
+        "gold": 1109.0,
+        "question": "Together, Sofie, Anne, and Fawn have 3329 books. If Sofie has 3789 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 8475,
+          "SOFIE_EXTRA_BOOKS": 6724
+        },
+        "gold": 2825.0,
+        "question": "Together, Sofie, Anne, and Fawn have 8475 books. If Sofie has 6724 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 912,
+          "SOFIE_EXTRA_BOOKS": 8358
+        },
+        "gold": 304.0,
+        "question": "Together, Sofie, Anne, and Fawn have 912 books. If Sofie has 8358 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 7940,
+          "SOFIE_EXTRA_BOOKS": 1778
+        },
+        "gold": 2646.0,
+        "question": "Together, Sofie, Anne, and Fawn have 7940 books. If Sofie has 1778 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 5876,
+          "SOFIE_EXTRA_BOOKS": 7841
+        },
+        "gold": 1958.0,
+        "question": "Together, Sofie, Anne, and Fawn have 5876 books. If Sofie has 7841 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 9525,
+          "SOFIE_EXTRA_BOOKS": 2648
+        },
+        "gold": 3175.0,
+        "question": "Together, Sofie, Anne, and Fawn have 9525 books. If Sofie has 2648 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 6609,
+          "SOFIE_EXTRA_BOOKS": 4204
+        },
+        "gold": 2203.0,
+        "question": "Together, Sofie, Anne, and Fawn have 6609 books. If Sofie has 4204 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 6107,
+          "SOFIE_EXTRA_BOOKS": 9121
+        },
+        "gold": 2035.0,
+        "question": "Together, Sofie, Anne, and Fawn have 6107 books. If Sofie has 9121 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 4107,
+          "SOFIE_EXTRA_BOOKS": 1646
+        },
+        "gold": 1369.0,
+        "question": "Together, Sofie, Anne, and Fawn have 4107 books. If Sofie has 1646 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 7453,
+          "SOFIE_EXTRA_BOOKS": 1173
+        },
+        "gold": 2484.0,
+        "question": "Together, Sofie, Anne, and Fawn have 7453 books. If Sofie has 1173 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 8266,
+          "SOFIE_EXTRA_BOOKS": 2300
+        },
+        "gold": 2755.0,
+        "question": "Together, Sofie, Anne, and Fawn have 8266 books. If Sofie has 2300 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 1851,
+          "SOFIE_EXTRA_BOOKS": 3428
+        },
+        "gold": 617.0,
+        "question": "Together, Sofie, Anne, and Fawn have 1851 books. If Sofie has 3428 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 1961,
+          "SOFIE_EXTRA_BOOKS": 3200
+        },
+        "gold": 653.0,
+        "question": "Together, Sofie, Anne, and Fawn have 1961 books. If Sofie has 3200 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 2658,
+          "SOFIE_EXTRA_BOOKS": 4338
+        },
+        "gold": 886.0,
+        "question": "Together, Sofie, Anne, and Fawn have 2658 books. If Sofie has 4338 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 9130,
+          "SOFIE_EXTRA_BOOKS": 6442
+        },
+        "gold": 3043.0,
+        "question": "Together, Sofie, Anne, and Fawn have 9130 books. If Sofie has 6442 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      },
+      {
+        "inputs": {
+          "TOTAL_BOOKS": 5519,
+          "SOFIE_EXTRA_BOOKS": 1684
+        },
+        "gold": 1839.0,
+        "question": "Together, Sofie, Anne, and Fawn have 5519 books. If Sofie has 1684 more books than Anne, and Anne has 12 fewer books than Fawn does, how many books does Fawn have?"
+      }
+    ]
+  },
+  {
+    "idx": 15,
+    "src_idx": "bf0",
+    "backfill": true,
+    "keys": [
+      "STEVE_AGE"
+    ],
+    "template": "Steve is STEVE_AGE years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?",
+    "require_int": true,
+    "source_target": 29.0,
+    "n_inputs": 1,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "STEVE_AGE": 5634
+      },
+      "gold": 2816.0,
+      "question": "Steve is 5634 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "STEVE_AGE": 772
+        },
+        "gold": 385.0,
+        "question": "Steve is 772 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 8670
+        },
+        "gold": 4334.0,
+        "question": "Steve is 8670 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 9414
+        },
+        "gold": 4706.0,
+        "question": "Steve is 9414 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 4062
+        },
+        "gold": 2030.0,
+        "question": "Steve is 4062 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 7216
+        },
+        "gold": 3607.0,
+        "question": "Steve is 7216 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 7356
+        },
+        "gold": 3677.0,
+        "question": "Steve is 7356 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 3166
+        },
+        "gold": 1582.0,
+        "question": "Steve is 3166 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 6080
+        },
+        "gold": 3039.0,
+        "question": "Steve is 6080 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 7716
+        },
+        "gold": 3857.0,
+        "question": "Steve is 7716 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 9070
+        },
+        "gold": 4534.0,
+        "question": "Steve is 9070 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 888
+        },
+        "gold": 443.0,
+        "question": "Steve is 888 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 7028
+        },
+        "gold": 3513.0,
+        "question": "Steve is 7028 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 7646
+        },
+        "gold": 3822.0,
+        "question": "Steve is 7646 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 1916
+        },
+        "gold": 957.0,
+        "question": "Steve is 1916 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 5548
+        },
+        "gold": 2773.0,
+        "question": "Steve is 5548 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 4196
+        },
+        "gold": 2097.0,
+        "question": "Steve is 4196 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 2662
+        },
+        "gold": 1330.0,
+        "question": "Steve is 2662 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 4846
+        },
+        "gold": 2422.0,
+        "question": "Steve is 4846 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 170
+        },
+        "gold": 84.0,
+        "question": "Steve is 170 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      },
+      {
+        "inputs": {
+          "STEVE_AGE": 6802
+        },
+        "gold": 3400.0,
+        "question": "Steve is 6802 years old. His wife is 4 years older than him. Their son is currently half as old as his mom and their son's wife is 3 years younger than her husband. How old is Steve's son's wife?"
+      }
+    ]
+  },
+  {
+    "idx": 16,
+    "src_idx": "bf1",
+    "backfill": true,
+    "keys": [
+      "GUM_INITIAL"
+    ],
+    "template": "Jim has a GUM_INITIAL pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?",
+    "require_int": true,
+    "source_target": 4190719.0,
+    "n_inputs": 3,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "GUM_INITIAL": 2338
+      },
+      "gold": 1166.0,
+      "question": "Jim has a 2338 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "GUM_INITIAL": 2384
+        },
+        "gold": 1189.0,
+        "question": "Jim has a 2384 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 8450
+        },
+        "gold": 4222.0,
+        "question": "Jim has a 8450 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 5284
+        },
+        "gold": 2639.0,
+        "question": "Jim has a 5284 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 6440
+        },
+        "gold": 3217.0,
+        "question": "Jim has a 6440 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 4644
+        },
+        "gold": 2319.0,
+        "question": "Jim has a 4644 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 7722
+        },
+        "gold": 3858.0,
+        "question": "Jim has a 7722 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 8436
+        },
+        "gold": 4215.0,
+        "question": "Jim has a 8436 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 7734
+        },
+        "gold": 3864.0,
+        "question": "Jim has a 7734 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 9460
+        },
+        "gold": 4727.0,
+        "question": "Jim has a 9460 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 5176
+        },
+        "gold": 2585.0,
+        "question": "Jim has a 5176 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 8772
+        },
+        "gold": 4383.0,
+        "question": "Jim has a 8772 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 7472
+        },
+        "gold": 3733.0,
+        "question": "Jim has a 7472 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 9336
+        },
+        "gold": 4665.0,
+        "question": "Jim has a 9336 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 2430
+        },
+        "gold": 1212.0,
+        "question": "Jim has a 2430 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 6156
+        },
+        "gold": 3075.0,
+        "question": "Jim has a 6156 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 6174
+        },
+        "gold": 3084.0,
+        "question": "Jim has a 6174 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 8268
+        },
+        "gold": 4131.0,
+        "question": "Jim has a 8268 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 3142
+        },
+        "gold": 1568.0,
+        "question": "Jim has a 3142 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 4366
+        },
+        "gold": 2180.0,
+        "question": "Jim has a 4366 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      },
+      {
+        "inputs": {
+          "GUM_INITIAL": 3194
+        },
+        "gold": 1594.0,
+        "question": "Jim has a 3194 pack of gum.  He chews 1 piece of gum for every 2 hours he's at school over a school day that lasts 8 hours.  He chews 1 piece on the way home from school and 1 stick after dinner.  He also gives half the gum he has remaining to his sister when she asks for some right before bed.  How many pieces of gum does Jim have left at the end of the day?"
+      }
+    ]
+  },
+  {
+    "idx": 17,
+    "src_idx": "bf2",
+    "backfill": true,
+    "keys": [
+      "BATHROOM_MINUTES"
+    ],
+    "template": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up BATHROOM_MINUTES minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?",
+    "require_int": true,
+    "source_target": 452.0,
+    "n_inputs": 3,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "BATHROOM_MINUTES": 166
+      },
+      "gold": 291.0,
+      "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 166 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 191
+        },
+        "gold": 266.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 191 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 397
+        },
+        "gold": 60.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 397 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 352
+        },
+        "gold": 105.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 352 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 187
+        },
+        "gold": 270.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 187 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 262
+        },
+        "gold": 195.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 262 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 258
+        },
+        "gold": 199.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 258 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 280
+        },
+        "gold": 177.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 280 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 412
+        },
+        "gold": 45.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 412 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 287
+        },
+        "gold": 170.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 287 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 399
+        },
+        "gold": 58.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 399 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 376
+        },
+        "gold": 81.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 376 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 180
+        },
+        "gold": 277.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 180 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 144
+        },
+        "gold": 313.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 144 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 316
+        },
+        "gold": 141.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 316 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 210
+        },
+        "gold": 247.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 210 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 362
+        },
+        "gold": 95.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 362 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 141
+        },
+        "gold": 316.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 141 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 200
+        },
+        "gold": 257.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 200 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 391
+        },
+        "gold": 66.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 391 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      },
+      {
+        "inputs": {
+          "BATHROOM_MINUTES": 416
+        },
+        "gold": 41.0,
+        "question": "Kim sleepwalks, to monitor her sleeping hours, she installs a camera in her room. Kim usually goes to sleep at 10 p.m. and wakes up at 6 a.m. She is a sleepwalker. One day, after reviewing the cameras, she finds that she woke up that day and was sleepwalking from 2:15 to 2:38 am.  Also, that day she woke up 416 minutes earlier than usual to go to the bathroom. How many minutes did she sleep on her bed that day?"
+      }
+    ]
+  },
+  {
+    "idx": 18,
+    "src_idx": "bf3",
+    "backfill": true,
+    "keys": [
+      "MARTHA_NOTEBOOKS_AFTER"
+    ],
+    "template": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of MARTHA_NOTEBOOKS_AFTER notebooks. How many more than Joseph does she now have?",
+    "require_int": true,
+    "source_target": 4140174.0,
+    "n_inputs": 2,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "MARTHA_NOTEBOOKS_AFTER": 3972
+      },
+      "gold": 3966.0,
+      "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 3972 notebooks. How many more than Joseph does she now have?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 5051
+        },
+        "gold": 5045.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 5051 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 1267
+        },
+        "gold": 1261.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 1267 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 9920
+        },
+        "gold": 9914.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 9920 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 3118
+        },
+        "gold": 3112.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 3118 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 6879
+        },
+        "gold": 6873.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 6879 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 3864
+        },
+        "gold": 3858.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 3864 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 818
+        },
+        "gold": 812.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 818 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 5097
+        },
+        "gold": 5091.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 5097 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 202
+        },
+        "gold": 196.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 202 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 9738
+        },
+        "gold": 9732.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 9738 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 3931
+        },
+        "gold": 3925.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 3931 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 8981
+        },
+        "gold": 8975.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 8981 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 8293
+        },
+        "gold": 8287.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 8293 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 5387
+        },
+        "gold": 5381.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 5387 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 3102
+        },
+        "gold": 3096.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 3102 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 6041
+        },
+        "gold": 6035.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 6041 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 9798
+        },
+        "gold": 9792.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 9798 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 1669
+        },
+        "gold": 1663.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 1669 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 9159
+        },
+        "gold": 9153.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 9159 notebooks. How many more than Joseph does she now have?"
+      },
+      {
+        "inputs": {
+          "MARTHA_NOTEBOOKS_AFTER": 3117
+        },
+        "gold": 3111.0,
+        "question": "Joseph had 3 times as many notebooks as Martha. Martha decided she needed more notebooks and then bought 5 more for a total of 3117 notebooks. How many more than Joseph does she now have?"
+      }
+    ]
+  },
+  {
+    "idx": 19,
+    "src_idx": "bf4",
+    "backfill": true,
+    "keys": [
+      "BONUS_PER_WEEK"
+    ],
+    "template": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $BONUS_PER_WEEK bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?",
+    "require_int": true,
+    "source_target": 289934000.0,
+    "n_inputs": 5,
+    "n_varied": 1,
+    "example": {
+      "inputs": {
+        "BONUS_PER_WEEK": 2847
+      },
+      "gold": 289944188.0,
+      "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $2847 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+    },
+    "tests": [
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 5233
+        },
+        "gold": 289953732.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $5233 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 9670
+        },
+        "gold": 289971480.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $9670 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 4387
+        },
+        "gold": 289950348.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $4387 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 2939
+        },
+        "gold": 289944556.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $2939 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 710
+        },
+        "gold": 289935640.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $710 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 7040
+        },
+        "gold": 289960960.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $7040 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 3874
+        },
+        "gold": 289948296.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $3874 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 3958
+        },
+        "gold": 289948632.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $3958 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 8976
+        },
+        "gold": 289968704.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $8976 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 4390
+        },
+        "gold": 289950360.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $4390 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 4080
+        },
+        "gold": 289949120.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $4080 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 9115
+        },
+        "gold": 289969260.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $9115 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 4428
+        },
+        "gold": 289950512.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $4428 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 1751
+        },
+        "gold": 289939804.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $1751 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 7807
+        },
+        "gold": 289964028.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $7807 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 8951
+        },
+        "gold": 289968604.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $8951 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 3740
+        },
+        "gold": 289947760.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $3740 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 3724
+        },
+        "gold": 289947696.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $3724 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 5187
+        },
+        "gold": 289953548.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $5187 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      },
+      {
+        "inputs": {
+          "BONUS_PER_WEEK": 3849
+        },
+        "gold": 289948196.0,
+        "question": "Watson works a 1449664-hour shift each day, five days a week. He earns $1449664 per hour and gets a $3849 bonus each week if the company performs well. How much money did Watson make in April if the company performed very well for the whole month?"
+      }
+    ]
+  }
+]

@@ -66,6 +66,9 @@ def main():
     ap.add_argument("haiku_dir"); ap.add_argument("sonnet_dir"); ap.add_argument("opus_dir")
     ap.add_argument("--n-hi", type=int, default=20)
     ap.add_argument("--bandwidth", type=float, default=1.0)
+    ap.add_argument("--poster", action="store_true",
+                    help="poster mode: panel title = model name only, no suptitle")
+    ap.add_argument("--outdir", default="figs/toolworld")
     args = ap.parse_args()
 
     loaded = [load_cells(Path(d)) for d in (args.haiku_dir, args.sonnet_dir, args.opus_dir)]
@@ -85,21 +88,23 @@ def main():
         ax.scatter(arr[:, 0], arr[:, 1], c=arr[:, 2], cmap="RdYlGn", vmin=0, vmax=1,
                    s=46, edgecolors="black", linewidths=0.7, zorder=3)
         ax.plot(ts, bnd, "k--", lw=1.2, label="E[build]=E[grind]")
-        ax.set_title(f"{short.capitalize()}\nsolve rate (tool in hand) = {head:.2f}")
+        ax.set_title(short.capitalize() if args.poster
+                     else f"{short.capitalize()}\nsolve rate (tool in hand) = {head:.2f}")
         ax.set_xlabel("byproduct types T")
         ax.set_xlim(T_LO - 0.5, T_HI + 0.5); ax.set_ylim(0.5, args.n_hi + 0.5)
     axes[0].set_ylabel("number of doors N")
     axes[0].legend(loc="upper right", fontsize=7, framealpha=0.9)
 
-    fig.suptitle("Solve rate with the tool FORCE-BUILT and handed over, over (T, N)\n"
-                 f"(gaussian-pooled bw={args.bandwidth:g}; budget caps the whole run incl. "
-                 "context; green = finished, red = failed despite holding the tool)",
-                 y=1.04, fontsize=12)
+    if not args.poster:
+        fig.suptitle("Solve rate with the tool FORCE-BUILT and handed over, over (T, N)\n"
+                     f"(gaussian-pooled bw={args.bandwidth:g}; budget caps the whole run incl. "
+                     "context; green = finished, red = failed despite holding the tool)",
+                     y=1.04, fontsize=12)
     cb = fig.colorbar(mesh, ax=axes, fraction=0.025, pad=0.02)
-    cb.set_label("P(solved | tool built)")
+    cb.set_label("" if args.poster else "P(solved | tool built)")
 
-    out = Path(f"figs/toolworld/fig_efficiency_panels_Nle{args.n_hi}.png")
-    out.parent.mkdir(exist_ok=True)
+    out = Path(args.outdir) / f"fig_efficiency_panels_Nle{args.n_hi}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight")
     print(f"wrote {out} (+ .pdf)")

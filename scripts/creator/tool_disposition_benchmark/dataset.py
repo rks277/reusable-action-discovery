@@ -96,11 +96,18 @@ def _load_items() -> list[tuple[int, dict]]:
             for i, l in enumerate(DATA.read_text().splitlines()) if l.strip()]
 
 
-def build_dataset(n: int, sig_figs: int, seed: int, magnitude: float = 1.0) -> list[dict]:
+def build_dataset(n: int, sig_figs: int, seed: int, magnitude: float = 1.0,
+                  shuffle: bool = False) -> list[dict]:
     """Collect n distinct feasible problems with magnitude-scaled inputs and golds that need all
-    `sig_figs` figures."""
+    `sig_figs` figures. By default items are taken in CC.jsonl index order; `shuffle` draws a
+    seeded random sample of the feasible pool instead — the early-index items are product-heavy,
+    so order-selection over-samples 'multiply the inputs' problems and inflates reusability, while
+    shuffle gives a representative mix (see docs/disposition-bench.md)."""
+    items = _load_items()
+    if shuffle:
+        random.Random(7919 * seed + 1).shuffle(items)
     problems: list[dict] = []
-    for item_idx, item in _load_items():
+    for item_idx, item in items:
         if len(problems) >= n:
             break
         try:
@@ -127,15 +134,18 @@ def _mtag(magnitude: float) -> str:
     return f"{magnitude:g}".replace(".", "p")
 
 
-def dataset_path(n: int, sig_figs: int, seed: int, magnitude: float = 1.0) -> Path:
-    return DATASET_DIR / f"toold_N{n}_seed{seed}_D{sig_figs}_m{_mtag(magnitude)}.json"
+def dataset_path(n: int, sig_figs: int, seed: int, magnitude: float = 1.0,
+                 shuffle: bool = False) -> Path:
+    suf = "_shuf" if shuffle else ""
+    return DATASET_DIR / f"toold_N{n}_seed{seed}_D{sig_figs}_m{_mtag(magnitude)}{suf}.json"
 
 
-def load_or_build(n: int, sig_figs: int, seed: int, magnitude: float = 1.0) -> list[dict]:
-    p = dataset_path(n, sig_figs, seed, magnitude)
+def load_or_build(n: int, sig_figs: int, seed: int, magnitude: float = 1.0,
+                  shuffle: bool = False) -> list[dict]:
+    p = dataset_path(n, sig_figs, seed, magnitude, shuffle)
     if p.exists():
         return json.loads(p.read_text())
-    problems = build_dataset(n, sig_figs, seed, magnitude)
+    problems = build_dataset(n, sig_figs, seed, magnitude, shuffle)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(problems, indent=2))
     return problems
@@ -148,13 +158,16 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--magnitude", type=float, default=1.0,
                     help="scales resampled input size; <1 makes by-hand arithmetic easier")
+    ap.add_argument("--shuffle", action="store_true",
+                    help="draw a seeded random sample of the feasible pool instead of first-N-in-order "
+                    "(order over-samples product-shaped early items)")
     args = ap.parse_args()
-    problems = build_dataset(args.n, args.sig_figs, args.seed, args.magnitude)
-    p = dataset_path(args.n, args.sig_figs, args.seed, args.magnitude)
+    problems = build_dataset(args.n, args.sig_figs, args.seed, args.magnitude, args.shuffle)
+    p = dataset_path(args.n, args.sig_figs, args.seed, args.magnitude, args.shuffle)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(problems, indent=2))
     print(f"built {len(problems)}/{args.n} problems @ {args.sig_figs} sig figs, "
-          f"magnitude {args.magnitude} -> {p}")
+          f"magnitude {args.magnitude}, shuffle={args.shuffle} -> {p}")
     for pr in problems[:3]:
         print(f"\n[{pr['idx']}] item={pr['item_idx']} gold={pr['gold']!r}\n{pr['question']}")
 
