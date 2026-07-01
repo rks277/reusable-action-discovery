@@ -95,12 +95,24 @@ async def main():
     ap.add_argument("--paper", choices=["I", "II", "both"], default="I")
     ap.add_argument("--reps", type=int, default=1)
     ap.add_argument("--budget", type=int, default=None,
-                    help="hard cap on scripts written for the whole session (default = N)")
+                    help="ENFORCED hard cap on scripts written for the whole session (default = N)")
+    ap.add_argument("--announce-budget", type=int, default=None,
+                    help="budget NUMBER shown in the prompt, decoupled from --budget enforcement "
+                         "(default = same as --budget). Lets you tell the model 'up to K scripts' "
+                         "while actually enforcing a different cap — to isolate the announcement/"
+                         "anchor effect from binding.")
     ap.add_argument("--token-cap", type=int, default=200_000)
     ap.add_argument("--max-tokens", type=int, default=2048)
     ap.add_argument("--concurrency", type=int, default=3)
     ap.add_argument("--no-scripts", action="store_true",
                     help="no-code arm: expose only submit_answer; the model must solve by hand")
+    ap.add_argument("--per-problem", action="store_true",
+                    help="isolation mode: run EACH problem as its own 1-problem session (no shared "
+                         "token pool, no allocation across problems). Used to measure clean per-problem "
+                         "value-of-budget curves. One output row per (problem, rep).")
+    ap.add_argument("--no-announce-cap", action="store_true",
+                    help="hide the token cap from the model (silent safety ceiling, not an announced "
+                         "budget). Use with --per-problem so the token cap is inert instrumentation.")
     args = ap.parse_args()
 
     load_dotenv()
@@ -109,47 +121,61 @@ async def main():
         driver.system_prompt = aime_byhand_system_prompt
         submit_only = [t for t in TOOL_SCHEMAS() if t["function"]["name"] == "submit_answer"]
         driver.TOOL_SCHEMAS = lambda: submit_only      # strip write/run/list/read tools
-    else:
-        driver.system_prompt = aime_system_prompt
     models = [CLAUDE.get(m, m) for m in args.models]
     problems = load_aime(args.paper)
     budget = args.budget if args.budget is not None else len(problems)
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    announce = args.announce_budget if args.announce_budget is not None else budget
+    if not args.no_scripts:
+        # The driver calls system_prompt(n, state.budget, cap) with the ENFORCED budget; ignore it
+        # and announce `announce` instead, so the prompt's "up to K scripts" can differ from the
+        # enforced cap (anchor-effect isolation). When announce == budget this is the old behavior.
+        driver.system_prompt = lambda n, _enforced, cap, _a=announce: aime_system_prompt(n, _a, cap)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")   # microseconds: avoid same-second dir collisions
     out_dir = Path("runs") / f"aime_disposition_{ts}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "sessions.jsonl"
     (out_dir / "config.json").write_text(json.dumps({**vars(args), "source": "aime_2026"}, indent=2))
-    total = len(models) * args.reps
+    announce_cap = not args.no_announce_cap
+    # In per-problem mode each problem is its own 1-problem session; otherwise one N-problem session.
+    pidxs = list(range(len(problems))) if args.per_problem else [None]
+    total = len(models) * args.reps * len(pidxs)
     print(f"AIME {args.paper}: {len(problems)} problems x {len(models)} models x {args.reps} reps "
-          f"-> {out_path} (cap={args.token_cap:,}, budget={budget})", flush=True)
+          f"{'(PER-PROBLEM)' if args.per_problem else ''} -> {out_path} "
+          f"(cap={args.token_cap:,}{'/silent' if not announce_cap else ''}, budget={budget})", flush=True)
 
     client = RawChat()
     sem = asyncio.Semaphore(args.concurrency)
     lock = asyncio.Lock()
     done = 0
 
-    async def one(model: str, rep: int):
+    async def one(model: str, rep: int, pidx: int | None):
         nonlocal done
         async with sem:
             t0 = time.time()
+            subset = problems if pidx is None else [problems[pidx]]
             try:
-                state = SessionState(problems=problems, budget=budget)
+                state = SessionState(problems=subset, budget=budget, announce_budget=announce)
                 row = await run_session(client, model, state, token_cap=args.token_cap,
-                                        max_tokens=args.max_tokens)
+                                        max_tokens=args.max_tokens, announce_cap=announce_cap)
                 row["rep"] = rep
+                if pidx is not None:
+                    row["problem_idx"] = pidx
+                    row["item_idx"] = problems[pidx].get("item_idx")
+                    row["budget_k"] = 0 if args.no_scripts else budget
             except Exception as e:
-                row = {"model": model, "rep": rep, "N": len(problems),
+                row = {"model": model, "rep": rep, "problem_idx": pidx, "N": len(subset),
                        "error": f"{type(e).__name__}: {e}", "elapsed_s": round(time.time() - t0, 2)}
             async with lock:
                 done += 1
                 with out_path.open("a") as f:
                     f.write(json.dumps(row) + "\n")
                 lbl = model.split("/")[-1]
-                print(f"  {done}/{total}  {lbl} rep{rep}: solve={row.get('n_correct')}/{row.get('N')} "
-                      f"scripts={row.get('n_scripts_written')} used={row.get('n_problems_used_script')} "
+                tag = f"p{pidx} " if pidx is not None else ""
+                print(f"  {done}/{total}  {lbl} {tag}rep{rep}: solve={row.get('n_correct')}/{row.get('N')} "
+                      f"scripts={row.get('n_scripts_written')} "
                       f"tok={row.get('spent_tokens')} {'(err)' if row.get('error') else ''}", flush=True)
 
-    await asyncio.gather(*(one(m, r) for m in models for r in range(args.reps)))
+    await asyncio.gather(*(one(m, r, p) for m in models for r in range(args.reps) for p in pidxs))
     print(f"done -> {out_path}", flush=True)
 
 

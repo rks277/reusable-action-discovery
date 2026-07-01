@@ -32,7 +32,11 @@ def write_budget(n: int) -> int:
 @dataclass
 class SessionState:
     problems: list[dict]                       # each: idx, keys, question, inputs, gold, sig_figs
-    budget: int                                # global write budget (0.1N)
+    budget: int                                # global write budget (0.1N) — ENFORCED (refusal cap)
+    announce_budget: int | None = None         # budget reported to the model via writes_remaining;
+    #   defaults to `budget`. Set below `budget` to announce a tighter cap than is enforced (the
+    #   awareness-vs-enforcement decoupling): the counter hits 0 at `announce_budget` but writes are
+    #   only refused at `budget`. None → identical to the old behavior.
 
     scripts: dict[str, str] = field(default_factory=dict)
     cur: int = 0                               # index of the problem currently being solved
@@ -56,6 +60,15 @@ class SessionState:
     @property
     def n(self) -> int:
         return len(self.problems)
+
+    @property
+    def announced(self) -> int:
+        """Budget reported to the model (writes_remaining). Defaults to the enforced budget."""
+        return self.budget if self.announce_budget is None else self.announce_budget
+
+    @property
+    def writes_remaining(self) -> int:
+        return max(0, self.announced - self.n_write_calls)
 
     @property
     def done(self) -> bool:
@@ -86,7 +99,7 @@ class SessionState:
         return {"ok": True,
                 "message": f"Saved script '{name}' ({len(code)} chars).{warn}",
                 "scripts": sorted(self.scripts),
-                "writes_remaining": max(0, self.budget - self.n_write_calls)}
+                "writes_remaining": self.writes_remaining}
 
     def op_run_script(self, name: str, inputs: dict | None = None) -> dict:
         if name not in self.scripts:
@@ -121,7 +134,7 @@ class SessionState:
     def op_list_scripts(self) -> dict:
         self.n_list_calls += 1
         return {"ok": True, "scripts": sorted(self.scripts),
-                "writes_remaining": max(0, self.budget - self.n_write_calls)}
+                "writes_remaining": self.writes_remaining}
 
     def op_read_script(self, name: str) -> dict:
         self.n_read_calls += 1
@@ -156,11 +169,13 @@ class SessionState:
         # reusability: distinct problems each script was BENEFICIAL toward — i.e. the script's
         # output was correct AND was the submitted (correct) answer. Averaged over the same scripts
         # as persistence, so scripts that were run but never paid off count as 0.
+        by_idx = {p["idx"]: p for p in self.problems}   # records carry the problem's own idx, which
+        #   need not equal its position (e.g. a 1-problem isolation session keeps its original idx)
         benef_attr: dict[str, set] = {}
         for r in recs:
             if not r["correct"]:
                 continue
-            prob = self.problems[r["idx"]]
+            prob = by_idx[r["idx"]]
             for run in r.get("runs", []):
                 ret = run["ret"]
                 if ret is None:
