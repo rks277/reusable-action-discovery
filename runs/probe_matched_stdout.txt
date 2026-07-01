@@ -1,0 +1,32 @@
+stream: 80 problems | recurring=['collatz_steps', 'count_inversions', 'digit_reverse_add', 'digitsq_iter', 'geometric_partial', 'running_reset_accum'] one-offs(hard)=['base_convert_digitsum', 'combined_bill', 'fib_mod', 'kaprekar_routine', 'list_sum', 'max_run_length', 'median_of_list', 'mode_count', 'number_line_walk', 'weighted_checksum'] | m=1 arrival=oneoff_per_block budget=6 -> runs/stream_disposition_20260701_144534
+  haiku: solve=68/80 scripts=6 used=51 tok=61219 
+
+session transcripts -> runs/stream_disposition_20260701_144534/sessions.jsonl
+
+================ SCORING haiku ================
+costs: a_hand={'product3': 0.67, 'weighted_sum': 0.33, 'lcg': 0.0, 'modpow': 0.17, 'horner_poly': 0.0, 'matvec_sum': 0.0, 'pairwise_prod_sum': 0.0, 'fib_mod': 0.83, 'collatz_steps': 1.0, 'digitsq_iter': 1.0, 'euclid_gcd_chain': 0.33, 'factorial_mod': 0.67, 'list_sum': 1.0, 'alt_sum': 0.83, 'sum_of_squares': 0.67, 'sum_of_cubes': 0.0, 'diff_of_products': 1.0, 'two_stage': 1.0, 'combined_bill': 1.0, 'quad_eval': 0.17, 'cubic_eval': 0.17, 'sum_of_fourth_powers': 0.0, 'alt_weighted_sum': 0.33, 'geometric_partial': 1.0, 'nested_two_stage': 0.67, 'base_convert_digitsum': 1.0, 'running_reset_accum': 1.0, 'weighted_checksum': 1.0, 'continued_frac': 0.0, 'luhn_sum': 0.83, 'count_inversions': 0.83, 'median_of_list': 1.0, 'mode_count': 1.0, 'number_line_walk': 1.0, 'digit_reverse_add': 1.0, 'kaprekar_routine': 1.0, 'look_and_say': 0.0, 'max_run_length': 1.0}  h=629 C=236 r=200 R=100.0 lam=0.1
+m* per family: {'product3': 0.31, 'weighted_sum': 0.22, 'lcg': 0.17, 'modpow': 0.19, 'horner_poly': 0.17, 'matvec_sum': 0.17, 'pairwise_prod_sum': 0.17, 'fib_mod': 0.4, 'collatz_steps': 0.55, 'digitsq_iter': 0.55, 'euclid_gcd_chain': 0.22, 'factorial_mod': 0.31, 'list_sum': 0.55, 'alt_sum': 0.4, 'sum_of_squares': 0.31, 'sum_of_cubes': 0.17, 'diff_of_products': 0.55, 'two_stage': 0.55, 'combined_bill': 0.55, 'quad_eval': 0.19, 'cubic_eval': 0.19, 'sum_of_fourth_powers': 0.17, 'alt_weighted_sum': 0.22, 'geometric_partial': 0.55, 'nested_two_stage': 0.31, 'base_convert_digitsum': 0.55, 'running_reset_accum': 0.55, 'weighted_checksum': 0.55, 'continued_frac': 0.17, 'luhn_sum': 0.4, 'count_inversions': 0.4, 'median_of_list': 0.55, 'mode_count': 0.55, 'number_line_walk': 0.55, 'digit_reverse_add': 0.55, 'kaprekar_routine': 0.55, 'look_and_say': 0.17, 'max_run_length': 0.55}
+
+budget-constrained optimum builds the top-6 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+collatz_steps      12   0.6  True  True     1    11     0   correct-build        0.0
+digitsq_iter       12   0.6  True  True     1    11     0   correct-build        0.0
+geometric_partial   12   0.6  True False  None     1     0 wrongly-skipped     1548.4
+running_reset_accum   12   0.6  True  True     1    11     0   correct-build        0.0
+count_inversions   11   0.4  True False  None     1     0 wrongly-skipped      405.5
+digit_reverse_add   11   0.6  True  True     1    10     0   correct-build        0.0
+base_convert_digitsum    1   0.6 False  True     1     0     0   wrongly-built      -19.3
+combined_bill       1   0.6 False False  None     0     0    correct-skip      100.0
+fib_mod             1   0.4 False False  None     0     0    correct-skip      -16.7
+kaprekar_routine    1   0.6 False False  None     0     0    correct-skip        0.0
+list_sum            1   0.6 False False  None     0     0    correct-skip        0.0
+max_run_length      1   0.6 False False  None     0     0    correct-skip        0.0
+median_of_list      1   0.6 False False  None     0     0    correct-skip        0.0
+mode_count          1   0.6 False False  None     0     0    correct-skip        0.0
+number_line_walk    1   0.6 False False  None     0     0    correct-skip        0.0
+weighted_checksum    1   0.6 False  True     1     0     0   wrongly-built      -19.3
+
+aggregate: {'correct-build': 4, 'wrongly-built': 2, 'wrongly-skipped': 2, 'correct-skip': 8}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.20 (2 built)  reuse_rate=1.05  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=1998.7  (vs unconstrained-fullinfo=2208.2)

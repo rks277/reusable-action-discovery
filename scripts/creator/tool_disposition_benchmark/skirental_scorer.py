@@ -89,10 +89,30 @@ def online_value_provisional(fam: str, size: int, costs: Costs) -> float:
     return (t - 1) * costs.u_hand(fam) + costs.u_build() + (size - t) * costs.u_reuse()
 
 
+def _build_gain(fam: str, size: int, costs: Costs) -> float:
+    """Value of building-then-reusing this class over solving all its members by hand."""
+    all_hand = size * costs.u_hand(fam)
+    build_first = costs.u_build() + (size - 1) * costs.u_reuse()
+    return build_first - all_hand
+
+
+def optimal_build_set(metas: list[tuple], costs: Costs, budget: int) -> set:
+    """Budget-constrained clairvoyant optimum. When building buys so much accuracy that the per-class
+    break-even m* < 1 (build-everything looks optimal), the REAL scarcity is the write budget: with
+    at most `budget` tools, the optimum spends them on the `budget` classes with the largest
+    build-gain (a 0/1-knapsack with unit weights -> just top-k). metas: (class_id, family, size).
+    Returns the class_ids the optimum builds."""
+    gains = [(_build_gain(fam, size, costs), cid) for cid, fam, size in metas]
+    gains = [(g, cid) for g, cid in gains if g > 0]
+    gains.sort(reverse=True)
+    return {cid for _, cid in gains[:budget]}
+
+
 # --------------------------------------------------------------------- scoring
-def score_class(actions: list[dict], costs: Costs) -> dict:
+def score_class(actions: list[dict], costs: Costs, opt_build: bool | None = None) -> dict:
     """Score one class's action records (each: action, correct, tokens?, class_position). actions
-    need not be sorted."""
+    need not be sorted. `opt_build`: whether the BUDGET-constrained optimum builds this class
+    (None -> fall back to the unconstrained per-class m* rule, `size >= m*`)."""
     acts = sorted(actions, key=lambda a: a["class_position"])
     fam = acts[0]["family"]
     size = acts[0]["class_size"]
@@ -107,31 +127,47 @@ def score_class(actions: list[dict], costs: Costs) -> dict:
 
     mstar = costs.m_star(fam)
     pays = size >= mstar
-    if pays and built:
+    should_build = pays if opt_build is None else opt_build
+    if should_build and built:
         decision = "correct-build"
-    elif pays and not built:
+    elif should_build and not built:
         decision = "wrongly-skipped"
-    elif (not pays) and built:
+    elif (not should_build) and built:
         decision = "wrongly-built"
     else:
         decision = "correct-skip"
 
-    fi = fullinfo_value(fam, size, costs)
+    # optimal value for THIS class under the chosen optimum (budget-constrained if opt_build given)
+    all_hand = size * costs.u_hand(fam)
+    build_first = costs.u_build() + (size - 1) * costs.u_reuse()
+    opt_value = (build_first if should_build else all_hand) if opt_build is not None \
+        else fullinfo_value(fam, size, costs)
     on = online_value_provisional(fam, size, costs)
     return {"family": fam, "size": size, "m_star": mstar, "pays": pays,
+            "opt_build": should_build,
             "built": built, "build_time": build_time, "lateness": lateness,
             "reuse_count": reuse_count, "rebuild_count": rebuild_count,
             "model_value": model_value, "decision": decision,
-            "regret_fullinfo": fi - model_value, "regret_online_provisional": on - model_value}
+            "regret_fullinfo": fullinfo_value(fam, size, costs) - model_value,
+            "regret_budget": opt_value - model_value,
+            "regret_online_provisional": on - model_value}
 
 
-def score_stream(actions: list[dict], costs: Costs) -> dict:
+def score_stream(actions: list[dict], costs: Costs, budget: int | None = None) -> dict:
     """actions: normalized per-slot records with class_id, class_size, class_position, family,
-    action, correct, tokens?. Returns per-class rows + an aggregate summary."""
+    action, correct, tokens?. `budget`: if given, decisions/regret are scored against the
+    BUDGET-CONSTRAINED clairvoyant optimum (build the `budget` highest-gain classes); else the
+    unconstrained per-class m* rule. Returns per-class rows + an aggregate summary."""
     by_class: dict[int, list[dict]] = defaultdict(list)
     for a in actions:
         by_class[a["class_id"]].append(a)
-    rows = [score_class(acts, costs) for acts in by_class.values()]
+    opt_set = None
+    if budget is not None:
+        metas = [(cid, acts[0]["family"], acts[0]["class_size"]) for cid, acts in by_class.items()]
+        opt_set = optimal_build_set(metas, costs, budget)
+    rows = [score_class(acts, costs,
+                        opt_build=(cid in opt_set) if opt_set is not None else None)
+            for cid, acts in by_class.items()]
 
     def _rate(num, den):
         return (num / den) if den else float("nan")
@@ -153,7 +189,9 @@ def score_stream(actions: list[dict], costs: Costs) -> dict:
         "mean_lateness": _rate(sum(r["lateness"] for r in rows if r["lateness"] is not None),
                                sum(1 for r in rows if r["lateness"] is not None)),
         "total_regret_fullinfo": sum(r["regret_fullinfo"] for r in rows),
+        "total_regret_budget": sum(r["regret_budget"] for r in rows),
         "total_regret_online_provisional": sum(r["regret_online_provisional"] for r in rows),
+        "budget": budget,
     }
     return {"classes": rows, "aggregate": agg}
 
@@ -228,26 +266,32 @@ def score_run(run_dir: str, a0_dir: str, model: str, magnitude: int,
         raise RuntimeError(f"no clean session for {model}: {session and session.get('error')}")
     costs = costs_from_a0(a0_dir, model, magnitude, R=R, lam=lam, r=r)
 
+    budget = None
+    cfg_path = Path(run_dir, "config.json")
+    if cfg_path.exists():
+        budget = json.loads(cfg_path.read_text()).get("budget")
+
     actions = actions_from_session(session, slots)
-    res = score_stream(actions, costs)
+    res = score_stream(actions, costs, budget=budget)
 
     print(f"costs: a_hand={ {k: round(v,2) for k,v in costs.a_hand.items()} }  "
           f"h={costs.h:.0f} C={costs.C:.0f} r={costs.r:.0f} R={costs.R} lam={costs.lam}")
     print(f"m* per family: { {f: round(costs.m_star(f),2) for f in costs.a_hand} }\n")
-    print(f"{'family':<14}{'size':>5}{'m*':>6}{'built':>6}{'btime':>6}{'reuse':>6}{'rebld':>6}"
-          f"{'decision':>16}{'regret_fi':>11}")
+    print(f"budget-constrained optimum builds the top-{budget} classes by build-gain\n")
+    print(f"{'family':<16}{'size':>5}{'m*':>6}{'optB':>6}{'built':>6}{'btime':>6}{'reuse':>6}"
+          f"{'rebld':>6}{'decision':>16}{'regret_B':>11}")
     for c in sorted(res["classes"], key=lambda z: (-z["size"], z["family"])):
-        print(f"{c['family']:<14}{c['size']:>5}{c['m_star']:>6.1f}{str(c['built']):>6}"
-              f"{str(c['build_time']):>6}{c['reuse_count']:>6}{c['rebuild_count']:>6}"
-              f"{c['decision']:>16}{c['regret_fullinfo']:>11.1f}")
+        print(f"{c['family']:<16}{c['size']:>5}{c['m_star']:>6.1f}{str(c['opt_build']):>6}"
+              f"{str(c['built']):>6}{str(c['build_time']):>6}{c['reuse_count']:>6}"
+              f"{c['rebuild_count']:>6}{c['decision']:>16}{c['regret_budget']:>11.1f}")
     a = res["aggregate"]
     print(f"\naggregate: {a['decision_counts']}")
     print(f"  build_rate(recurring)={a['build_rate_recurring']:.2f}  "
           f"build_rate(one-off)={a['build_rate_oneoff']:.2f} ({a['n_oneoffs_built']} built)  "
           f"reuse_rate={a['reuse_rate']:.2f}  rebuilds={a['total_rebuilds']}  "
           f"mean_lateness={a['mean_lateness']:.2f}")
-    print(f"  total regret vs fullinfo={a['total_regret_fullinfo']:.1f}  "
-          f"(vs online-provisional={a['total_regret_online_provisional']:.1f})")
+    print(f"  total regret vs BUDGET-optimum={a['total_regret_budget']:.1f}  "
+          f"(vs unconstrained-fullinfo={a['total_regret_fullinfo']:.1f})")
     return res
 
 

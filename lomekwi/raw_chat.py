@@ -272,9 +272,22 @@ class RawChat:
                             finish_reason=getattr(choice, "finish_reason", None))
 
         if prov == "anthropic":
+            # Prompt caching (same pattern as chat()): a breakpoint on the last message caches the
+            # whole growing prefix (system + tools + prior turns). Next turn it is an interior
+            # prefix -> served as a cache read (~10% of input price); we pay full price only for the
+            # new turn. Without this a persistent tool session re-bills the entire transcript every
+            # turn -> quadratic input cost (the N=80 stream blew past 2.5M spent tokens).
+            anth_msgs = _oai_msgs_to_anthropic(messages)
+            if anth_msgs:
+                last = dict(anth_msgs[-1])
+                blocks = ([{"type": "text", "text": last["content"]}]
+                          if isinstance(last["content"], str) else list(last["content"]))
+                blocks[-1] = {**blocks[-1], "cache_control": {"type": "ephemeral"}}
+                last["content"] = blocks
+                anth_msgs = anth_msgs[:-1] + [last]
             resp = await self._anthropic().messages.create(
                 model=model, max_tokens=max_tokens, system=system,
-                messages=_oai_msgs_to_anthropic(messages),
+                messages=anth_msgs,
                 tools=_oai_tools_to_anthropic(tools),
             )
             u = getattr(resp, "usage", None)

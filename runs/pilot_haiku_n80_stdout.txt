@@ -1,0 +1,28 @@
+stream: 80 problems | recurring=['euclid_gcd_chain', 'lcg', 'matvec_sum', 'modpow', 'product3', 'weighted_sum'] one-offs(hard)=['base_convert_digitsum', 'collatz_steps', 'continued_frac', 'factorial_mod', 'horner_poly', 'luhn_sum', 'pairwise_prod_sum', 'two_stage'] | m=100 arrival=oneoff_per_block budget=6 -> runs/stream_disposition_20260701_121954
+  haiku: solve=29/80 scripts=6 used=31 tok=920242 
+
+session transcripts -> runs/stream_disposition_20260701_121954/sessions.jsonl
+
+================ SCORING haiku ================
+costs: a_hand={'product3': 0.0, 'weighted_sum': 0.0, 'lcg': 0.0, 'modpow': 0.0, 'horner_poly': 0.0, 'matvec_sum': 0.0, 'pairwise_prod_sum': 0.0, 'fib_mod': 0.83, 'collatz_steps': 1.0, 'digitsq_iter': 1.0, 'euclid_gcd_chain': 0.0, 'factorial_mod': 0.0, 'list_sum': 1.0, 'alt_sum': 1.0, 'sum_of_squares': 0.0, 'sum_of_cubes': 0.0, 'diff_of_products': 0.5, 'two_stage': 1.0, 'combined_bill': 0.83, 'quad_eval': 0.0, 'cubic_eval': 0.0, 'sum_of_fourth_powers': 0.0, 'alt_weighted_sum': 0.0, 'geometric_partial': 0.33, 'nested_two_stage': 0.17, 'base_convert_digitsum': 1.0, 'running_reset_accum': 1.0, 'weighted_checksum': 1.0, 'continued_frac': 0.0, 'luhn_sum': 1.0}  h=735 C=219 r=200 R=100.0 lam=0.1
+m* per family: {'product3': 0.14, 'weighted_sum': 0.14, 'lcg': 0.14, 'modpow': 0.14, 'horner_poly': 0.14, 'matvec_sum': 0.14, 'pairwise_prod_sum': 0.14, 'fib_mod': 0.31, 'collatz_steps': 0.41, 'digitsq_iter': 0.41, 'euclid_gcd_chain': 0.14, 'factorial_mod': 0.14, 'list_sum': 0.41, 'alt_sum': 0.41, 'sum_of_squares': 0.14, 'sum_of_cubes': 0.14, 'diff_of_products': 0.21, 'two_stage': 0.41, 'combined_bill': 0.31, 'quad_eval': 0.14, 'cubic_eval': 0.14, 'sum_of_fourth_powers': 0.14, 'alt_weighted_sum': 0.14, 'geometric_partial': 0.18, 'nested_two_stage': 0.16, 'base_convert_digitsum': 0.41, 'running_reset_accum': 0.41, 'weighted_checksum': 0.41, 'continued_frac': 0.14, 'luhn_sum': 0.41}
+
+family         size    m* built btime reuse rebld        decision  regret_fi
+modpow           14   0.1  True     1     4     0   correct-build     1381.4
+lcg              13   0.1  True     1     4     0   correct-build     1227.9
+euclid_gcd_chain   12   0.1 False  None     1     0 wrongly-skipped     1666.6
+product3         12   0.1  True     1     7     0   correct-build      714.0
+weighted_sum     11   0.1  True     1     4     0   correct-build      921.0
+matvec_sum       10   0.1  True     1     5     0   correct-build      614.0
+base_convert_digitsum    1   0.4 False  None     0     0 wrongly-skipped      131.6
+collatz_steps     1   0.4 False  None     0     0 wrongly-skipped      131.6
+continued_frac    1   0.1 False  None     0     0 wrongly-skipped      131.6
+factorial_mod     1   0.1 False  None     0     0 wrongly-skipped      131.6
+horner_poly       1   0.1  True     1     0     0   correct-build      100.0
+luhn_sum          1   0.4 False  None     0     0 wrongly-skipped      131.6
+pairwise_prod_sum    1   0.1 False  None     0     0 wrongly-skipped      131.6
+two_stage         1   0.4 False  None     0     0 wrongly-skipped      131.6
+
+aggregate: {'correct-build': 6, 'wrongly-skipped': 8}
+  build_rate(recurring)=0.83  build_rate(one-off)=0.12 (1 built)  reuse_rate=0.45  rebuilds=0  mean_lateness=0.00
+  total regret vs fullinfo=7546.3  (vs online-provisional=7546.3)

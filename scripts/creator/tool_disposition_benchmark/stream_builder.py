@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from scripts.creator.tool_disposition_benchmark.family_kit import (
-    ALL_FAMILIES, EASY_ONEOFFS, HARD_ONEOFFS, HARD_ONEOFF_MAGNITUDE)
+    ALL_FAMILIES, EASY_ONEOFFS, HARD_ONEOFFS, HARD_ONEOFF_MAGNITUDE, cluster_of)
 
 # fields the MODEL sees (the runner presents only these); everything else is a hidden label.
 PROBLEM_FIELDS = ("family", "magnitude", "keys", "inputs", "vals_order", "gold", "question")
@@ -45,6 +45,7 @@ class StreamSpec:
     the recurring magnitude (hand-infeasible, building is tempting but still single-use)."""
     recurring: list[tuple[str, int]]
     n_one_offs: int = 0
+    one_offs: list[str] | None = None       # explicit one-off procedures (else drawn from the pool)
     one_off_difficulty: str = "hard"        # 'easy' | 'hard' (selects op pool + magnitude, A0-calibrated)
     magnitude: int = 10                     # recurring-class magnitude
     one_off_magnitude: int | None = None    # override the difficulty-derived one-off magnitude
@@ -95,11 +96,11 @@ def _order(class_sizes: list[int], arrival: str, rng: random.Random) -> list[int
         rng.shuffle(rests)
         ids = firsts + rests
     elif arrival == "oneoff_per_block":
-        # random, EXCEPT exactly one (distinct) one-off is guaranteed in each successive 4-slot
-        # block (slots 1-4, 5-8, ...) — so the "one-off or recurring-first-member?" decision is
-        # stress-tested early in every seed, not just when a one-off happens to land early.
-        BLOCK = 4
+        # random, EXCEPT exactly one (distinct) one-off is guaranteed in each successive block, the
+        # block width scaled so the one-offs spread evenly across the WHOLE stream (BLOCK≈N/#oneoffs)
+        # — so the "one-off or recurring-first-member?" decision recurs throughout, every seed.
         oneoff = [c for c, s in enumerate(class_sizes) if s == 1]
+        BLOCK = max(1, sum(class_sizes) // max(1, len(oneoff)))
         recur = [c for c, s in enumerate(class_sizes) if s >= 2 for _ in range(s)]
         rng.shuffle(recur)
         N = sum(class_sizes)
@@ -111,26 +112,109 @@ def _order(class_sizes: list[int], arrival: str, rng: random.Random) -> list[int
             ids[rng.choice(empty)] = cid
         ri = iter(recur)
         ids = [x if x is not None else next(ri) for x in ids]
+    elif arrival == "random_oneoff_early":
+        # fully random order, EXCEPT guarantee >=1 one-off within the first 6 slots -- so the eager-
+        # vs-wait decision is forced early (while the write budget is still free) without otherwise
+        # constraining the natural interleaving of recurring members and one-offs.
+        for c, s in enumerate(class_sizes):
+            ids += [c] * s
+        rng.shuffle(ids)
+        oneoff = {c for c, s in enumerate(class_sizes) if s == 1}
+        head = min(6, len(ids))
+        if oneoff and not any(ids[i] in oneoff for i in range(head)):
+            src = next(i for i, c in enumerate(ids) if c in oneoff)   # first one-off past the head
+            dst = rng.randrange(head)
+            ids[src], ids[dst] = ids[dst], ids[src]
+    elif arrival == "firsts_spread":
+        # The FIRST sighting of every class (recurring AND one-off) is anchored across the opening
+        # ~half of the stream, shuffled, with >=1 one-off FORCED into slot 0 -- so build decisions
+        # recur throughout while the budget is still available, and recurring-vs-one-off is
+        # indistinguishable at first sight (only later recurrence reveals it). Recurring remainders
+        # then fill the gaps, each placed AFTER its class's first sighting.
+        N = sum(class_sizes); n = len(class_sizes)
+        firsts = list(range(n)); rng.shuffle(firsts)
+        oo = [c for c in firsts if class_sizes[c] == 1]
+        if oo:                                        # guarantee an early one-off
+            firsts.remove(oo[0]); firsts.insert(0, oo[0])
+        span = max(n, N // 2)                          # spread first-sightings over the opening half
+        raw = [round(i * (span - 1) / max(1, n - 1)) for i in range(n)] if n > 1 else [0]
+        anchors, taken = [], set()                     # de-collide to distinct ascending slots
+        for a in raw:
+            while a in taken:
+                a += 1
+            taken.add(a); anchors.append(a)
+        ids = [None] * N
+        first_slot = {}
+        for c, a in zip(firsts, anchors):
+            ids[a] = c; first_slot[c] = a
+        empties = [j for j in range(N) if ids[j] is None]
+        rem = [c for c, s in enumerate(class_sizes) for _ in range(s - 1)]
+        rng.shuffle(rem)
+        rem.sort(key=lambda c: first_slot[c], reverse=True)   # place late-anchored classes first
+        for c in rem:                                  # RANDOM empty slot after the first sighting
+            cands = [j for j in empties if j > first_slot[c]] or empties
+            j = rng.choice(cands)
+            empties.remove(j); ids[j] = c
+        assert all(x is not None for x in ids), "firsts_spread left an empty slot"
     else:
         raise ValueError(f"unknown arrival: {arrival}")
     return ids
 
 
 def _resolve_classes(spec: StreamSpec, rng: random.Random) -> list[tuple[str, int, int]]:
-    """(family, size, magnitude) per class: recurring at spec.magnitude, then n_one_offs distinct
-    procedures drawn from the one-off pool (disjoint from recurring families) at oo_magnitude."""
+    """(family, size, magnitude) per class: recurring at spec.magnitude, then one-off singletons at
+    oo_magnitude. GENERALIZATION-CLUSTER CONSTRAINT: no two classes (across recurring AND one-off)
+    may share a gen_cluster — otherwise a single tool would serve both and they would not be
+    independent build-decisions / genuine single-use traps. One-offs are either taken verbatim from
+    spec.one_offs or drawn from the difficulty pool, in both cases respecting the constraint."""
     for fam, _ in spec.recurring:
         if fam not in ALL_FAMILIES:
             raise ValueError(f"unknown family: {fam}")
+    # recurring classes must themselves be cluster-distinct (else two recurring share one tool)
+    recur_clusters: dict[str, str] = {}
+    for fam, _ in spec.recurring:
+        c = cluster_of(fam)
+        if c in recur_clusters:
+            raise ValueError(f"recurring {fam} shares gen_cluster '{c}' with "
+                             f"{recur_clusters[c]} -> one tool would serve both")
+        recur_clusters[c] = fam
     classes = [(fam, size, spec.magnitude) for fam, size in spec.recurring]
     recurring_fams = {f for f, _ in spec.recurring}
-    pool_names, oo_mag = spec.oo_pool_and_magnitude()
-    pool = [f for f in pool_names if f not in recurring_fams]
-    if spec.n_one_offs > len(pool):
-        raise ValueError(f"n_one_offs={spec.n_one_offs} exceeds {len(pool)} distinct "
-                         f"{spec.one_off_difficulty} one-off procedures available; add more to the "
-                         f"{'EASY' if spec.one_off_difficulty=='easy' else 'HARD'}_ONEOFFS pool")
-    for fam in rng.sample(pool, spec.n_one_offs):
+    used_clusters = set(recur_clusters)
+
+    _, oo_mag = spec.oo_pool_and_magnitude()
+
+    if spec.one_offs is not None:                       # explicit one-off list
+        for fam in spec.one_offs:
+            if fam not in ALL_FAMILIES:
+                raise ValueError(f"unknown one-off family: {fam}")
+            if fam in recurring_fams:
+                raise ValueError(f"one-off {fam} is also a recurring class")
+            c = cluster_of(fam)
+            if c in used_clusters:
+                raise ValueError(f"one-off {fam} shares gen_cluster '{c}' with an existing class "
+                                 f"-> the one-off would be solvable by that class's tool")
+            used_clusters.add(c)
+            classes.append((fam, 1, oo_mag))
+        return classes
+
+    # else: draw n_one_offs distinct-cluster procedures from the difficulty pool
+    pool_names, _ = spec.oo_pool_and_magnitude()
+    pool = [f for f in pool_names if f not in recurring_fams and cluster_of(f) not in used_clusters]
+    picks: list[str] = []
+    for fam in rng.sample(pool, len(pool)):             # greedy over a shuffled pool, cluster-unique
+        if len(picks) >= spec.n_one_offs:
+            break
+        c = cluster_of(fam)
+        if c in used_clusters:
+            continue
+        used_clusters.add(c)
+        picks.append(fam)
+    if len(picks) < spec.n_one_offs:
+        raise ValueError(f"n_one_offs={spec.n_one_offs} exceeds {len(picks)} cluster-distinct "
+                         f"{spec.one_off_difficulty} one-offs available given the recurring set; "
+                         f"add procedures in fresh gen_clusters or reduce n_one_offs")
+    for fam in picks:
         classes.append((fam, 1, oo_mag))
     return classes
 

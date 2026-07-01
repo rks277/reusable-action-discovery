@@ -222,7 +222,15 @@ async def main():
     # build instances up front (deterministic; no model calls)
     instances = []
     if args.source == "kit":
-        from scripts.creator.tool_disposition_benchmark.family_kit import ALL_FAMILIES as FAMILIES
+        from scripts.creator.tool_disposition_benchmark.family_kit import (
+            ALL_FAMILIES as FAMILIES, set_profile, profile)
+        # per-model difficulty profile: instances are shared across models here, so run ONE model
+        # per grid when profiles differ (each model needs its own difficulty tuning).
+        if len(args.models) > 1:
+            print(f"WARNING: {len(args.models)} models but kit difficulty profile is per-model; "
+                  f"instances will use '{args.models[0]}' tuning for all. Run one model per grid.")
+        set_profile(args.models[0])
+        print(f"difficulty profile = {profile()}")
         fams = args.families or list(FAMILIES)
         for fam in fams:
             f = FAMILIES.get(fam)

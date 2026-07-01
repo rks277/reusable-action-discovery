@@ -43,7 +43,9 @@ def slots_to_problems(slots: list[dict]) -> list[dict]:
         g = int(s["gold"])
         probs.append({"idx": s["slot_index"], "item_idx": s["slot_index"], "keys": s["keys"],
                       "question": s["question"], "inputs": s["inputs"],
-                      "gold": float(g), "sig_figs": max(1, len(str(abs(g))))})
+                      # exact-integer grading: gold kept as an arbitrary-precision int (golds can
+                      # exceed 2**53, e.g. products/Horner), graded by exact int match not sig-figs
+                      "gold": g, "sig_figs": max(1, len(str(abs(g)))), "exact_int": True})
     return probs
 
 
@@ -51,8 +53,13 @@ async def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=["haiku"])
     ap.add_argument("--magnitude", type=int, default=10, help="recurring-class magnitude")
+    ap.add_argument("--recurring", nargs="+", default=None,
+                    help="explicit recurring classes as 'family:size' (else DEFAULT_RECURRING). "
+                         "e.g. product3:12 weighted_sum:11 lcg:13 modpow:14 fib_mod:12 digitsq_iter:10")
+    ap.add_argument("--one-offs", nargs="+", default=None,
+                    help="explicit one-off procedures (else drawn from the difficulty pool)")
     ap.add_argument("--n-one-offs", type=int, default=4,
-                    help="distinct one-off problems (easy pool has 4, hard pool 5)")
+                    help="distinct one-off problems (ignored if --one-offs given)")
     ap.add_argument("--one-off-difficulty", choices=["easy", "hard"], default="hard")
     ap.add_argument("--one-off-magnitude", type=int, default=None,
                     help="override one-off magnitude (else easy->recurring mag, hard->A0 default). "
@@ -73,7 +80,14 @@ async def main():
     args = ap.parse_args()
 
     load_dotenv()
-    spec = StreamSpec(recurring=DEFAULT_RECURRING, n_one_offs=args.n_one_offs,
+    from scripts.creator.tool_disposition_benchmark.family_kit import set_profile
+    set_profile(args.models[0])                  # per-model difficulty tuning (one model per stream)
+    if args.recurring:
+        recurring = [(p.rsplit(":", 1)[0], int(p.rsplit(":", 1)[1])) for p in args.recurring]
+    else:
+        recurring = DEFAULT_RECURRING
+    n_one_offs = len(args.one_offs) if args.one_offs else args.n_one_offs
+    spec = StreamSpec(recurring=recurring, n_one_offs=n_one_offs, one_offs=args.one_offs,
                       one_off_difficulty=args.one_off_difficulty, magnitude=args.magnitude,
                       one_off_magnitude=args.one_off_magnitude,
                       arrival=args.arrival, announce=args.announce, seed=args.seed)
@@ -85,7 +99,7 @@ async def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "stream.json").write_text(json.dumps(slots, indent=2))
     (out_dir / "config.json").write_text(json.dumps(
-        {**vars(args), "recurring": DEFAULT_RECURRING}, indent=2))
+        {**vars(args), "recurring": recurring}, indent=2))
     out_path = out_dir / "sessions.jsonl"
     recur = {s["family"] for s in slots if s["is_recurring"]}
     oneoff = {s["family"] for s in slots if not s["is_recurring"]}

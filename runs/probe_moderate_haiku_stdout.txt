@@ -1,0 +1,25 @@
+stream: 80 problems | recurring=['geometric_partial', 'nested_two_stage', 'product3', 'weighted_sum'] one-offs(hard)=['diff_of_products', 'matvec_sum', 'pairwise_prod_sum', 'quad_eval', 'sum_of_squares'] | m=1 arrival=oneoff_per_block budget=4 -> runs/stream_disposition_20260701_161943
+  haiku: solve=80/80 scripts=4 used=80 tok=54915 
+
+session transcripts -> runs/stream_disposition_20260701_161943/sessions.jsonl
+
+================ SCORING haiku ================
+costs: a_hand={'product3': 0.75, 'weighted_sum': 0.4, 'nested_two_stage': 0.75, 'geometric_partial': 0.75, 'diff_of_products': 0.85, 'pairwise_prod_sum': 0.4, 'matvec_sum': 0.55, 'quad_eval': 0.75, 'sum_of_squares': 0.55}  h=569 C=206 r=200 R=100.0 lam=0.1
+m* per family: {'product3': 0.33, 'weighted_sum': 0.21, 'nested_two_stage': 0.33, 'geometric_partial': 0.33, 'diff_of_products': 0.4, 'pairwise_prod_sum': 0.21, 'matvec_sum': 0.25, 'quad_eval': 0.33, 'sum_of_squares': 0.25}
+
+budget-constrained optimum builds the top-4 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+nested_two_stage   19   0.3  True  True     1    18     0   correct-build        0.0
+product3           19   0.3  True  True     1    18     0   correct-build        0.0
+weighted_sum       19   0.2  True  True     1    18     0   correct-build        0.0
+geometric_partial   18   0.3  True  True     1    17     0   correct-build        0.0
+diff_of_products    1   0.4 False False  None     1     0    correct-skip      -51.9
+matvec_sum          1   0.3 False False  None     1     0    correct-skip      -81.9
+pairwise_prod_sum    1   0.2 False False  None     1     0    correct-skip      -96.9
+quad_eval           1   0.3 False False  None     1     0    correct-skip      -61.9
+sum_of_squares      1   0.3 False False  None     1     0    correct-skip      -81.9
+
+aggregate: {'correct-build': 4, 'correct-skip': 5}
+  build_rate(recurring)=1.00  build_rate(one-off)=0.00 (0 built)  reuse_rate=1.07  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=-374.4  (vs unconstrained-fullinfo=-103.1)

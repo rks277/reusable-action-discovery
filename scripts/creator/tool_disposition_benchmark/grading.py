@@ -9,6 +9,36 @@ difficulty knob — each problem statement tells the model the required `d`.
 from __future__ import annotations
 
 import math
+from decimal import Decimal, InvalidOperation
+
+
+def as_exact_int(v):
+    """Exact Python int from an int / integral float / numeric string (commas & underscores
+    stripped), via Decimal so huge values NEVER route through float. None if not an integer.
+
+    This is the grading path for integer-exact families whose golds exceed 2**53 (e.g. products,
+    Horner polynomials, continued fractions) — float rounding to d sig-figs would mark a correct
+    answer wrong because float only holds ~15-16 significant digits."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float):
+        return int(v) if v.is_integer() else None
+    if isinstance(v, str):
+        s = v.strip().replace(",", "").replace("_", "")
+        try:
+            d = Decimal(s)
+        except InvalidOperation:
+            return None
+        return int(d) if d == d.to_integral_value() else None
+    return None
+
+
+def correct_exact_int(ans, gold) -> bool:
+    """True iff `ans` equals the integer `gold` EXACTLY (arbitrary precision, no float)."""
+    a, g = as_exact_int(ans), as_exact_int(gold)
+    return a is not None and g is not None and a == g
 
 
 def round_sig(x: float, d: int) -> float:

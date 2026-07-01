@@ -47,6 +47,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     spent = n_turns = n_tool_calls = n_malformed = n_unknown = consecutive_no_tool = 0
     usage_estimated = False
     last_finish = None
+    turn_usages: list[dict] = []          # per-turn exact usage + which tools it called (for cost model)
 
     while not state.done and n_turns < max_turns:
         remaining = token_cap - spent
@@ -59,6 +60,13 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         u = client.last_usage
         if u and (u.get("input_tokens") or u.get("output_tokens")):
             spent += int(u.get("input_tokens", 0)) + int(u.get("output_tokens", 0))
+            turn_usages.append({
+                "tools": [tc["name"] for tc in turn.tool_calls],
+                "input_tokens": int(u.get("input_tokens", 0)),
+                "output_tokens": int(u.get("output_tokens", 0)),
+                "cache_read_tokens": int(u.get("cache_read_tokens", 0) or 0),
+                "cache_write_tokens": int(u.get("cache_write_tokens", 0) or 0),
+                "problem": state.cur})
         else:
             spent += _est_tokens(system, messages, turn)
             usage_estimated = True
@@ -125,6 +133,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         "n_malformed_tool_calls": n_malformed,
         "n_unknown_tool_calls": n_unknown,
         "usage_estimated": usage_estimated,
+        "turn_usages": turn_usages,
         "last_finish_reason": last_finish,
         "scripts": dict(state.scripts),
         "transcript": messages,

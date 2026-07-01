@@ -19,7 +19,8 @@ from dataclasses import dataclass, field
 
 from scripts.creator.creator_exec import _parse_answer, _run
 from scripts.creator.creator_heldout import has_solve
-from scripts.creator.tool_disposition_benchmark.grading import correct_to_sigfigs
+from scripts.creator.tool_disposition_benchmark.grading import (
+    correct_to_sigfigs, correct_exact_int, as_exact_int)
 
 TOOL_NAMES = ("write_script", "run_script", "list_scripts", "read_script", "submit_answer")
 
@@ -147,11 +148,15 @@ class SessionState:
         if self.done:
             return {"ok": False, "error": "all problems already submitted; the session is over."}
         prob = self.problems[self.cur]
-        ans = _as_float(value)
         rec = self.records[self.cur]
         rec["submitted"] = True
+        if prob.get("exact_int"):                       # arbitrary-precision integer match
+            ans = as_exact_int(value)
+            rec["correct"] = correct_exact_int(ans, prob["gold"])
+        else:
+            ans = _as_float(value)
+            rec["correct"] = correct_to_sigfigs(ans, prob["gold"], prob["sig_figs"])
         rec["answer"] = ans
-        rec["correct"] = correct_to_sigfigs(ans, prob["gold"], prob["sig_figs"])
         self.cur += 1
         remaining = self.n - self.cur
         msg = (f"Recorded answer for problem {prob['idx']}. "
@@ -180,8 +185,12 @@ class SessionState:
                 ret = run["ret"]
                 if ret is None:
                     continue
-                if (correct_to_sigfigs(r["answer"], ret, prob["sig_figs"])
-                        and correct_to_sigfigs(ret, prob["gold"], prob["sig_figs"])):
+                if prob.get("exact_int"):
+                    ok = correct_exact_int(r["answer"], ret) and correct_exact_int(ret, prob["gold"])
+                else:
+                    ok = (correct_to_sigfigs(r["answer"], ret, prob["sig_figs"])
+                          and correct_to_sigfigs(ret, prob["gold"], prob["sig_figs"]))
+                if ok:
                     benef_attr.setdefault(run["script"], set()).add(r["idx"])
         reusability_counts = {name: len(benef_attr.get(name, set())) for name in self.attribution}
         return {

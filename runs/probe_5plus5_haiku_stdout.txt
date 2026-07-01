@@ -1,0 +1,26 @@
+stream: 80 problems | recurring=['count_inversions', 'euclid_gcd_chain', 'factorial_mod', 'int_div_sum', 'lcg'] one-offs(hard)=['continued_frac', 'kaprekar_routine', 'look_and_say', 'luhn_sum', 'mod_pair_sum'] | m=1 arrival=random_oneoff_early budget=5 -> runs/stream_disposition_20260701_171639
+  haiku: solve=67/80 scripts=5 used=61 tok=55162 
+
+session transcripts -> runs/stream_disposition_20260701_171639/sessions.jsonl
+
+================ SCORING haiku ================
+costs: a_hand={'euclid_gcd_chain': 0.3, 'factorial_mod': 0.6, 'int_div_sum': 0.8, 'mod_pair_sum': 0.9, 'lcg': 0.6, 'count_inversions': 0.85, 'continued_frac': 0.85, 'luhn_sum': 0.6, 'digit_reverse_add': 1.0, 'kaprekar_routine': 0.3, 'number_line_walk': 1.0, 'running_reset_accum': 1.0, 'look_and_say': 0.6}  h=732 C=272 r=200 R=100.0 lam=0.1
+m* per family: {'euclid_gcd_chain': 0.22, 'factorial_mod': 0.29, 'int_div_sum': 0.37, 'mod_pair_sum': 0.43, 'lcg': 0.29, 'count_inversions': 0.4, 'continued_frac': 0.4, 'luhn_sum': 0.29, 'digit_reverse_add': 0.51, 'kaprekar_routine': 0.22, 'number_line_walk': 0.51, 'running_reset_accum': 0.51, 'look_and_say': 0.29}
+
+budget-constrained optimum builds the top-5 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+count_inversions   15   0.4  True  True     1    14     0   correct-build        0.0
+euclid_gcd_chain   15   0.2  True  True     1    14     0   correct-build        0.0
+factorial_mod      15   0.3  True  True     1    14     0   correct-build        0.0
+int_div_sum        15   0.4  True  True     1    14     0   correct-build        0.0
+lcg                15   0.3  True False  None     0     0 wrongly-skipped     1871.5
+continued_frac      1   0.4 False  True     1     0     0   wrongly-built      -41.0
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       30.0
+look_and_say        1   0.3 False False  None     0     0    correct-skip      -40.0
+luhn_sum            1   0.3 False False  None     0     0    correct-skip       60.0
+mod_pair_sum        1   0.4 False False  None     0     0    correct-skip      -10.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 4, 'wrongly-skipped': 1, 'correct-skip': 4}
+  build_rate(recurring)=0.80  build_rate(one-off)=0.20 (1 built)  reuse_rate=1.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=1870.5  (vs unconstrained-fullinfo=2175.7)
