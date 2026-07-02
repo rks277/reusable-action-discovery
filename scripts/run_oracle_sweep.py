@@ -33,7 +33,7 @@ from scripts.oracle_sweep_config import (MODELS, QWEN3_MODELS,      # noqa: E402
 # sonnet~20) so each model passes through its reliable -> unreliable -> hopeless regimes,
 # which is where tool discovery starts to matter.
 N_VALUES = [4, 8, 12, 16, 20]          # linear step 4
-DIFFICULTY_VALUES = [14, 16, 18, 20, 22]   # linear step 2
+DIFFICULTY_VALUES = [8, 10, 12, 14, 16]   # linear step 2; spans 9B cliff (~12-14)
 
 # Per-N rep counts so that N × reps ≈ constant (~20) across all N values,
 # giving equal numbers of scored oracle-assignment rows per (model, N, difficulty) cell.

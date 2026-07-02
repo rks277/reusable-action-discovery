@@ -54,6 +54,10 @@ TOOL_SPECS = [
     {"name": "tool_november","description": SHARED_DESCRIPTION},
     {"name": "tool_oscar",   "description": SHARED_DESCRIPTION},
     {"name": "tool_papa",    "description": SHARED_DESCRIPTION},
+    {"name": "tool_quebec",  "description": SHARED_DESCRIPTION},
+    {"name": "tool_romeo",   "description": SHARED_DESCRIPTION},
+    {"name": "tool_sierra",  "description": SHARED_DESCRIPTION},
+    {"name": "tool_tango",   "description": SHARED_DESCRIPTION},
 ]
 
 # Name of the (real, non-candidate) submission tool. Excluded from the n candidates and

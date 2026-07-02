@@ -70,7 +70,7 @@ MODELS=(
     "Qwen/Qwen3.5-2B:"
     "Qwen/Qwen3.5-4B:"
     "Qwen/Qwen3.5-9B:"
-    "Qwen/Qwen3.5-27B-GPTQ-Int4:--quantization gptq"
+    "Qwen/Qwen3.5-27B-GPTQ-Int4:--quantization gptq --enforce-eager --gpu-memory-utilization 0.82"
 )
 
 # ---- Phase 1: pilot (difficulty calibration, tools OFF) ----------------------------
@@ -103,6 +103,26 @@ for entry in "${MODELS[@]}"; do
         stop_vllm
     else
         log "SKIP sweep for $SHORT (vLLM failed to start)"
+    fi
+done
+
+# ---- Phase 3: re-run 2B and 4B with fixed code ------------------------------------
+log "======== PHASE 3: RE-RUN 2B + 4B (with hallucination fix) ========"
+RERUN_MODELS=(
+    "Qwen/Qwen3.5-2B:"
+    "Qwen/Qwen3.5-4B:"
+)
+for entry in "${RERUN_MODELS[@]}"; do
+    HF_MODEL="${entry%%:*}"
+    QUANT="${entry#*:}"
+    SHORT="${HF_MODEL##*/}"
+
+    if start_vllm "$HF_MODEL" "$QUANT"; then
+        log "Re-run sweep: $SHORT"
+        run_phase run_oracle_sweep.py --model "$HF_MODEL" || log "WARN: re-run sweep failed for $SHORT"
+        stop_vllm
+    else
+        log "SKIP re-run for $SHORT (vLLM failed to start)"
     fi
 done
 

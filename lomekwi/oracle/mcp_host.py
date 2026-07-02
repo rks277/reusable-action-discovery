@@ -96,10 +96,19 @@ async def run_episode(model: str, system: str, intro: str, problem, n: int,
             await session.initialize()
             mcp_tools = (await session.list_tools()).tools
 
+            registered = {t.name for t in mcp_tools}
+
             async def call(name: str) -> str:
-                res = await session.call_tool(name, {})
-                parts = [getattr(b, "text", "") for b in (res.content or [])]
-                return "".join(p for p in parts if p) or ""
+                if name not in registered:
+                    # model hallucinated a tool name; tell it the valid options
+                    return (f"unknown tool '{name}'. "
+                            f"Available: {', '.join(sorted(registered - {'submit_answer'}))}")
+                try:
+                    res = await session.call_tool(name, {})
+                    parts = [getattr(b, "text", "") for b in (res.content or [])]
+                    return "".join(p for p in parts if p) or ""
+                except Exception as e:
+                    return f"tool error: {e}"
 
             if prov == "anthropic":
                 return await _loop_anthropic(client, model, system, intro, problem,
