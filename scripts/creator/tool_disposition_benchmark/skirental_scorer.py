@@ -89,6 +89,87 @@ def online_value_provisional(fam: str, size: int, costs: Costs) -> float:
     return (t - 1) * costs.u_hand(fam) + costs.u_build() + (size - t) * costs.u_reuse()
 
 
+# --------------------------------------------------------------------- realizable ONLINE reference
+def _posterior_expected_p(k: int, t: int, support: list[float],
+                          prior: list[float] | None = None) -> float:
+    """E[p | this type was seen k times in the first t iid slots], posterior over the discrete
+    `support` of the pool's per-type appearance probabilities (prior uniform over the support unless
+    given). Bernoulli-count likelihood p^k (1-p)^(t-k) (the binomial coeff cancels). This is exactly
+    the information the online policy has -- it does NOT know which type is frequent, it infers each
+    type's rate from the observed prefix, like the model."""
+    if not support:
+        return 0.0
+    prior = prior or [1.0] * len(support)
+    ws, num = 0.0, 0.0
+    for pj, pr in zip(support, prior):
+        pj = min(max(pj, 0.0), 1.0)
+        like = (pj ** k) * ((1.0 - pj) ** (t - k))
+        w = pr * like
+        ws += w
+        num += w * pj
+    return (num / ws) if ws > 0 else (sum(support) / len(support))
+
+
+def online_reference(actions: list[dict], costs: Costs, budget: int | None = None,
+                     min_repeats: int = 2, support: list[float] | None = None) -> dict:
+    """Realizable ONLINE reference for the STOCHASTIC design (problems drawn i.i.d. from a pool of
+    types). The policy sees the same thing the model does -- a stream of typed problems, one at a
+    time -- and knows only that types are drawn from a distribution (NOT which type is frequent, NOT
+    the horizon). It gathers evidence before spending an irreversible, budget-limited build:
+
+      * a type is BUILD-ELIGIBLE only after it has been seen `min_repeats` times (default 2: one
+        confirmatory repeat) -- so scarce builds are never wasted on singletons / rarely-seen types;
+      * eligible types are built in the temporal order they become eligible, until the write budget
+        is spent -- because high-rate types recur sooner and more often, they become eligible first
+        and win the budget; low-rate types recur late (after the budget is gone) or never.
+
+    This is the key contrast with the model: the reference WAITS for a repeat (mean lateness >= 1) and
+    RESERVES its budget for demonstrated recurrence; the eager model builds on first sight (lateness
+    0) and burns the budget on whatever it sees first. It is myopic (build-now-vs-never at the
+    eligibility point) and greedy on the budget, so it builds weakly EARLIER / less selectively than
+    the true optimum -> regret vs this reference is a conservative LOWER BOUND on regret vs the true
+    online optimum. `support` (pool probabilities) is accepted for the posterior readout only; the
+    build rule keys off observed repeats and is prior-free."""
+    by_class: dict[int, list[dict]] = defaultdict(list)
+    for a in actions:
+        by_class[a["class_id"]].append(a)
+    remaining_budget = budget if budget is not None else len(by_class)
+    stream = sorted(actions, key=lambda a: a["slot_index"])
+    seen: dict[int, int] = defaultdict(int)
+    built_at: dict[int, int] = {}          # cid -> class_position at which the reference built
+    ep_at_build: dict[int, float] = {}
+    for a in stream:
+        cid = a["class_id"]
+        seen[cid] += 1
+        if cid in built_at or seen[cid] < min_repeats or remaining_budget <= 0:
+            continue
+        # eligible now (>= min_repeats sightings) and budget free -> build, reserving it for this
+        # demonstrated-recurring type. (Under the m*<1 accuracy regime the per-type profitability
+        # test is always met once it recurs, so the binding constraint is the budget, not m*.)
+        built_at[cid] = seen[cid]
+        remaining_budget -= 1
+        if support is not None:
+            ep_at_build[cid] = _posterior_expected_p(seen[cid], a["slot_index"] + 1, support)
+
+    total, per_class = 0.0, {}
+    for cid, acts in by_class.items():
+        fam, size = acts[0]["family"], acts[0]["class_size"]
+        bpos = built_at.get(cid)
+        if bpos is None:
+            val = size * costs.u_hand(fam)
+        else:
+            val = ((bpos - 1) * costs.u_hand(fam) + costs.u_build()
+                   + (size - bpos) * costs.u_reuse())
+        total += val
+        per_class[cid] = {"built": bpos is not None, "build_position": bpos, "value": val,
+                          "lateness": (bpos - 1) if bpos is not None else None,
+                          "ep_at_build": ep_at_build.get(cid)}
+    lats = [v["lateness"] for v in per_class.values() if v["lateness"] is not None]
+    return {"total_value": total, "classes": per_class,
+            "mean_lateness": (sum(lats) / len(lats)) if lats else float("nan"),
+            "n_built": len(built_at)}
+
+
 def _build_gain(fam: str, size: int, costs: Costs) -> float:
     """Value of building-then-reusing this class over solving all its members by hand."""
     all_hand = size * costs.u_hand(fam)
@@ -153,11 +234,13 @@ def score_class(actions: list[dict], costs: Costs, opt_build: bool | None = None
             "regret_online_provisional": on - model_value}
 
 
-def score_stream(actions: list[dict], costs: Costs, budget: int | None = None) -> dict:
+def score_stream(actions: list[dict], costs: Costs, budget: int | None = None,
+                 online_min_repeats: int = 2, support: list[float] | None = None) -> dict:
     """actions: normalized per-slot records with class_id, class_size, class_position, family,
     action, correct, tokens?. `budget`: if given, decisions/regret are scored against the
     BUDGET-CONSTRAINED clairvoyant optimum (build the `budget` highest-gain classes); else the
-    unconstrained per-class m* rule. Returns per-class rows + an aggregate summary."""
+    unconstrained per-class m* rule. `online_min_repeats`/`support` parameterize the realizable
+    online reference (see online_reference). Returns per-class rows + an aggregate summary."""
     by_class: dict[int, list[dict]] = defaultdict(list)
     for a in actions:
         by_class[a["class_id"]].append(a)
@@ -165,9 +248,19 @@ def score_stream(actions: list[dict], costs: Costs, budget: int | None = None) -
     if budget is not None:
         metas = [(cid, acts[0]["family"], acts[0]["class_size"]) for cid, acts in by_class.items()]
         opt_set = optimal_build_set(metas, costs, budget)
-    rows = [score_class(acts, costs,
+    cids = list(by_class.keys())
+    rows = [score_class(by_class[cid], costs,
                         opt_build=(cid in opt_set) if opt_set is not None else None)
-            for cid, acts in by_class.items()]
+            for cid in cids]
+
+    # realizable online reference (budget-aware, evidence-gathering) -> per-class regret_online
+    online = online_reference(actions, costs, budget=budget,
+                              min_repeats=online_min_repeats, support=support)
+    for cid, r in zip(cids, rows):
+        oc = online["classes"].get(cid, {})
+        r["online_built"] = oc.get("built")
+        r["online_build_position"] = oc.get("build_position")
+        r["regret_online"] = oc.get("value", r["model_value"]) - r["model_value"]
 
     def _rate(num, den):
         return (num / den) if den else float("nan")
@@ -191,6 +284,9 @@ def score_stream(actions: list[dict], costs: Costs, budget: int | None = None) -
         "total_regret_fullinfo": sum(r["regret_fullinfo"] for r in rows),
         "total_regret_budget": sum(r["regret_budget"] for r in rows),
         "total_regret_online_provisional": sum(r["regret_online_provisional"] for r in rows),
+        "total_regret_online": sum(r["regret_online"] for r in rows),
+        "online_mean_lateness": online["mean_lateness"],
+        "online_n_built": online["n_built"],
         "budget": budget,
     }
     return {"classes": rows, "aggregate": agg}
@@ -268,9 +364,74 @@ def actions_from_session(session: dict, slots: list[dict]) -> list[dict]:
     return out
 
 
+# --------------------------------------------------------------------- pi* same-info reference
+def model_builds_from_actions(actions: list[dict]) -> dict:
+    """{class_id: build_position (1-based class_position of the first authoring) or None} -- the
+    model's ACTUAL build decisions, from its authoring events. Feeds `value_of_builds`, which values
+    them analytically over full realized class sizes (so a truncated session is extrapolated: reuse
+    the rest if built, hand-solve the rest if not) -- killing the truncation confound."""
+    by_class: dict[int, list[dict]] = defaultdict(list)
+    for a in actions:
+        by_class[a["class_id"]].append(a)
+    out = {}
+    for cid, acts in by_class.items():
+        authored = sorted((a for a in acts if a["action"] in AUTHOR_ACTIONS),
+                          key=lambda a: a["class_position"])
+        out[cid] = authored[0]["class_position"] if authored else None
+    return out
+
+
+def pistar_report(slots: list[dict], costs: Costs, budget: int, N: int, T: int, pool: list[str],
+                  a_hands: dict, magnitude: int, model_builds: dict, alpha: float = 1.0,
+                  price: float | None = None, n_sim: int = 150) -> dict:
+    """Value the model's ACTUAL builds and pi*'s builds ANALYTICALLY over full realized class sizes
+    (no truncation), on one stochastic stream. pi* is the SAME-INFORMATION reference (Whittle-index
+    DP under the exchangeable prior; knows only {N,T,B}). Reports:
+      * regret_lb = value(pi*) - value(model)  -- the headline CONSERVATIVE LOWER BOUND on the
+        model's regret (pi* has identical info to the model, so a true optimum is >= pi*);
+      * clairvoyant_gap = value(clairvoyant) - value(pi*) -- intrinsic price of online uncertainty;
+      * role-keyed bait: how many TRAP types (ground-truth low-rate) each policy built.
+    `price`: pass a pre-tuned Whittle price to reuse across seeds (it's a design constant, a function
+    of {N,T,B,pool}); None -> tune here."""
+    from scripts.creator.tool_disposition_benchmark.pi_star import (
+        tune_price, _regions_for_pool, policy_builds, value_of_builds, clairvoyant_builds)
+    if price is None:
+        price = tune_price(costs, pool, a_hands, N, T, budget, magnitude, alpha=alpha, n_sim=n_sim)
+    regions = _regions_for_pool(costs, a_hands, price, T, alpha, N)
+    pi_builds = policy_builds(slots, regions, budget)
+
+    role = {s["class_id"]: s.get("role") for s in slots}
+
+    def _lat(builds):
+        ls = [b - 1 for b in builds.values() if b is not None]
+        return (sum(ls) / len(ls)) if ls else float("nan")
+
+    def _traps(builds):
+        return sum(1 for cid, b in builds.items() if b is not None and role.get(cid) == "trap")
+
+    def _hots(builds):
+        return sum(1 for cid, b in builds.items() if b is not None and role.get(cid) == "hot")
+
+    v_model = value_of_builds(slots, model_builds, costs)
+    v_star = value_of_builds(slots, pi_builds, costs)
+    v_clair = value_of_builds(slots, clairvoyant_builds(slots, budget), costs)
+    return {
+        "price": price,
+        "value_model": v_model, "value_pistar": v_star, "value_clairvoyant": v_clair,
+        "regret_lb": v_star - v_model,          # headline: model's regret lower bound
+        "clairvoyant_gap": v_clair - v_star,    # intrinsic online-uncertainty price
+        "model_n_built": sum(1 for b in model_builds.values() if b is not None),
+        "pistar_n_built": sum(1 for b in pi_builds.values() if b is not None),
+        "model_lateness": _lat(model_builds), "pistar_lateness": _lat(pi_builds),
+        "model_traps_built": _traps(model_builds), "model_hots_built": _hots(model_builds),
+        "pistar_traps_built": _traps(pi_builds), "pistar_hots_built": _hots(pi_builds),
+    }
+
+
 # --------------------------------------------------------------------- score a real stream run
 def score_run(run_dir: str, a0_dir: str, model: str, magnitude: int,
-              R: float = 100.0, lam: float = 0.1, r: float = 200.0) -> dict:
+              R: float = 100.0, lam: float = 0.1, r: float = 200.0,
+              pistar_price: float | None = None) -> dict:
     """Load a stream run (stream.json labels + sessions.jsonl transcript), build costs from the A0
     calibration, map the transcript to actions, score, and print. Returns the score dict."""
     slots = json.loads(Path(run_dir, "stream.json").read_text())
@@ -306,6 +467,31 @@ def score_run(run_dir: str, a0_dir: str, model: str, magnitude: int,
           f"mean_lateness={a['mean_lateness']:.2f}")
     print(f"  total regret vs BUDGET-optimum={a['total_regret_budget']:.1f}  "
           f"(vs unconstrained-fullinfo={a['total_regret_fullinfo']:.1f})")
+    print(f"  total regret vs wait-one-repeat (extra-info: knows rare=one-off)="
+          f"{a['total_regret_online']:.1f}  "
+          f"(waits: mean_lateness={a['online_mean_lateness']:.2f} vs "
+          f"model {a['mean_lateness']:.2f}; built {a['online_n_built']})")
+
+    # ---- pi* SAME-INFO reference: analytic value over FULL realized sizes (kills truncation) ----
+    meta_path = Path(run_dir, "meta.json")
+    if meta_path.exists() and budget is not None:
+        meta = json.loads(meta_path.read_text())
+        pool = list(meta["assignment"].keys())
+        a_hands = {f: costs.ah(f) for f in pool}
+        model_builds = model_builds_from_actions(actions)
+        rep = pistar_report(slots, costs, budget, meta["N"], meta["T"], pool, a_hands,
+                            meta.get("magnitude", magnitude), model_builds, price=pistar_price)
+        res["pistar"] = rep
+        print(f"\n  pi* SAME-INFO reference (analytic over full realized sizes; price={rep['price']:.1f}):")
+        print(f"    value: model={rep['value_model']:.1f}  pi*={rep['value_pistar']:.1f}  "
+              f"clairvoyant={rep['value_clairvoyant']:.1f}")
+        print(f"    REGRET vs pi* (LOWER BOUND) = {rep['regret_lb']:.1f}   "
+              f"clairvoyant gap = {rep['clairvoyant_gap']:.1f}")
+        print(f"    builds: model={rep['model_n_built']} "
+              f"(traps={rep['model_traps_built']} hots={rep['model_hots_built']} "
+              f"lateness={rep['model_lateness']:.2f})  vs  "
+              f"pi*={rep['pistar_n_built']} (traps={rep['pistar_traps_built']} "
+              f"hots={rep['pistar_hots_built']} lateness={rep['pistar_lateness']:.2f})")
     return res
 
 
@@ -373,5 +559,76 @@ def _selftest():
     print("\nself-test OK")
 
 
+def _selftest_stochastic():
+    """STOCHASTIC design: problems drawn i.i.d. from a heavy-tailed pool of types, with a binding
+    write budget. Verifies the online reference (a) WAITS -- builds only after a repeat, mean
+    lateness >= 1 -- and (b) BEATS the eager (build-on-first-sight) model, because eager burns its
+    scarce budget on whatever it sees first (often a rare type) while the reference reserves it for
+    demonstrated-recurring (high-rate) types. This is the paper's core comparison in miniature."""
+    import random as _r
+    print("\n================ stochastic reference self-test ================")
+    # Heavy tail with GENUINE TRAPS: 3 hot types (expected count >> m*, worth a tool) + 10 rare
+    # "trap" types (expected count ~1-2 < m*, NOT worth a tool). Budget < #hot forces SELECTION:
+    # spend scarce builds on demonstrated-hot types, never on a trap. This is the regime where eager
+    # (build-on-first-sight, first-come budget) is genuinely wrong -- it burns builds on early traps
+    # and on un-vetted types, starving the hot ones. (See threshold note: m* ~ 2.8 below.)
+    types = ([("hotA", 0.24), ("hotB", 0.20), ("hotC", 0.16)]
+             + [(f"trap{i}", 0.04) for i in range(10)])   # 10 traps @ ~2.4 expected occ each
+    fams = [f for f, _ in types]
+    support = [p for _, p in types]
+    T, BUDGET = 60, 3                       # 3 builds; 3 hot types -> exactly binding, no slack
+    costs = Costs(a_hand={f: 0.4 for f in fams}, h=1000, C=4200, r=100, R=100.0, lam=0.1,
+                  default_a_hand=0.4)       # s=150, m*=lam*C/s=2.8 -> traps (<=2 occ) are unprofitable
+
+    def make_actions(draw, policy):
+        seen, sizes = defaultdict(int), {c: draw.count(c) for c in set(draw)}
+        built, budget_left, out = set(), BUDGET, []
+        for i, c in enumerate(draw):
+            seen[c] += 1
+            fam = fams[c]
+            if policy == "eager":           # build on FIRST sight, budget spent first-come
+                if seen[c] == 1 and budget_left > 0:
+                    act, budget_left = ("build", 1.0), budget_left - 1
+                    built.add(c)
+                elif c in built:
+                    act = ("reuse", 1.0)
+                else:
+                    act = ("hand", costs.ah(fam))
+            elif policy == "hand":
+                act = ("hand", costs.ah(fam))
+            else:
+                raise ValueError(policy)
+            out.append({"slot_index": i, "class_id": c, "family": fam, "class_size": sizes[c],
+                        "class_position": seen[c], "action": act[0], "correct": act[1],
+                        "tokens": None})
+        return out
+
+    eager_reg, ref_lat, ref_gt_eager = [], [], 0
+    n = 60
+    for seed in range(n):
+        rng = _r.Random(seed)
+        draw = rng.choices(range(len(types)), weights=support, k=T)
+        eager_acts = make_actions(draw, "eager")
+        res = score_stream(eager_acts, costs, budget=BUDGET, support=support)
+        a = res["aggregate"]
+        eager_reg.append(a["total_regret_online"])
+        ref_lat.append(a["online_mean_lateness"])
+        if a["total_regret_online"] > 0:
+            ref_gt_eager += 1
+
+    import statistics as _st
+    mreg, mlat = _st.mean(eager_reg), _st.mean(ref_lat)
+    print(f"seeds={len(eager_reg)}  eager-model regret vs online reference: "
+          f"mean={mreg:.1f}  (>0 on {ref_gt_eager}/{len(eager_reg)} seeds)")
+    print(f"online reference mean_lateness={mlat:.2f} (waits ~1 repeat)  vs  eager model lateness=0")
+    assert mlat >= 0.99, f"reference should wait >=1 repeat, got {mlat}"
+    assert mreg > 0, f"eager model should have positive MEAN regret vs reference, got {mreg}"
+    # NOTE: per-seed win-rate is only ~55-60%, NOT ~100%: the myopic reference pays a lateness-1
+    # timing cost, so on lucky draws where eager happens to build only hot types its lateness-0
+    # timing edges out the reference. The robust claim is the positive MEAN regret + the lateness gap.
+    print("stochastic self-test OK")
+
+
 if __name__ == "__main__":
     _selftest()
+    _selftest_stochastic()

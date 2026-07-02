@@ -256,6 +256,104 @@ def build_stream(spec: StreamSpec) -> list[dict]:
     return slots
 
 
+# ===================================================================== STOCHASTIC (generative) mode
+@dataclass
+class StochasticStreamSpec:
+    """Stochastic design: T i.i.d. draws from a distribution over N types (families). n_hot "hot"
+    types carry hot_share of the mass, N-n_hot "trap" types carry trap_share. Which family gets which
+    rate is RANDOMIZED per seed (no memorization). guarantee_trap_early = target fraction of seeds
+    conditioned to have >=1 trap in the first `budget` slots (the consequential-seed knob; 1.0 = every
+    seed, 0.0 = pure i.i.d.). role (hot/trap) is ground truth by RATE; class_size is the REALIZED
+    draw count."""
+    families: list[str]
+    n_hot: int = 3
+    hot_share: float = 0.85
+    trap_share: float = 0.15
+    T: int = 60
+    budget: int = 3
+    guarantee_trap_early: float = 1.0
+    magnitude: int = 100
+    seed: int = 0
+
+    def __post_init__(self):
+        assert 0 < self.n_hot < len(self.families), (self.n_hot, len(self.families))
+        assert abs(self.hot_share + self.trap_share - 1.0) < 1e-9, "shares must sum to 1"
+
+
+def build_stochastic_stream(spec: StochasticStreamSpec) -> tuple[list[dict], dict]:
+    """Return (slots, meta). slots carry the PROBLEM_FIELDS the model sees + hidden labels
+    (slot_index, class_id, class_size=REALIZED count, class_position, members_remaining_after,
+    is_recurring=(role==hot), role, rate). meta carries the family->rate/role assignment, pmf,
+    realized counts, and the trap-early conditioning outcome (for the scorer + pi*)."""
+    rng = random.Random(spec.seed)
+    fams = list(spec.families)
+    N, n_hot = len(fams), spec.n_hot
+    n_trap = N - n_hot
+    hot_p, trap_p = spec.hot_share / n_hot, spec.trap_share / n_trap
+
+    # Q1: randomize which family gets which rate/role
+    roles_rates = [("hot", hot_p)] * n_hot + [("trap", trap_p)] * n_trap
+    rng.shuffle(roles_rates)
+    role = {fams[i]: roles_rates[i][0] for i in range(N)}
+    rate = {fams[i]: roles_rates[i][1] for i in range(N)}
+    pmf = [rate[f] for f in fams]                          # aligned to fams order
+    trap_ids = {i for i, f in enumerate(fams) if role[f] == "trap"}
+    hot_ids = [i for i in range(N) if i not in trap_ids]
+
+    def has_early_trap(seq):
+        return any(seq[j] in trap_ids for j in range(min(spec.budget, len(seq))))
+
+    # trap-early conditioning: rejection-sample the whole stream to the target stratum
+    want_early = rng.random() < spec.guarantee_trap_early
+    seq = None
+    for _ in range(2000):
+        cand = rng.choices(range(N), weights=pmf, k=spec.T)
+        if has_early_trap(cand) == want_early:
+            seq = cand
+            break
+    if seq is None:                                        # surgical fallback (rare)
+        seq = rng.choices(range(N), weights=pmf, k=spec.T)
+        win = min(spec.budget, spec.T)
+        if want_early and not has_early_trap(seq):
+            seq[rng.randrange(win)] = rng.choice(sorted(trap_ids))
+        elif not want_early and has_early_trap(seq):
+            for j in range(win):
+                if seq[j] in trap_ids:
+                    seq[j] = rng.choice(hot_ids)
+
+    counts: dict[int, int] = {}
+    for cid in seq:
+        counts[cid] = counts.get(cid, 0) + 1
+    members = {cid: [ALL_FAMILIES[fams[cid]].make_member(rng, spec.magnitude) for _ in range(c)]
+               for cid, c in counts.items()}
+
+    seen = {cid: 0 for cid in counts}
+    slots = []
+    for slot_index, cid in enumerate(seq):
+        pos = seen[cid]
+        seen[cid] += 1
+        fam, size = fams[cid], counts[cid]
+        slots.append({
+            **members[cid][pos],
+            "slot_index": slot_index, "class_id": cid, "class_size": size,
+            "class_position": pos + 1, "members_remaining_after": size - (pos + 1),
+            "is_recurring": role[fam] == "hot",            # ground-truth role, NOT realized size
+            "role": role[fam], "rate": rate[fam],
+        })
+
+    meta = {
+        "N": N, "n_hot": n_hot, "n_trap": n_trap, "T": spec.T, "budget": spec.budget,
+        "hot_share": spec.hot_share, "trap_share": spec.trap_share,
+        "guarantee_trap_early": spec.guarantee_trap_early,
+        "want_early": want_early, "trap_early_realized": has_early_trap(seq),
+        "assignment": {f: {"role": role[f], "rate": rate[f]} for f in fams},
+        "pmf": {f: rate[f] for f in fams},
+        "realized_counts": {fams[cid]: c for cid, c in counts.items()},
+        "seed": spec.seed, "magnitude": spec.magnitude,
+    }
+    return slots, meta
+
+
 def problems_only(slots: list[dict]) -> list[dict]:
     """The view the model is allowed to see (labels stripped)."""
     return [{k: s[k] for k in PROBLEM_FIELDS} for s in slots]
@@ -310,8 +408,48 @@ def _selftest():
     print("self-test OK")
 
 
+def _selftest_stochastic():
+    from collections import Counter
+    print("\n================ stochastic stream self-test ================")
+    pool = ["lcg", "modpow", "factorial_mod", "kaprekar_routine", "look_and_say", "continued_frac",
+            "crt_solve", "josephus", "quadratic_map_mod", "xorshift_steps", "matrix_power_mod",
+            "linrec_mod"]
+    spec = StochasticStreamSpec(families=pool, n_hot=3, T=60, budget=3, magnitude=100, seed=0)
+    slots, meta = build_stochastic_stream(spec)
+
+    assert len(slots) == spec.T
+    cnt = Counter(s["class_id"] for s in slots)
+    for cid, c in cnt.items():                              # class_size == realized count; positions 1..c
+        assert all(s["class_size"] == c for s in slots if s["class_id"] == cid)
+        pos = sorted(s["class_position"] for s in slots if s["class_id"] == cid)
+        assert pos == list(range(1, c + 1))
+    roles = [meta["assignment"][f]["role"] for f in pool]
+    assert roles.count("hot") == 3 and roles.count("trap") == 9
+    assert abs(sum(meta["pmf"].values()) - 1.0) < 1e-9
+    for s in slots:                                        # model-visible fields present
+        assert all(k in s for k in PROBLEM_FIELDS)
+
+    hot = [f for f in pool if meta["assignment"][f]["role"] == "hot"]
+    trap = [f for f in pool if meta["assignment"][f]["role"] == "trap"]
+    hot_counts = {f: meta["realized_counts"].get(f, 0) for f in hot}
+    trap_counts = {f: meta["realized_counts"].get(f, 0) for f in trap}
+    print(f"hot types {hot} counts={list(hot_counts.values())}")
+    print(f"trap counts={list(trap_counts.values())}  (expect mostly ~1)")
+    print(f"trap_early_realized={meta['trap_early_realized']}  want_early={meta['want_early']}")
+
+    # g=1.0 -> every seed has an early trap; g=0.0 -> none
+    for g, expect in ((1.0, True), (0.0, False)):
+        for sd in range(12):
+            _, m = build_stochastic_stream(StochasticStreamSpec(
+                families=pool, n_hot=3, T=60, budget=3, guarantee_trap_early=g, seed=sd))
+            assert m["trap_early_realized"] == expect, (g, sd, m["trap_early_realized"])
+    print("trap-early knob: g=1.0 forces early trap on 12/12 seeds; g=0.0 suppresses on 12/12")
+    print("stochastic self-test OK")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--selftest", action="store_true")
     args, _ = ap.parse_known_args()
     _selftest()
+    _selftest_stochastic()

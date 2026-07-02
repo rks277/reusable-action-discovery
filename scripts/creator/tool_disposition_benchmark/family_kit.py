@@ -385,7 +385,9 @@ FIB_MOD = Family("fib_mod", ["X0", "X1", "M", "K"], _fibmod_sampler, reference=_
 
 
 def _collatz_sampler(rng, m):
-    return {"N": _scale(rng, m), "K": rng.randint(10, 25)}
+    # K cranked to 45-70 (was 10-25, a_hand 1.00 for Haiku): tracking many halving / 3n+1 steps on a
+    # growing 6-digit value accumulates hand errors while a tool is O(1).
+    return {"N": _scale(rng, m), "K": rng.randint(45, 70)}
 
 
 def _collatz_ref(v):
@@ -405,7 +407,9 @@ COLLATZ_STEPS = Family("collatz_steps", ["N", "K"], _collatz_sampler, reference=
 
 
 def _digitsq_sampler(rng, m):
-    return {"N": _scale(rng, m), "K": rng.randint(5, 10)}
+    # K cranked to 30-50 (was 5-10, a_hand 1.00): the map converges into a short cycle fast, so
+    # difficulty is tracking the EXACT cycle position after many steps (off-by-one prone by hand).
+    return {"N": _scale(rng, m), "K": rng.randint(30, 50)}
 
 
 def _digitsq_ref(v):
@@ -721,9 +725,9 @@ NUMBER_LINE_WALK = Family("number_line_walk", ["STEPS"], _walk_sampler, referenc
 # ---- more a_hand~=1 "long-but-easy" families (distinct per-step logic; a script for one CANNOT
 #      compute another, and none matches collatz/digitsq/the scan/tally/sort kinds already present) --
 def _revadd_sampler(rng, m):
-    # more rounds (6-9): n grows to 8-12 digits, so each 'add the digit-reversal' is a long-integer
-    # addition and errors compound across rounds.
-    return {"N": _scale(rng, m), "K": rng.randint(6, 9)}
+    # K cranked to 12-18 (was 6-9, a_hand 0.75): n grows to ~15-20 digits, so each 'add the
+    # digit-reversal' is a long-integer addition and errors compound across the extra rounds.
+    return {"N": _scale(rng, m), "K": rng.randint(12, 18)}
 
 
 def _revadd_ref(v):
@@ -884,10 +888,169 @@ MOD_PAIR_SUM = Family("mod_pair_sum", ["A", "B"], _modpair_sampler,
                       fields=_twolist_fields, hard_by="magnitude")
 
 
+# ===================================================================== STOCHASTIC-DESIGN UNIFORM POOL
+# Irreducibly computation-bound classes: NO closed form (iterate K steps / reconstruct), so they are
+# hard by hand for ALL frontier models at one fixed hard setting -- no per-model profile needed. Each
+# is a distinct tool-identity (non-composable with the others or the existing pool) with a dead-simple
+# exact reference (a_script ~ 1). Added 2026-07-02 to replace the per-model-calibrated pool.
+def _matpow_sampler(rng, m):
+    return {"A": rng.randint(2, 40), "B": rng.randint(2, 40), "C": rng.randint(2, 40),
+            "D": rng.randint(2, 40), "MOD": _scale(rng, m), "K": rng.randint(25, 45)}
+
+
+def _matpow_ref(v):
+    mod, K = v["MOD"], v["K"]
+    R, Mx = [[1, 0], [0, 1]], [[v["A"], v["B"]], [v["C"], v["D"]]]
+
+    def mul(X, Y):
+        return [[(X[0][0] * Y[0][0] + X[0][1] * Y[1][0]) % mod,
+                 (X[0][0] * Y[0][1] + X[0][1] * Y[1][1]) % mod],
+                [(X[1][0] * Y[0][0] + X[1][1] * Y[1][0]) % mod,
+                 (X[1][0] * Y[0][1] + X[1][1] * Y[1][1]) % mod]]
+    for _ in range(K):
+        R = mul(R, Mx)
+    return (R[0][0] + R[0][1] + R[1][0] + R[1][1]) % mod
+
+
+MATRIX_POWER_MOD = Family("matrix_power_mod", ["A", "B", "C", "D", "MOD", "K"], _matpow_sampler,
+                          reference=_matpow_ref, covers=[
+                              "Let M = [[{A}, {B}], [{C}, {D}]]. Compute M raised to the power {K} "
+                              "(the product of exactly {K} copies of M), reducing every entry modulo "
+                              "{MOD} throughout, and report the sum of the four entries of M^{K}.",
+                              "Compute the matrix power M^{K} mod {MOD} for M = [[{A}, {B}], "
+                              "[{C}, {D}]] (i.e. M multiplied together {K} times: M^1 = M, M^2 = M*M, "
+                              "..., taking mod {MOD} throughout); give the sum of the entries of the "
+                              "result."],
+                          fields=lambda v: v, hard_by="structure")
+
+
+_CRT_PRIMES = [p for p in range(101, 3000) if _is_prime(p)]
+
+
+def _crt_sampler(rng, m):
+    n = rng.randint(4, 5)
+    mods = rng.sample(_CRT_PRIMES, n)
+    return {"REMAINDERS": [rng.randint(0, mm - 1) for mm in mods], "MODULI": mods}
+
+
+def _crt_ref(v):
+    x, mod = 0, 1
+    for r, mm in zip(v["REMAINDERS"], v["MODULI"]):
+        inv = pow(mod % mm, -1, mm)
+        t = ((r - x) * inv) % mm
+        x += mod * t
+        mod *= mm
+    return x % mod
+
+
+CRT_SOLVE = Family("crt_solve", ["REMAINDERS", "MODULI"], _crt_sampler, reference=_crt_ref, covers=[
+    "Find the smallest non-negative integer x that leaves remainders {REMS} when divided by the "
+    "respective moduli {MODS} (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "Solve the system of congruences: x is congruent to {REMS} modulo {MODS} respectively (the "
+    "moduli are pairwise coprime). Give the least non-negative x."],
+    fields=lambda v: {"REMS": "[" + ", ".join(map(str, v["REMAINDERS"])) + "]",
+                      "MODS": "[" + ", ".join(map(str, v["MODULI"])) + "]"}, hard_by="structure")
+
+
+def _josephus_sampler(rng, m):
+    return {"N": rng.randint(80, 200), "K": rng.randint(3, 9)}
+
+
+def _josephus_ref(v):
+    r = 0
+    for i in range(2, v["N"] + 1):
+        r = (r + v["K"]) % i
+    return r + 1
+
+
+JOSEPHUS = Family("josephus", ["N", "K"], _josephus_sampler, reference=_josephus_ref, covers=[
+    "{N} people stand in a circle numbered 1..{N}. Counting around the circle, every {K}-th person "
+    "is eliminated (continuing past those already gone) until one remains. Report the position of "
+    "the survivor.",
+    "In a circle of {N} people (positions 1..{N}), repeatedly remove every {K}-th person until a "
+    "single survivor is left. What is the survivor's original position?"],
+    fields=lambda v: v, hard_by="structure")
+
+
+def _xorshift_sampler(rng, m):
+    return {"X": rng.randint(1 << 20, (1 << 32) - 1), "A": rng.choice([11, 13]),
+            "B": rng.choice([7, 9]), "C": rng.choice([15, 17]), "K": rng.randint(12, 25)}
+
+
+def _xorshift_ref(v):
+    mask, x = (1 << 32) - 1, v["X"]
+    for _ in range(v["K"]):
+        x ^= (x << v["A"]) & mask
+        x ^= x >> v["B"]
+        x ^= (x << v["C"]) & mask
+        x &= mask
+    return x
+
+
+XORSHIFT_STEPS = Family("xorshift_steps", ["X", "A", "B", "C", "K"], _xorshift_sampler,
+                        reference=_xorshift_ref, covers=[
+                            "A 32-bit register holds X = {X}. Repeat {K} times: X ^= (X << {A}); "
+                            "X ^= (X >> {B}); X ^= (X << {C}); keeping X masked to 32 bits (AND with "
+                            "0xFFFFFFFF) after each left shift. Report the final X.",
+                            "Start with the 32-bit value {X}. Apply the xorshift step {K} times, "
+                            "where one step is X ^= (X<<{A}); X ^= (X>>{B}); X ^= (X<<{C}) (all "
+                            "arithmetic kept within 32 bits). What is the resulting X?"],
+                        fields=lambda v: v, hard_by="structure")
+
+
+def _linrec_sampler(rng, m):
+    return {"COEFFS": [rng.randint(2, 9) for _ in range(3)],
+            "SEEDS": [_scale(rng, m) for _ in range(3)], "MOD": _scale(rng, m),
+            "K": rng.randint(15, 25)}
+
+
+def _linrec_ref(v):
+    c, mod = v["COEFFS"], v["MOD"]
+    s = [x % mod for x in v["SEEDS"]]
+    for _ in range(v["K"]):
+        s.append((c[0] * s[-1] + c[1] * s[-2] + c[2] * s[-3]) % mod)
+    return s[-1]
+
+
+LINREC_MOD = Family("linrec_mod", ["COEFFS", "SEEDS", "MOD", "K"], _linrec_sampler,
+                    reference=_linrec_ref, covers=[
+                        "A sequence has seeds (oldest first) {SEEDS}. Each later term is "
+                        "(c1*prev + c2*prev2 + c3*prev3) mod {MOD}, where (c1, c2, c3) = {COEFFS} "
+                        "(c1 multiplies the most recent term). Advance {K} steps and report the last "
+                        "term.",
+                        "Let the three starting values be {SEEDS} (oldest to newest). Repeatedly "
+                        "append (c1*a + c2*b + c3*c) mod {MOD} using the last three terms a,b,c "
+                        "(a newest) with coefficients {COEFFS}. After {K} new terms, give the last."],
+                    fields=lambda v: {"COEFFS": "[" + ", ".join(map(str, v["COEFFS"])) + "]",
+                                      "SEEDS": "[" + ", ".join(map(str, v["SEEDS"])) + "]",
+                                      "MOD": v["MOD"], "K": v["K"]}, hard_by="structure")
+
+
+def _quadmap_sampler(rng, m):
+    return {"X": _scale(rng, m), "C": _scale(rng, m), "MOD": _scale(rng, m), "K": rng.randint(15, 30)}
+
+
+def _quadmap_ref(v):
+    x, mod = v["X"] % v["MOD"], v["MOD"]
+    for _ in range(v["K"]):
+        x = (x * x + v["C"]) % mod
+    return x
+
+
+QUADRATIC_MAP_MOD = Family("quadratic_map_mod", ["X", "C", "MOD", "K"], _quadmap_sampler,
+                           reference=_quadmap_ref, covers=[
+                               "Start with x = {X}. Repeat {K} times: replace x with (x*x + {C}) mod "
+                               "{MOD}. Report the final x.",
+                               "Iterate the map x -> (x^2 + {C}) mod {MOD} for {K} steps, starting "
+                               "from x = {X}. What is the resulting value?"],
+                           fields=lambda v: v, hard_by="structure")
+
+
 FAMILIES: dict[str, Family] = {f.name: f for f in (
     PRODUCT3, WEIGHTED_SUM, LCG, MODPOW, LCG_SMALL,
     HORNER_POLY, MATVEC_SUM, PAIRWISE_PROD_SUM,
-    FIB_MOD, COLLATZ_STEPS, DIGITSQ_ITER, EUCLID_GCD_CHAIN, FACTORIAL_MOD)}
+    FIB_MOD, COLLATZ_STEPS, DIGITSQ_ITER, EUCLID_GCD_CHAIN, FACTORIAL_MOD,
+    MATRIX_POWER_MOD, CRT_SOLVE, JOSEPHUS, XORSHIFT_STEPS, LINREC_MOD, QUADRATIC_MAP_MOD)}
 ONE_OFF_POOL: dict[str, Family] = {f.name: f for f in (
     LIST_SUM, ALT_SUM, SUM_SQ, SUM_CUBE, DIFF_PROD, TWO_STAGE, COMBINED_BILL, QUAD,
     CUBIC, SUM_4TH,

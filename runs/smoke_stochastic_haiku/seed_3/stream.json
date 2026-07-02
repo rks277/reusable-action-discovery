@@ -1,0 +1,1916 @@
+[
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2192086380,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 23
+    },
+    "vals_order": [
+      2192086380,
+      13,
+      7,
+      15,
+      23
+    ],
+    "gold": 2025364348,
+    "question": "Start with the 32-bit value 2192086380. Apply the xorshift step 23 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 0,
+    "class_id": 9,
+    "class_size": 3,
+    "class_position": 1,
+    "members_remaining_after": 2,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 281,
+      "A": 2700,
+      "B": 2300,
+      "M": 82400,
+      "K": 7
+    },
+    "vals_order": [
+      281,
+      2700,
+      2300,
+      82400,
+      7
+    ],
+    "gold": 3500,
+    "question": "A pseudorandom counter begins at 281. For 7 rounds, set X = (2700 * X + 2300) mod 82400. What is X after the final round?",
+    "slot_index": 1,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 1,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 58909094,
+      "K": 4
+    },
+    "vals_order": [
+      58909094,
+      4
+    ],
+    "gold": 97544421,
+    "question": "Start with n = 58909094. Repeat 4 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 2,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 1,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        3117,
+        11950,
+        9786,
+        7267
+      ]
+    },
+    "vals_order": [
+      [
+        3117,
+        11950,
+        9786,
+        7267
+      ]
+    ],
+    "gold": 2648897178019552,
+    "question": "For the continued fraction with terms [3117, 11950, 9786, 7267], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 3,
+    "class_id": 5,
+    "class_size": 3,
+    "class_position": 1,
+    "members_remaining_after": 2,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 605434,
+      "EXP": 15,
+      "MOD": 704928
+    },
+    "vals_order": [
+      605434,
+      15,
+      704928
+    ],
+    "gold": 405952,
+    "question": "A key-exchange step needs g^x mod p with g = 605434, x = 15, and p = 704928. What is the result?",
+    "slot_index": 4,
+    "class_id": 1,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "look_and_say",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 25,
+      "K": 2
+    },
+    "vals_order": [
+      25,
+      2
+    ],
+    "gold": 11121115,
+    "question": "Start with the digit string 25. Apply the 'look-and-say' step 2 times: read off each run of equal consecutive digits as (count)(digit), left to right. Report the resulting number.",
+    "slot_index": 5,
+    "class_id": 4,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 197,
+      "A": 300,
+      "B": 100,
+      "M": 79200,
+      "K": 11
+    },
+    "vals_order": [
+      197,
+      300,
+      100,
+      79200,
+      11
+    ],
+    "gold": 22900,
+    "question": "A register starts at X = 197. It is updated 11 times; each update replaces X with ((300 * X) + 100) mod 79200. Report the final value of X.",
+    "slot_index": 6,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 2,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 93,
+      "A": 1800,
+      "B": 1000,
+      "M": 54400,
+      "K": 11
+    },
+    "vals_order": [
+      93,
+      1800,
+      1000,
+      54400,
+      11
+    ],
+    "gold": 53800,
+    "question": "A register starts at X = 93. It is updated 11 times; each update replaces X with ((1800 * X) + 1000) mod 54400. Report the final value of X.",
+    "slot_index": 7,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 3,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 620905,
+      "C": 327624,
+      "MOD": 851247,
+      "K": 17
+    },
+    "vals_order": [
+      620905,
+      327624,
+      851247,
+      17
+    ],
+    "gold": 205015,
+    "question": "Start with x = 620905. Repeat 17 times: replace x with (x*x + 327624) mod 851247. Report the final x.",
+    "slot_index": 8,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 1,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 818396,
+      "C": 604716,
+      "MOD": 549863,
+      "K": 22
+    },
+    "vals_order": [
+      818396,
+      604716,
+      549863,
+      22
+    ],
+    "gold": 400737,
+    "question": "Start with x = 818396. Repeat 22 times: replace x with (x*x + 604716) mod 549863. Report the final x.",
+    "slot_index": 9,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 2,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 184,
+      "A": 1900,
+      "B": 1400,
+      "M": 35400,
+      "K": 10
+    },
+    "vals_order": [
+      184,
+      1900,
+      1400,
+      35400,
+      10
+    ],
+    "gold": 5400,
+    "question": "A register starts at X = 184. It is updated 10 times; each update replaces X with ((1900 * X) + 1400) mod 35400. Report the final value of X.",
+    "slot_index": 10,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 4,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 595095,
+      "C": 799046,
+      "MOD": 118466,
+      "K": 16
+    },
+    "vals_order": [
+      595095,
+      799046,
+      118466,
+      16
+    ],
+    "gold": 93827,
+    "question": "Iterate the map x -> (x^2 + 799046) mod 118466 for 16 steps, starting from x = 595095. What is the resulting value?",
+    "slot_index": 11,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 3,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 137,
+      "A": 600,
+      "B": 900,
+      "M": 118200,
+      "K": 10
+    },
+    "vals_order": [
+      137,
+      600,
+      900,
+      118200,
+      10
+    ],
+    "gold": 53700,
+    "question": "A pseudorandom counter begins at 137. For 10 rounds, set X = (600 * X + 900) mod 118200. What is X after the final round?",
+    "slot_index": 12,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 5,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 925355,
+      "C": 605073,
+      "MOD": 202886,
+      "K": 17
+    },
+    "vals_order": [
+      925355,
+      605073,
+      202886,
+      17
+    ],
+    "gold": 119382,
+    "question": "Start with x = 925355. Repeat 17 times: replace x with (x*x + 605073) mod 202886. Report the final x.",
+    "slot_index": 13,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 4,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "matrix_power_mod",
+    "magnitude": 100,
+    "keys": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "A": 14,
+      "B": 13,
+      "C": 38,
+      "D": 25,
+      "MOD": 264126,
+      "K": 35
+    },
+    "vals_order": [
+      14,
+      13,
+      38,
+      25,
+      264126,
+      35
+    ],
+    "gold": 187092,
+    "question": "Compute the matrix power M^35 mod 264126 for M = [[14, 13], [38, 25]] (i.e. M multiplied together 35 times: M^1 = M, M^2 = M*M, ..., taking mod 264126 throughout); give the sum of the entries of the result.",
+    "slot_index": 14,
+    "class_id": 10,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 202205,
+      "C": 691051,
+      "MOD": 275808,
+      "K": 29
+    },
+    "vals_order": [
+      202205,
+      691051,
+      275808,
+      29
+    ],
+    "gold": 185348,
+    "question": "Iterate the map x -> (x^2 + 691051) mod 275808 for 29 steps, starting from x = 202205. What is the resulting value?",
+    "slot_index": 15,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 5,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 257,
+      "A": 2700,
+      "B": 200,
+      "M": 66000,
+      "K": 7
+    },
+    "vals_order": [
+      257,
+      2700,
+      200,
+      66000,
+      7
+    ],
+    "gold": 200,
+    "question": "A register starts at X = 257. It is updated 7 times; each update replaces X with ((2700 * X) + 200) mod 66000. Report the final value of X.",
+    "slot_index": 16,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 6,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 75931430,
+      "K": 4
+    },
+    "vals_order": [
+      75931430,
+      4
+    ],
+    "gold": 86108832,
+    "question": "From 75931430, run 4 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 17,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 2,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 179,
+      "K": 9
+    },
+    "vals_order": [
+      179,
+      9
+    ],
+    "gold": 133,
+    "question": "179 people stand in a circle numbered 1..179. Counting around the circle, every 9-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 18,
+    "class_id": 7,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 81,
+      "A": 1900,
+      "B": 2900,
+      "M": 113600,
+      "K": 6
+    },
+    "vals_order": [
+      81,
+      1900,
+      2900,
+      113600,
+      6
+    ],
+    "gold": 36100,
+    "question": "A register starts at X = 81. It is updated 6 times; each update replaces X with ((1900 * X) + 2900) mod 113600. Report the final value of X.",
+    "slot_index": 19,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 7,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 12094161,
+      "K": 5
+    },
+    "vals_order": [
+      12094161,
+      5
+    ],
+    "gold": 86108832,
+    "question": "Start with n = 12094161. Repeat 5 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 20,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 3,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 278880,
+      "C": 399021,
+      "MOD": 642272,
+      "K": 27
+    },
+    "vals_order": [
+      278880,
+      399021,
+      642272,
+      27
+    ],
+    "gold": 596433,
+    "question": "Iterate the map x -> (x^2 + 399021) mod 642272 for 27 steps, starting from x = 278880. What is the resulting value?",
+    "slot_index": 21,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 6,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        1917,
+        1188,
+        2281,
+        113,
+        492
+      ],
+      "MODULI": [
+        2647,
+        1741,
+        2659,
+        2237,
+        739
+      ]
+    },
+    "vals_order": [
+      [
+        1917,
+        1188,
+        2281,
+        113,
+        492
+      ],
+      [
+        2647,
+        1741,
+        2659,
+        2237,
+        739
+      ]
+    ],
+    "gold": 11106964580392931,
+    "question": "Find the smallest non-negative integer x that leaves remainders [1917, 1188, 2281, 113, 492] when divided by the respective moduli [2647, 1741, 2659, 2237, 739] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 22,
+    "class_id": 6,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 111,
+      "A": 2700,
+      "B": 900,
+      "M": 112500,
+      "K": 7
+    },
+    "vals_order": [
+      111,
+      2700,
+      900,
+      112500,
+      7
+    ],
+    "gold": 68400,
+    "question": "A register starts at X = 111. It is updated 7 times; each update replaces X with ((2700 * X) + 900) mod 112500. Report the final value of X.",
+    "slot_index": 23,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 8,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "look_and_say",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 96,
+      "K": 3
+    },
+    "vals_order": [
+      96,
+      3
+    ],
+    "gold": 31193116,
+    "question": "From 96, perform 3 look-and-say rounds (describe the digit runs as count-then-digit). What number results?",
+    "slot_index": 24,
+    "class_id": 4,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 597377,
+      "C": 452232,
+      "MOD": 101004,
+      "K": 27
+    },
+    "vals_order": [
+      597377,
+      452232,
+      101004,
+      27
+    ],
+    "gold": 53065,
+    "question": "Start with x = 597377. Repeat 27 times: replace x with (x*x + 452232) mod 101004. Report the final x.",
+    "slot_index": 25,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 7,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 988340,
+      "C": 446585,
+      "MOD": 898281,
+      "K": 20
+    },
+    "vals_order": [
+      988340,
+      446585,
+      898281,
+      20
+    ],
+    "gold": 804668,
+    "question": "Iterate the map x -> (x^2 + 446585) mod 898281 for 20 steps, starting from x = 988340. What is the resulting value?",
+    "slot_index": 26,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 8,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 174,
+      "A": 2200,
+      "B": 1900,
+      "M": 118300,
+      "K": 9
+    },
+    "vals_order": [
+      174,
+      2200,
+      1900,
+      118300,
+      9
+    ],
+    "gold": 99000,
+    "question": "A register starts at X = 174. It is updated 9 times; each update replaces X with ((2200 * X) + 1900) mod 118300. Report the final value of X.",
+    "slot_index": 27,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 9,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 738096,
+      "C": 609715,
+      "MOD": 806545,
+      "K": 30
+    },
+    "vals_order": [
+      738096,
+      609715,
+      806545,
+      30
+    ],
+    "gold": 640976,
+    "question": "Start with x = 738096. Repeat 30 times: replace x with (x*x + 609715) mod 806545. Report the final x.",
+    "slot_index": 28,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 9,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3594642031,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 25
+    },
+    "vals_order": [
+      3594642031,
+      13,
+      9,
+      15,
+      25
+    ],
+    "gold": 1321601919,
+    "question": "A 32-bit register holds X = 3594642031. Repeat 25 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 29,
+    "class_id": 9,
+    "class_size": 3,
+    "class_position": 2,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 243,
+      "A": 1000,
+      "B": 800,
+      "M": 57500,
+      "K": 10
+    },
+    "vals_order": [
+      243,
+      1000,
+      800,
+      57500,
+      10
+    ],
+    "gold": 43300,
+    "question": "Initialize s = 243. Repeat the following 10 times: s = (1000 * s + 800) % 57500. Give the resulting value of s.",
+    "slot_index": 30,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 10,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 687885,
+      "C": 434233,
+      "MOD": 954693,
+      "K": 19
+    },
+    "vals_order": [
+      687885,
+      434233,
+      954693,
+      19
+    ],
+    "gold": 935630,
+    "question": "Start with x = 687885. Repeat 19 times: replace x with (x*x + 434233) mod 954693. Report the final x.",
+    "slot_index": 31,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 10,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 183,
+      "A": 1500,
+      "B": 200,
+      "M": 78400,
+      "K": 8
+    },
+    "vals_order": [
+      183,
+      1500,
+      200,
+      78400,
+      8
+    ],
+    "gold": 77800,
+    "question": "A register starts at X = 183. It is updated 8 times; each update replaces X with ((1500 * X) + 200) mod 78400. Report the final value of X.",
+    "slot_index": 32,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 11,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 51470065,
+      "K": 7
+    },
+    "vals_order": [
+      51470065,
+      7
+    ],
+    "gold": 85317642,
+    "question": "From 51470065, run 7 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 33,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 4,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 269,
+      "A": 300,
+      "B": 2500,
+      "M": 42900,
+      "K": 6
+    },
+    "vals_order": [
+      269,
+      300,
+      2500,
+      42900,
+      6
+    ],
+    "gold": 7300,
+    "question": "A register starts at X = 269. It is updated 6 times; each update replaces X with ((300 * X) + 2500) mod 42900. Report the final value of X.",
+    "slot_index": 34,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 12,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 114217,
+      "C": 535847,
+      "MOD": 798197,
+      "K": 30
+    },
+    "vals_order": [
+      114217,
+      535847,
+      798197,
+      30
+    ],
+    "gold": 38645,
+    "question": "Iterate the map x -> (x^2 + 535847) mod 798197 for 30 steps, starting from x = 114217. What is the resulting value?",
+    "slot_index": 35,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 11,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 62,
+      "A": 400,
+      "B": 1600,
+      "M": 33300,
+      "K": 12
+    },
+    "vals_order": [
+      62,
+      400,
+      1600,
+      33300,
+      12
+    ],
+    "gold": 29900,
+    "question": "Initialize s = 62. Repeat the following 12 times: s = (400 * s + 1600) % 33300. Give the resulting value of s.",
+    "slot_index": 36,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 13,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3686049334,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 12
+    },
+    "vals_order": [
+      3686049334,
+      13,
+      7,
+      15,
+      12
+    ],
+    "gold": 461022101,
+    "question": "A 32-bit register holds X = 3686049334. Repeat 12 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 37,
+    "class_id": 9,
+    "class_size": 3,
+    "class_position": 3,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 21,
+      "MOD": 280219
+    },
+    "vals_order": [
+      21,
+      280219
+    ],
+    "gold": 61083,
+    "question": "Compute 21 factorial modulo 280219 (the remainder when 21! is divided by 280219).",
+    "slot_index": 38,
+    "class_id": 2,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 628656,
+      "C": 767532,
+      "MOD": 913488,
+      "K": 20
+    },
+    "vals_order": [
+      628656,
+      767532,
+      913488,
+      20
+    ],
+    "gold": 401820,
+    "question": "Start with x = 628656. Repeat 20 times: replace x with (x*x + 767532) mod 913488. Report the final x.",
+    "slot_index": 39,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 12,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 86823262,
+      "K": 4
+    },
+    "vals_order": [
+      86823262,
+      4
+    ],
+    "gold": 75308643,
+    "question": "From 86823262, run 4 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 40,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 5,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 294044,
+      "C": 802284,
+      "MOD": 222555,
+      "K": 19
+    },
+    "vals_order": [
+      294044,
+      802284,
+      222555,
+      19
+    ],
+    "gold": 205510,
+    "question": "Iterate the map x -> (x^2 + 802284) mod 222555 for 19 steps, starting from x = 294044. What is the resulting value?",
+    "slot_index": 41,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 13,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 8492232,
+      "K": 6
+    },
+    "vals_order": [
+      8492232,
+      6
+    ],
+    "gold": 8649432,
+    "question": "From 8492232, run 6 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 42,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 6,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 993897,
+      "C": 257289,
+      "MOD": 906552,
+      "K": 24
+    },
+    "vals_order": [
+      993897,
+      257289,
+      906552,
+      24
+    ],
+    "gold": 136581,
+    "question": "Iterate the map x -> (x^2 + 257289) mod 906552 for 24 steps, starting from x = 993897. What is the resulting value?",
+    "slot_index": 43,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 14,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 72,
+      "A": 1800,
+      "B": 1700,
+      "M": 80100,
+      "K": 8
+    },
+    "vals_order": [
+      72,
+      1800,
+      1700,
+      80100,
+      8
+    ],
+    "gold": 71000,
+    "question": "A register starts at X = 72. It is updated 8 times; each update replaces X with ((1800 * X) + 1700) mod 80100. Report the final value of X.",
+    "slot_index": 44,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 14,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        10338,
+        9815,
+        2789,
+        10729
+      ]
+    },
+    "vals_order": [
+      [
+        10338,
+        9815,
+        2789,
+        10729
+      ]
+    ],
+    "gold": 3036229712729124,
+    "question": "For the continued fraction with terms [10338, 9815, 2789, 10729], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 45,
+    "class_id": 5,
+    "class_size": 3,
+    "class_position": 2,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 95709045,
+      "K": 6
+    },
+    "vals_order": [
+      95709045,
+      6
+    ],
+    "gold": 86508432,
+    "question": "From 95709045, run 6 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 46,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 7,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 94533640,
+      "K": 7
+    },
+    "vals_order": [
+      94533640,
+      7
+    ],
+    "gold": 75508443,
+    "question": "From 94533640, run 7 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 47,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 8,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 3775873,
+      "K": 5
+    },
+    "vals_order": [
+      3775873,
+      5
+    ],
+    "gold": 6409854,
+    "question": "Start with n = 3775873. Repeat 5 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 48,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 9,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 637838,
+      "C": 908805,
+      "MOD": 626670,
+      "K": 23
+    },
+    "vals_order": [
+      637838,
+      908805,
+      626670,
+      23
+    ],
+    "gold": 224311,
+    "question": "Start with x = 637838. Repeat 23 times: replace x with (x*x + 908805) mod 626670. Report the final x.",
+    "slot_index": 49,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 15,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 73288876,
+      "K": 6
+    },
+    "vals_order": [
+      73288876,
+      6
+    ],
+    "gold": 43208766,
+    "question": "Start with n = 73288876. Repeat 6 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 50,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 10,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        961,
+        2655,
+        183,
+        1591,
+        691
+      ],
+      "MODULI": [
+        2957,
+        2749,
+        227,
+        1697,
+        823
+      ]
+    },
+    "vals_order": [
+      [
+        961,
+        2655,
+        183,
+        1591,
+        691
+      ],
+      [
+        2957,
+        2749,
+        227,
+        1697,
+        823
+      ]
+    ],
+    "gold": 995815548336317,
+    "question": "Find the smallest non-negative integer x that leaves remainders [961, 2655, 183, 1591, 691] when divided by the respective moduli [2957, 2749, 227, 1697, 823] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 51,
+    "class_id": 6,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 201556,
+      "EXP": 38,
+      "MOD": 38328
+    },
+    "vals_order": [
+      201556,
+      38,
+      38328
+    ],
+    "gold": 34912,
+    "question": "A key-exchange step needs g^x mod p with g = 201556, x = 38, and p = 38328. What is the result?",
+    "slot_index": 52,
+    "class_id": 1,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 58397575,
+      "K": 5
+    },
+    "vals_order": [
+      58397575,
+      5
+    ],
+    "gold": 75308643,
+    "question": "From 58397575, run 5 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 53,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 11,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 130,
+      "A": 400,
+      "B": 1200,
+      "M": 69500,
+      "K": 11
+    },
+    "vals_order": [
+      130,
+      400,
+      1200,
+      69500,
+      11
+    ],
+    "gold": 12200,
+    "question": "A pseudorandom counter begins at 130. For 11 rounds, set X = (400 * X + 1200) mod 69500. What is X after the final round?",
+    "slot_index": 54,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 15,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 18867413,
+      "K": 4
+    },
+    "vals_order": [
+      18867413,
+      4
+    ],
+    "gold": 87644322,
+    "question": "From 18867413, run 4 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 55,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 12,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 200,
+      "A": 1100,
+      "B": 1200,
+      "M": 57100,
+      "K": 7
+    },
+    "vals_order": [
+      200,
+      1100,
+      1200,
+      57100,
+      7
+    ],
+    "gold": 27500,
+    "question": "A pseudorandom counter begins at 200. For 7 rounds, set X = (1100 * X + 1200) mod 57100. What is X after the final round?",
+    "slot_index": 56,
+    "class_id": 0,
+    "class_size": 16,
+    "class_position": 16,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 51599064,
+      "K": 6
+    },
+    "vals_order": [
+      51599064,
+      6
+    ],
+    "gold": 87517422,
+    "question": "Start with n = 51599064. Repeat 6 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 57,
+    "class_id": 3,
+    "class_size": 13,
+    "class_position": 13,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 335851,
+      "C": 37948,
+      "MOD": 294816,
+      "K": 30
+    },
+    "vals_order": [
+      335851,
+      37948,
+      294816,
+      30
+    ],
+    "gold": 257909,
+    "question": "Iterate the map x -> (x^2 + 37948) mod 294816 for 30 steps, starting from x = 335851. What is the resulting value?",
+    "slot_index": 58,
+    "class_id": 8,
+    "class_size": 16,
+    "class_position": 16,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        3451,
+        4966,
+        7468,
+        1826
+      ]
+    },
+    "vals_order": [
+      [
+        3451,
+        4966,
+        7468,
+        1826
+      ]
+    ],
+    "gold": 233698984846049,
+    "question": "For the continued fraction with terms [3451, 4966, 7468, 1826], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 59,
+    "class_id": 5,
+    "class_size": 3,
+    "class_position": 3,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  }
+]
