@@ -100,7 +100,14 @@ async def main():
                     sequential=SEQUENTIAL)
                 row = {**result, "elapsed_s": round(time.time() - t0, 2)}
             except Exception as e:
-                row = {**cfg, "error": f"{type(e).__name__}: {e}",
+                # ExceptionGroup (anyio) hides inner exceptions in str(); unwrap them.
+                if hasattr(e, "exceptions"):
+                    inner = "; ".join(f"{type(ie).__name__}: {ie}"
+                                      for ie in e.exceptions)
+                    err_str = f"ExceptionGroup({inner})"
+                else:
+                    err_str = f"{type(e).__name__}: {e}"
+                row = {**cfg, "error": err_str,
                        "elapsed_s": round(time.time() - t0, 2)}
             async with lock:
                 with out_path.open("a") as f:

@@ -37,6 +37,17 @@ def _strip_think(text: str) -> str:
     return _THINK_RE.sub("", text).strip()
 
 
+def _is_context_overflow(e: Exception) -> bool:
+    """True if an exception (or any nested ExceptionGroup member) is a context-length
+    overflow from the model server (vLLM/OpenAI 400)."""
+    excs = getattr(e, "exceptions", None)
+    if excs is not None:
+        return any(_is_context_overflow(sub) for sub in excs)
+    s = str(e).lower()
+    return ("maximum context length" in s or "context length is" in s
+            or "reduce the length" in s)
+
+
 # --- token meter -----------------------------------------------------------------------
 
 def per_call_cost(usage: dict | None, provider: str) -> int:
@@ -217,8 +228,17 @@ async def _loop_openai(client, model, system, intro, problem, mcp_tools, call, b
     noop = 0
 
     for t in range(max_turns):
-        resp = await client.chat_tools_openai(model, system, msgs, tools, max_tokens,
-                                              provider=prov)
+        try:
+            resp = await client.chat_tools_openai(model, system, msgs, tools, max_tokens,
+                                                  provider=prov)
+        except Exception as e:
+            # Context-length overflow (prompt+max_tokens > model ctx) is a natural end of
+            # a long episode, not a failure -- record it as a clean terminal state so the
+            # rollout is still scorable (no dropped-error survivorship bias).
+            if _is_context_overflow(e):
+                r["stopped_reason"] = "context_overflow"
+                break
+            raise
         meter += per_call_cost(client.last_usage, prov)
         _accrue_usage(r, client.last_usage)
 
