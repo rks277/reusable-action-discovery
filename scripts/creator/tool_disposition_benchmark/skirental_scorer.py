@@ -223,30 +223,44 @@ def actions_from_session(session: dict, slots: list[dict]) -> list[dict]:
     """Map a persistent-session harness record (its `records[]`) + the stream `slots` (labels) into
     normalized action records.
 
-    Authoring proxy: a script's FIRST appearance in `scripts_run` across the whole session marks
-    where it was authored. So at a slot: running a script NEW to the session -> 'build' (or
-    'rebuild' if this class already authored one); running only PRE-EXISTING scripts -> 'reuse'
-    (this correctly counts running class A's tool on a one-off as reuse, NOT a build for the
-    one-off); no script -> 'hand'. Verified against runs/stream_disposition_20260630_233414
-    (yields exactly n_scripts_written builds)."""
+    BUILD is attributed by the AUTHORING event: a slot whose record logged `scripts_authored` (a
+    `write_script` fired while that problem was on screen) is a 'build' for that class ('rebuild' if
+    the class already authored one). This is robust to (a) truncation cutting off a freshly-built
+    tool before it is reused, and (b) the model running a tool on a DIFFERENT family (exploration /
+    flailing) -- neither of which is a build for the visited class. Running an existing script with
+    no new authoring -> 'reuse'; nothing -> 'hand'.
+
+    Fallback: older runs (recorded before `scripts_authored` existed) use the legacy proxy = a
+    script's FIRST appearance in `scripts_run` marks its authoring slot."""
     recs = {r.get("idx"): r for r in session.get("records", [])}
-    seen_scripts: set = set()          # script names authored anywhere earlier in the session
-    class_built: set = set()           # class_ids that have authored a serving tool
+    has_authoring = any("scripts_authored" in (r or {}) for r in recs.values())
+    seen_scripts: set = set()
+    class_built: set = set()
     out = []
     for s in sorted(slots, key=lambda z: z["slot_index"]):
         rec = recs.get(s["slot_index"])
         cid = s["class_id"]
-        if not rec or not rec.get("used_script"):
-            action = "hand"
-        else:
-            ran = rec.get("scripts_run") or []
-            new = [sc for sc in ran if sc not in seen_scripts]
-            if new:
+        if has_authoring:
+            authored = (rec.get("scripts_authored") if rec else None) or []
+            if authored:
                 action = "rebuild" if cid in class_built else "build"
                 class_built.add(cid)
-            else:
+            elif rec and rec.get("used_script"):
                 action = "reuse"
-            seen_scripts.update(ran)
+            else:
+                action = "hand"
+        else:                              # legacy run-based proxy
+            if not rec or not rec.get("used_script"):
+                action = "hand"
+            else:
+                ran = rec.get("scripts_run") or []
+                new = [sc for sc in ran if sc not in seen_scripts]
+                if new:
+                    action = "rebuild" if cid in class_built else "build"
+                    class_built.add(cid)
+                else:
+                    action = "reuse"
+                seen_scripts.update(ran)
         out.append({"slot_index": s["slot_index"], "class_id": cid, "family": s["family"],
                     "class_size": s["class_size"], "class_position": s["class_position"],
                     "action": action, "correct": bool(rec["correct"]) if rec else False,

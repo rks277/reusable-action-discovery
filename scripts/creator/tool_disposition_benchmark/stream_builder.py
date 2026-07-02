@@ -53,6 +53,10 @@ class StreamSpec:
     announce: bool = False
     seed: int = 0
     note: str = ""
+    oneoff_head: int = 6                     # random_oneoff_early: guarantee >=1 one-off within the
+    #   first `oneoff_head` slots. Set this to the WRITE BUDGET B so the one-off appears while budget
+    #   is still free (at most B-1 builds can precede a slot < B), avoiding false "correct-skip"s from
+    #   the model exhausting budget on early recurring first-sightings before any one-off arrives.
 
     def oo_pool_and_magnitude(self) -> tuple[list[str], int]:
         """A0-calibrated: 'easy' -> ops Haiku hand-solves (at the recurring magnitude, so building
@@ -62,7 +66,7 @@ class StreamSpec:
         return HARD_ONEOFFS, (self.one_off_magnitude or HARD_ONEOFF_MAGNITUDE)
 
 
-def _order(class_sizes: list[int], arrival: str, rng: random.Random) -> list[int]:
+def _order(class_sizes: list[int], arrival: str, rng: random.Random, oneoff_head: int = 6) -> list[int]:
     """Return a list of class-ids of length sum(sizes): which class occupies each slot, in order."""
     ids: list[int] = []
     if arrival == "blocked":
@@ -120,7 +124,7 @@ def _order(class_sizes: list[int], arrival: str, rng: random.Random) -> list[int
             ids += [c] * s
         rng.shuffle(ids)
         oneoff = {c for c, s in enumerate(class_sizes) if s == 1}
-        head = min(6, len(ids))
+        head = min(max(1, oneoff_head), len(ids))
         if oneoff and not any(ids[i] in oneoff for i in range(head)):
             src = next(i for i, c in enumerate(ids) if c in oneoff)   # first one-off past the head
             dst = rng.randrange(head)
@@ -232,7 +236,7 @@ def build_stream(spec: StreamSpec) -> list[dict]:
     for cid, (fam, size, mag) in enumerate(classes):
         members[cid] = [ALL_FAMILIES[fam].make_member(rng, mag) for _ in range(size)]
 
-    order = _order(class_sizes, spec.arrival, rng)
+    order = _order(class_sizes, spec.arrival, rng, oneoff_head=spec.oneoff_head)
     seen: dict[int, int] = {c: 0 for c in range(len(classes))}
     slots: list[dict] = []
     for slot_index, cid in enumerate(order):

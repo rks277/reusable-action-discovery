@@ -1,0 +1,24 @@
+stream: 80 problems | recurring=['euclid_gcd_chain', 'factorial_mod', 'lcg', 'look_and_say'] one-offs(hard)=['continued_frac', 'count_inversions', 'kaprekar_routine', 'luhn_sum'] | m=1 arrival=random_oneoff_early budget=4 -> runs/stream_disposition_20260701_232633
+  sonnet: solve=10/80 scripts=4 used=10 tok=5934 
+
+session transcripts -> runs/stream_disposition_20260701_232633/sessions.jsonl
+
+================ SCORING sonnet ================
+costs: a_hand={'euclid_gcd_chain': 0.8, 'factorial_mod': 0.35, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0, 'lcg': 0.8, 'count_inversions': 0.6, 'continued_frac': 0.75, 'luhn_sum': 0.35, 'look_and_say': 0.35, 'kaprekar_routine': 0.7}  h=1326 C=259 r=200 R=100.0 lam=0.1
+m* per family: {'euclid_gcd_chain': 0.2, 'factorial_mod': 0.15, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23, 'lcg': 0.2, 'count_inversions': 0.17, 'continued_frac': 0.19, 'luhn_sum': 0.15, 'look_and_say': 0.15, 'kaprekar_routine': 0.18}
+
+budget-constrained optimum builds the top-4 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+euclid_gcd_chain   19   0.2  True  True     1     5     0   correct-build     2763.2
+factorial_mod      19   0.1  True False  None     1     0 wrongly-skipped     3800.0
+lcg                19   0.2  True  True     1     1     0   correct-build     3613.4
+look_and_say       19   0.1  True False  None     0     0 wrongly-skipped     4012.6
+continued_frac      1   0.2 False False  None     0     0    correct-skip       75.0
+count_inversions    1   0.2 False False  None     0     0    correct-skip       60.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -116.6
+luhn_sum            1   0.1 False False  None     0     0    correct-skip       35.0
+
+aggregate: {'wrongly-skipped': 2, 'correct-build': 2, 'wrongly-built': 1, 'correct-skip': 3}
+  build_rate(recurring)=0.50  build_rate(one-off)=0.25 (1 built)  reuse_rate=0.19  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=14242.6  (vs unconstrained-fullinfo=14749.1)

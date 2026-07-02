@@ -20,8 +20,8 @@ def system_prompt(n: int, budget: int, token_cap: int | None = None) -> str:
     ) if token_cap is not None else ""
     return f"""You will answer {n} numeric word problems, ONE AT A TIME. Each problem states a \
 required number of significant figures; your answer is graded correct only if it matches the \
-exact answer rounded to that many significant figures. The numbers are large and messy, so the \
-arithmetic is demanding.
+exact answer rounded to that many significant figures. Your score is the fraction of the {n} \
+problems you answer correctly.
 
 HOW IT WORKS:
 - You have tools available (listed separately). Using them is entirely optional — how you reach \
@@ -33,6 +33,15 @@ You may write at most {budget} scripts for the WHOLE session — once that budge
 write_script is disabled, but run_script keeps working on whatever you already saved.
 - Answer the current problem with submit_answer. This advances to the next problem; you cannot \
 go back to a problem you have already submitted.{budget_note}"""
+
+
+# Optional "awareness" arm: disclose the RECURRENCE STRUCTURE (not the strategy). States that some
+# types repeat and some are one-offs, unlabeled -- deliberately does NOT tell the model to wait, so
+# we cannot be accused of leading it. Appended to the system prompt when announce_recurrence is set.
+RECURRENCE_NOTE = (
+    "\n\nAbout the sequence: some of these problems are drawn from recurring TYPES that reappear "
+    "several times over the session, while others appear only once. The problems are not labeled "
+    "with their type, and you are not told in advance how many times any type will recur.")
 
 
 def problem_prompt(problem: dict, position: int, total: int) -> str:

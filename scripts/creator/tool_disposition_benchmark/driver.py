@@ -29,7 +29,8 @@ def _est_tokens(system: str, messages: list, turn) -> int:
 
 async def run_session(client: RawChat, model: str, state: SessionState, *,
                       token_cap: int = 200_000, max_tokens: int = DEFAULT_MAX_TOKENS,
-                      max_turns: int | None = None, announce_cap: bool = True) -> dict:
+                      max_turns: int | None = None, announce_cap: bool = True,
+                      stop_on_budget_exhausted: bool = False) -> dict:
     """token_cap is always enforced as a hard ceiling. announce_cap=False ('no-cap' arm) hides it
     from the model: the system prompt omits the budget paragraph and tool results omit
     tokens_remaining — token_cap then acts only as a silent safety ceiling on cost."""
@@ -39,6 +40,9 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     tools = TOOL_SCHEMAS()
     known_tools = {t["function"]["name"] for t in tools}
     system = system_prompt(state.n, state.budget, token_cap if announce_cap else None)
+    if getattr(state, "announce_recurrence", False):   # awareness arm (appended so system_prompt's
+        from scripts.creator.tool_disposition_benchmark.prompts import RECURRENCE_NOTE  # signature
+        system += RECURRENCE_NOTE                       # stays 3-arg for the AIME monkeypatch)
 
     messages: list[dict] = [{"role": "user",
                              "content": problem_prompt(state.current(), 1, state.n)}]
@@ -49,7 +53,13 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     last_finish = None
     turn_usages: list[dict] = []          # per-turn exact usage + which tools it called (for cost model)
 
+    stopped_on_budget = False
     while not state.done and n_turns < max_turns:
+        # early-stop pilot: once the write budget is spent, no further BUILD decisions are possible,
+        # so all decision signal (bait, lateness, which classes built) is final -- stop to save cost.
+        if stop_on_budget_exhausted and state.writes_remaining <= 0:
+            stopped_on_budget = True
+            break
         remaining = token_cap - spent
         if remaining < MIN_CALL_BUDGET:
             break
@@ -128,6 +138,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         "spent_tokens": spent,
         "token_cap": token_cap,
         "hit_cap": spent >= token_cap,
+        "stopped_on_budget": stopped_on_budget,
+        "problems_seen": state.cur,
         "n_turns": n_turns,
         "n_tool_calls": n_tool_calls,
         "n_malformed_tool_calls": n_malformed,

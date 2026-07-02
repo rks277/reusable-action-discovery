@@ -60,14 +60,39 @@ The single-seed pattern holds across seeds with striking consistency (seeds vary
 
 Not a family artifact: the wasted build lands on **whichever one-off arrives early** (continued_frac, look_and_say, luhn_sum, kaprekar all appear across seeds) and the starved recurring class varies (lcg, count_inversions, factorial_mod, euclid, int_div). It is a **general disposition** — Haiku *always* commits an irreversible build to a freshly-seen one-off rather than waiting for recurrence evidence.
 
+### Awareness arm — disclosure does NOT fix it (`runs/stream_sweep_haiku_n20_announce`)
+
+The system prompt was given a factual note that some problem types recur (several times) and others appear once, unlabeled — *without* prescribing "wait" (so we can't be accused of leading the model). Result across 20 seeds: **bait 20/20 = 100%, mean lateness 0.00 — identical to the hidden arm.** Even told recurrence exists, Haiku still commits builds on first sight. This rules out the "it didn't know recurrence was possible" objection: the failure is a genuine **online-decision** deficiency (over-eager irreversible commitment), not a recognition gap. (Run truncated at budget-exhaustion; solve/regret are not comparable across truncation, but the decision metrics — bait, lateness — are, and they match.)
+
+**Cross-model note (Sonnet):** hidden-arm bait was also 100% (lateness 0). Sonnet additionally *flails* — it runs existing tools on the wrong family before writing the correct one — which is why build decisions are now attributed by the **authoring event** (which class was on screen when `write_script` fired), robust to that and to truncation.
+
+### Full capability ladder — uniform, and disclosure-immune
+
+Each model uses its **own** difficulty-calibrated non-composable set (moderate a_hand is model-specific: Haiku 5+5, Sonnet 4+4, Opus 3+3 — raw-arithmetic families like int_div/mod_pair fall out as capability rises since long division becomes perfect; continued_frac drops for Opus as its value explodes). Arrival guarantees the first one-off within the first **B** (=budget) slots, so the bait decision is always faced *with budget free* (this fixed a false-restraint artifact where an eager model spent its whole budget on early recurring first-sightings before any one-off appeared).
+
+**Announced arm, 20 seeds each, bait rate / mean lateness:**
+
+| model | set | bait rate | mean lateness |
+|---|---|---|---|
+| Haiku | 5+5, budget 5 | 20/20 = 100% | 0.00 |
+| Sonnet | 4+4, budget 4 | ~100%¹ | 0.00 |
+| Opus | 3+3, budget 3 | 20/20 = 100% | 0.00 |
+
+¹ Sonnet's announced arm predates the arrival fix; raw 18/20 with two false-restraint seeds (budget exhausted before the one-off appeared) → true rate ~100%. To be re-run under the final setup.
+
+**The failure is uniform across the capability ladder and immune to disclosure of the recurrence structure.** Even the strongest model, told some types recur, commits an irreversible build to a one-off on first sight in every seed, with zero evidence-gathering. (Opus run cost $1.15 total — truncation at budget-exhaustion + the first-B one-off guarantee make eager seeds terminate within a handful of problems.)
+
 ## Where to go next (steps to the end goal)
 
 **End goal:** a defensible, quantitative demonstration that LLMs deviate from the optimal online tool-investment policy — building eagerly on first sight without gathering recurrence evidence — reported as **decision-regret vs the online optimum**, ideally uniform across the capability ladder.
 
-1. ~~Commit to moderate-a_hand regime~~ **DONE** — regime chosen, non-composable family set built + calibrated, arrival fixed, single-seed demonstration in hand (above).
-2. **Multi-seed Haiku sweep** (~10–20 seeds) — the headline needs error bars. Each seed's guaranteed-early one-off differs, so this measures *how often* Haiku takes the bait and stabilizes mean-lateness / decision-regret. Cheap (~$10–20 with the caching fix). *(gated on approval, per `no-auto-reps`)*
-3. **Model ladder** (Opus + OSS Qwen/Llama on the Oracle A10). "Moderate" is model-specific, so each needs its **own A0 recalibration** first (these tunings are Haiku-specific). Uniform failure strengthens the claim; a model that *waits* is itself a finding. *(gated)*
-4. **Confirm the online-optimal reference** in `skirental_scorer` (budget-constrained knapsack is in; verify against a 2-competitive ski-rental lower bound).
+1. ~~Commit to moderate-a_hand regime~~ **DONE** — regime chosen, non-composable family set built + calibrated (Haiku 5+5, Sonnet 4+4 via per-model difficulty profiles), arrival fixed (`random_oneoff_early`).
+2. ~~Multi-seed Haiku sweep~~ **DONE, both arms** — hidden (100% bait, lateness 0) and announced (100% bait, lateness 0). Sonnet hidden also 100%; Sonnet announced running.
+3. **Definitive re-runs under the final prompt** — the sweeps above that predate the final prompt (Haiku hidden full, Sonnet hidden) should be re-run under it for a clean dataset; report realized solve too (needs full, non-truncated runs). *(gated)*
+4. **Opus** (+ optional OSS ladder). Needs its **own A0 recalibration** (moderate is model-specific; int_div/mod_pair already fell out for Sonnet — expect more raw-arithmetic families to drop for Opus). *(gated)*
+5. **Confirm the online-optimal reference** in `skirental_scorer` (budget-constrained knapsack is in; verify against a 2-competitive ski-rental lower bound).
+
+Infra now in place: authoring-based build attribution, `--stop-on-budget-exhausted` (cheap truncated arms), per-seed `--session-timeout` guard, per-model difficulty profiles, `--announce` awareness arm.
 
 ## Surviving capability signals (secondary, not the headline)
 

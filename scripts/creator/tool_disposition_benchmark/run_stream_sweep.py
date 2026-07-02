@@ -35,6 +35,18 @@ RECURRING = [("euclid_gcd_chain", 15), ("factorial_mod", 15), ("lcg", 15),
              ("int_div_sum", 15), ("count_inversions", 15)]
 ONEOFFS = ["kaprekar_routine", "look_and_say", "luhn_sum", "continued_frac", "mod_pair_sum"]
 
+# $/1M (input, output). cache read = 0.1*input, cache write = 1.25*input.
+PRICES = {"haiku": (1.0, 5.0), "sonnet": (3.0, 15.0), "opus": (5.0, 25.0)}
+
+
+def seed_cost_usd(row: dict, model_key: str) -> float:
+    pin, pout = PRICES.get(model_key, (1.0, 5.0))
+    tin = tout = tcr = tcw = 0
+    for u in row.get("turn_usages", []) or []:
+        tin += u.get("input_tokens", 0); tout += u.get("output_tokens", 0)
+        tcr += u.get("cache_read_tokens", 0) or 0; tcw += u.get("cache_write_tokens", 0) or 0
+    return (tin * pin + tout * pout + tcr * 0.1 * pin + tcw * 1.25 * pin) / 1e6
+
 
 async def main():
     ap = argparse.ArgumentParser()
@@ -54,6 +66,18 @@ async def main():
     ap.add_argument("--token-cap", type=int, default=200_000)
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--retries", type=int, default=2, help="retry attempts per seed on failure")
+    ap.add_argument("--session-timeout", type=int, default=900,
+                    help="per-seed wall-clock cap (s); a seed exceeding it is cancelled and retried "
+                         "so one slow/stuck session can't stall the batch")
+    ap.add_argument("--max-cost-usd", type=float, default=None,
+                    help="soft total-spend cap: stop launching new seeds once cumulative billed cost "
+                         "(real token usage x model rates) reaches 85%% of this. In-flight seeds may "
+                         "drain slightly past it, so run at low --concurrency to bound overshoot.")
+    ap.add_argument("--announce", action="store_true",
+                    help="awareness arm: disclose the recurring-type structure in the system prompt")
+    ap.add_argument("--stop-on-budget-exhausted", action="store_true",
+                    help="end each seed once the write budget is spent (cheap; all build decisions "
+                         "are final by then). Decision-regret is computed over full class sizes.")
     ap.add_argument("--tag", default=None)
     args = ap.parse_args()
 
@@ -75,12 +99,23 @@ async def main():
     client = RawChat()
     sem = asyncio.Semaphore(args.concurrency)
     lock = asyncio.Lock()
+    spent_usd = [0.0]                            # cumulative billed cost across completed seeds
+    cost_gate = (0.85 * args.max_cost_usd) if args.max_cost_usd else None  # stop-launch threshold
 
     async def one(seed: int) -> dict:
         async with sem:
+            if cost_gate is not None and spent_usd[0] >= cost_gate:
+                rec = {"seed": seed, "ok": False, "error": f"skipped: cost cap "
+                       f"(${spent_usd[0]:.2f} >= ${cost_gate:.2f} launch-gate)"}
+                async with lock:
+                    with combined.open("a") as f:
+                        f.write(json.dumps(rec) + "\n")
+                    print(f"[seed {seed}] SKIP (cost cap; spent ${spent_usd[0]:.2f})", flush=True)
+                return rec
             seed_dir = base / f"seed_{seed}"
             seed_dir.mkdir(parents=True, exist_ok=True)
             spec = StreamSpec(recurring=recurring, n_one_offs=len(oneoffs), one_offs=oneoffs,
+                              oneoff_head=args.budget,   # one-off within first B slots (budget free)
                               magnitude=args.magnitude, one_off_magnitude=args.one_off_magnitude,
                               arrival=args.arrival, seed=seed)
             slots = build_stream(spec)
@@ -94,9 +129,13 @@ async def main():
             for attempt in range(args.retries + 1):
                 t0 = time.time()
                 try:
-                    state = SessionState(problems=problems, budget=args.budget)
-                    row = await run_session(client, model, state, token_cap=args.token_cap,
-                                            max_tokens=args.max_tokens)
+                    state = SessionState(problems=problems, budget=args.budget,
+                                         announce_recurrence=args.announce)
+                    row = await asyncio.wait_for(
+                        run_session(client, model, state, token_cap=args.token_cap,
+                                    max_tokens=args.max_tokens,
+                                    stop_on_budget_exhausted=args.stop_on_budget_exhausted),
+                        timeout=args.session_timeout)
                     row["model_key"] = args.model
                     (seed_dir / "sessions.jsonl").write_text(json.dumps(row) + "\n")
                     res = score_run(str(seed_dir), args.a0_dir, args.model, args.magnitude)
@@ -114,6 +153,7 @@ async def main():
                                              if c["decision"] == "wrongly-built"],
                            "wrongly_skipped": [c["family"] for c in res["classes"]
                                                if c["decision"] == "wrongly-skipped"],
+                           "cost_usd": round(seed_cost_usd(row, args.model), 3),
                            "elapsed_s": round(time.time() - t0, 1)}
                     break
                 except Exception as e:
@@ -124,12 +164,15 @@ async def main():
                 rec = {"seed": seed, "ok": False, "error": last_err}
 
             async with lock:
+                if rec.get("ok"):
+                    spent_usd[0] += rec.get("cost_usd", 0.0)
                 with combined.open("a") as f:
                     f.write(json.dumps(rec) + "\n")
                 if rec.get("ok"):
                     print(f"[seed {seed}] OK solve={rec['solve']}/{rec['N']} lateness={rec['mean_lateness']:.2f} "
                           f"oneoffs_built={rec['n_oneoffs_built']} regret={rec['regret']:.0f} "
-                          f"wrong_built={rec['wrongly_built']} wrong_skip={rec['wrongly_skipped']}", flush=True)
+                          f"wrong_built={rec['wrongly_built']} wrong_skip={rec['wrongly_skipped']} "
+                          f"| ${rec.get('cost_usd',0):.2f} (cum ${spent_usd[0]:.2f})", flush=True)
                 else:
                     print(f"[seed {seed}] FAIL {rec['error']}", flush=True)
             return rec
@@ -147,6 +190,7 @@ async def main():
 
     print("\n================ SWEEP SUMMARY ================", flush=True)
     print(f"seeds ok: {len(ok)}/{len(seeds)}   failed: {[r['seed'] for r in fail]}")
+    print(f"total billed cost: ${spent_usd[0]:.2f}")
     if ok:
         sm, ss = ms([r["solve"] for r in ok])
         lm, ls = ms([r["mean_lateness"] for r in ok])

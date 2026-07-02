@@ -1,0 +1,354 @@
+difficulty profile = opus
+sweep: model=opus seeds=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] conc=3 budget=3 arrival=random_oneoff_early -> runs/stream_sweep_opus_n20_announce
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+lcg                19   0.2  True  True     1     0     0   correct-build     4165.5
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4165.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False  True     1     0     0   wrongly-built      -30.7
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 0] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['luhn_sum'] wrong_skip=['factorial_mod'] | $0.05 (cum $0.05)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False  True     1     0     0   wrongly-built      -30.7
+
+aggregate: {'correct-build': 1, 'wrongly-built': 1, 'wrongly-skipped': 2, 'correct-skip': 2}
+  build_rate(recurring)=0.33  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=13017.1  (vs unconstrained-fullinfo=13399.2)
+[seed 2] OK solve=1/60 lateness=0.00 oneoffs_built=1 regret=13017 wrong_built=['luhn_sum'] wrong_skip=['lcg', 'look_and_say'] | $0.04 (cum $0.09)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4265.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4165.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False  True     1     0     0   wrongly-built     -130.7
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 1] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['luhn_sum'] wrong_skip=['lcg'] | $0.05 (cum $0.14)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True  True     1     0     0   correct-build     4265.5
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False  True     1     0     0   wrongly-built     -130.7
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 3] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['count_inversions'] wrong_skip=['look_and_say'] | $0.05 (cum $0.19)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False  True     1     0     0   wrongly-built      -30.7
+
+aggregate: {'correct-build': 1, 'wrongly-built': 1, 'wrongly-skipped': 2, 'correct-skip': 2}
+  build_rate(recurring)=0.33  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=13017.1  (vs unconstrained-fullinfo=13399.2)
+[seed 5] OK solve=1/60 lateness=0.00 oneoffs_built=1 regret=13017 wrong_built=['luhn_sum'] wrong_skip=['lcg', 'look_and_say'] | $0.05 (cum $0.24)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True  True     1     0     0   correct-build     4165.5
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False  True     1     0     0   wrongly-built      -30.7
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 4] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['count_inversions'] wrong_skip=['look_and_say'] | $0.05 (cum $0.29)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True  True     1     0     0   correct-build     4165.5
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built      -20.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 6] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['kaprekar_routine'] wrong_skip=['look_and_say'] | $0.05 (cum $0.33)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+lcg                19   0.2  True  True     1     0     0   correct-build     4265.5
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4165.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -120.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 8] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['kaprekar_routine'] wrong_skip=['factorial_mod'] | $0.05 (cum $0.38)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4265.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     2     0   correct-build     3702.6
+count_inversions    1   0.2 False  True     1     0     0   wrongly-built     -130.7
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.06  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12353.5  (vs unconstrained-fullinfo=12735.6)
+[seed 7] OK solve=4/60 lateness=0.00 oneoffs_built=1 regret=12354 wrong_built=['count_inversions'] wrong_skip=['lcg'] | $0.09 (cum $0.47)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4265.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     2     0   correct-build     3702.6
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -120.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.06  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12353.5  (vs unconstrained-fullinfo=12735.6)
+[seed 10] OK solve=4/60 lateness=0.00 oneoffs_built=1 regret=12354 wrong_built=['kaprekar_routine'] wrong_skip=['lcg'] | $0.07 (cum $0.53)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     3     0   correct-build     3471.2
+lcg                19   0.2  True  True     1     0     0   correct-build     4265.5
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -120.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.08  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12122.1  (vs unconstrained-fullinfo=12504.2)
+[seed 9] OK solve=5/60 lateness=0.00 oneoffs_built=1 regret=12122 wrong_built=['kaprekar_routine'] wrong_skip=['look_and_say'] | $0.09 (cum $0.62)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+lcg                19   0.2  True  True     1     1     0   correct-build     3934.0
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4265.5
+count_inversions    1   0.2 False  True     1     0     0   wrongly-built     -130.7
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.03  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12584.9  (vs unconstrained-fullinfo=12967.1)
+[seed 11] OK solve=3/60 lateness=0.00 oneoffs_built=1 regret=12585 wrong_built=['count_inversions'] wrong_skip=['factorial_mod'] | $0.07 (cum $0.69)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4265.5
+lcg                19   0.2  True  True     1     2     0   correct-build     3702.6
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False  True     1     0     0   wrongly-built     -130.7
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.06  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12353.5  (vs unconstrained-fullinfo=12735.6)
+[seed 12] OK solve=4/60 lateness=0.00 oneoffs_built=1 regret=12354 wrong_built=['count_inversions'] wrong_skip=['look_and_say'] | $0.07 (cum $0.76)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+lcg                19   0.2  True  True     1     0     0   correct-build     4265.5
+look_and_say       19   0.2  True  True     1     1     0   correct-build     4034.0
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -120.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.03  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12684.9  (vs unconstrained-fullinfo=13067.1)
+[seed 13] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12685 wrong_built=['kaprekar_routine'] wrong_skip=['factorial_mod'] | $0.08 (cum $0.84)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     1     0   correct-build     3934.0
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4265.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -120.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 2, 'wrongly-built': 1, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.03  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12584.9  (vs unconstrained-fullinfo=12967.1)
+[seed 14] OK solve=3/60 lateness=0.00 oneoffs_built=1 regret=12585 wrong_built=['kaprekar_routine'] wrong_skip=['lcg'] | $0.05 (cum $0.89)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True  True     1     0     0   correct-build     4265.5
+look_and_say       19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+count_inversions    1   0.2 False  True     1     0     0   wrongly-built     -130.7
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 15] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['count_inversions'] wrong_skip=['look_and_say'] | $0.05 (cum $0.94)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     1     0   correct-build     3934.0
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built      -20.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 1, 'wrongly-built': 1, 'wrongly-skipped': 2, 'correct-skip': 2}
+  build_rate(recurring)=0.33  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.06  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12785.6  (vs unconstrained-fullinfo=13167.8)
+[seed 16] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12786 wrong_built=['kaprekar_routine'] wrong_skip=['lcg', 'factorial_mod'] | $0.05 (cum $0.99)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4165.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built      -20.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'correct-build': 1, 'wrongly-built': 1, 'wrongly-skipped': 2, 'correct-skip': 2}
+  build_rate(recurring)=0.33  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=13017.1  (vs unconstrained-fullinfo=13399.2)
+[seed 17] OK solve=1/60 lateness=0.00 oneoffs_built=1 regret=13017 wrong_built=['kaprekar_routine'] wrong_skip=['lcg', 'factorial_mod'] | $0.05 (cum $1.04)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4265.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False False  None     0     0    correct-skip       80.0
+luhn_sum            1   0.2 False  True     1     0     0   wrongly-built     -130.7
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 18] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['luhn_sum'] wrong_skip=['lcg'] | $0.05 (cum $1.09)
+costs: a_hand={'factorial_mod': 0.3, 'look_and_say': 0.8, 'lcg': 0.8, 'euclid_gcd_chain': 0.9, 'luhn_sum': 0.7, 'count_inversions': 0.7, 'kaprekar_routine': 0.8, 'continued_frac': 0.4, 'int_div_sum': 1.0, 'mod_pair_sum': 1.0}  h=1514 C=307 r=200 R=100.0 lam=0.1
+m* per family: {'factorial_mod': 0.15, 'look_and_say': 0.2, 'lcg': 0.2, 'euclid_gcd_chain': 0.22, 'luhn_sum': 0.19, 'count_inversions': 0.19, 'kaprekar_routine': 0.2, 'continued_frac': 0.16, 'int_div_sum': 0.23, 'mod_pair_sum': 0.23}
+
+budget-constrained optimum builds the top-3 classes by build-gain
+
+family           size    m*  optB built btime reuse rebld        decision   regret_B
+factorial_mod      19   0.2  True  True     1     0     0   correct-build     4165.5
+lcg                19   0.2  True False  None     0     0 wrongly-skipped     4366.2
+look_and_say       19   0.2  True  True     1     0     0   correct-build     4265.5
+count_inversions    1   0.2 False False  None     0     0    correct-skip       70.0
+kaprekar_routine    1   0.2 False  True     1     0     0   wrongly-built     -120.7
+luhn_sum            1   0.2 False False  None     0     0    correct-skip       70.0
+
+aggregate: {'wrongly-built': 1, 'correct-build': 2, 'wrongly-skipped': 1, 'correct-skip': 2}
+  build_rate(recurring)=0.67  build_rate(one-off)=0.33 (1 built)  reuse_rate=0.00  rebuilds=0  mean_lateness=0.00
+  total regret vs BUDGET-optimum=12816.4  (vs unconstrained-fullinfo=13198.5)
+[seed 19] OK solve=2/60 lateness=0.00 oneoffs_built=1 regret=12816 wrong_built=['kaprekar_routine'] wrong_skip=['lcg'] | $0.06 (cum $1.15)
+
+================ SWEEP SUMMARY ================
+seeds ok: 20/20   failed: []
+total billed cost: $1.15
+solve/80:          mean=2.4 sd=1.1
+mean_lateness:     mean=0.00 sd=0.00   (0 = builds on first sight)
+regret vs opt:     mean=12711 sd=246
+one-offs built:    mean=1.00 sd=0.00   (0 = never took the bait)
+recurring starved: mean=1.20 sd=0.41 classes/seed
+BAIT RATE (>=1 one-off built): 1.00 +/- 0.00  (20/20 seeds)
+
+per-seed results -> runs/stream_sweep_opus_n20_announce/sweep_results.jsonl

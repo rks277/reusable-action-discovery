@@ -38,6 +38,7 @@ class SessionState:
     #   defaults to `budget`. Set below `budget` to announce a tighter cap than is enforced (the
     #   awareness-vs-enforcement decoupling): the counter hits 0 at `announce_budget` but writes are
     #   only refused at `budget`. None → identical to the old behavior.
+    announce_recurrence: bool = False          # awareness arm: disclose the recurring-type structure
 
     scripts: dict[str, str] = field(default_factory=dict)
     cur: int = 0                               # index of the problem currently being solved
@@ -54,8 +55,9 @@ class SessionState:
     def __post_init__(self):
         if not self.records:
             self.records = [{"idx": p["idx"], "item_idx": p.get("item_idx"),
-                             "used_script": False, "scripts_run": [], "n_run_calls": 0,
-                             "runs": [], "submitted": False, "answer": None, "correct": False}
+                             "used_script": False, "scripts_run": [], "scripts_authored": [],
+                             "n_run_calls": 0, "runs": [], "submitted": False, "answer": None,
+                             "correct": False}
                             for p in self.problems]
 
     @property
@@ -94,6 +96,11 @@ class SessionState:
         self.scripts[name] = code
         if not existed:                      # overwriting a name doesn't cost extra budget
             self.n_write_calls += 1
+            # log the AUTHORING event against the currently-active problem, so build decisions can be
+            # attributed by which class was on screen when the tool was written (robust to truncation
+            # and to the model later running the tool on other families).
+            if not self.done:
+                self.records[self.cur].setdefault("scripts_authored", []).append(name)
         warn = "" if has_solve(code) else (
             " WARNING: this code does not define `def solve(inputs):` — run_script will fail "
             "until it does.")

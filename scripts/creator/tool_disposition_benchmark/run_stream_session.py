@@ -75,6 +75,9 @@ async def main():
     ap.add_argument("--token-cap", type=int, default=200_000)
     ap.add_argument("--max-tokens", type=int, default=2048)
     ap.add_argument("--concurrency", type=int, default=3)
+    ap.add_argument("--stop-on-budget-exhausted", action="store_true",
+                    help="end each session once the write budget is spent (all build decisions are "
+                         "final by then) -- cheap pilot to read bait-rate/lateness without the tail")
     ap.add_argument("--a0-dir", default="runs/a0_oracle_gap_20260630_105027",
                     help="A0 results dir for cost constants (a_hand, h, C)")
     args = ap.parse_args()
@@ -89,7 +92,7 @@ async def main():
     n_one_offs = len(args.one_offs) if args.one_offs else args.n_one_offs
     spec = StreamSpec(recurring=recurring, n_one_offs=n_one_offs, one_offs=args.one_offs,
                       one_off_difficulty=args.one_off_difficulty, magnitude=args.magnitude,
-                      one_off_magnitude=args.one_off_magnitude,
+                      one_off_magnitude=args.one_off_magnitude, oneoff_head=args.budget,
                       arrival=args.arrival, announce=args.announce, seed=args.seed)
     slots = build_stream(spec)
     problems = slots_to_problems(slots)
@@ -116,9 +119,11 @@ async def main():
         async with sem:
             t0 = time.time()
             try:
-                state = SessionState(problems=problems, budget=args.budget)
+                state = SessionState(problems=problems, budget=args.budget,
+                                     announce_recurrence=args.announce)
                 row = await run_session(client, model, state, token_cap=args.token_cap,
-                                        max_tokens=args.max_tokens)
+                                        max_tokens=args.max_tokens,
+                                        stop_on_budget_exhausted=args.stop_on_budget_exhausted)
                 row["model_key"] = mkey
             except Exception as e:
                 row = {"model": model, "model_key": mkey, "N": len(problems),
