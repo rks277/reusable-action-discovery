@@ -268,3 +268,57 @@ class RawChat:
             return "".join(getattr(p, "text", "") or "" for p in parts)
 
         raise ValueError(prov)
+
+    # --- tool-use variants (for the oracle MCP environment) -------------------------
+    # Unlike chat(), these pass a `tools` schema to the provider and return the RAW
+    # response object so a caller can read tool_use / tool_call blocks and run a manual
+    # agentic loop (needed to stamp a per-call token meter). Usage is recorded into
+    # self.last_usage exactly like chat(), so the existing accounting keeps working.
+    # `messages` must already be in the provider's native shape (the MCP host builds
+    # assistant tool_use blocks and tool_result/role:tool turns itself).
+
+    async def chat_tools_anthropic(self, model: str, system: str, messages: list[dict],
+                                   tools: list[dict], max_tokens: int = 1500):
+        self.last_usage = None
+        self.last_debug = None
+        resp = await self._anthropic().messages.create(
+            model=model, max_tokens=max_tokens, system=system,
+            messages=messages, tools=tools,
+        )
+        u = getattr(resp, "usage", None)
+        self._set_usage(
+            input_tokens=getattr(u, "input_tokens", 0),
+            output_tokens=getattr(u, "output_tokens", 0),
+            cache_read_tokens=getattr(u, "cache_read_input_tokens", 0),
+            cache_write_tokens=getattr(u, "cache_creation_input_tokens", 0),
+        )
+        return resp
+
+    async def chat_tools_openai(self, model: str, system: str, messages: list[dict],
+                                tools: list[dict], max_tokens: int = 1500,
+                                provider: str | None = None):
+        """OpenAI-compatible function-calling (used for Qwen via vLLM/Ollama and for
+        OpenAI). `provider` selects the client; defaults to routing from the model."""
+        prov = provider or _provider_for(model)
+        client = {"openai": self._openai, "vllm": self._vllm,
+                  "ollama": self._ollama}.get(prov, self._openai)()
+        self.last_usage = None
+        self.last_debug = None
+        oai_msgs = [{"role": "system", "content": system}] + messages
+        kwargs = dict(model=model, messages=oai_msgs, tools=tools, tool_choice="auto")
+        try:
+            resp = await client.chat.completions.create(
+                max_completion_tokens=max_tokens, **kwargs)
+        except TypeError:
+            resp = await client.chat.completions.create(
+                max_tokens=max_tokens, **kwargs)
+        u = getattr(resp, "usage", None)
+        ptd = getattr(u, "prompt_tokens_details", None)
+        ctd = getattr(u, "completion_tokens_details", None)
+        self._set_usage(
+            input_tokens=getattr(u, "prompt_tokens", 0),
+            output_tokens=getattr(u, "completion_tokens", 0),
+            cache_read_tokens=getattr(ptd, "cached_tokens", 0),
+            reasoning_tokens=getattr(ctd, "reasoning_tokens", 0),
+        )
+        return resp

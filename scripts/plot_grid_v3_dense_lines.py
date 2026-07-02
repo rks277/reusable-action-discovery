@@ -39,10 +39,12 @@ CLASSIFY = [
     ("Qwen2-5-7B",   ("Qwen2.5", 7.0, "7B")),
     ("Qwen2-5-14B",  ("Qwen2.5", 14.0, "14B")),
     ("Qwen2-5-72B",  ("Qwen2.5", 72.0, "72B")),
+    ("gpt-5-mini",   ("OpenAI", 8.0, "gpt-5-mini")),
 ]
 FAMILY_STYLE = {  # colour + marker per family
     "Anthropic": dict(color="#C44E52", marker="o"),
     "Qwen2.5":   dict(color="#4C72B0", marker="s"),
+    "OpenAI":    dict(color="#2CA02C", marker="D"),
 }
 
 
