@@ -15,30 +15,47 @@ degenerate under caching, so **the write budget is the scarcity**.
 **Model knows:** only {N, T, B} + "problems come from a distribution over N types." NOT the p_i,
 which types are hot, or that #hot = B.
 
-## Reference policy: π\* (built — `pi_star.py`)
+## Reference policy: π\* — the exact same-information optimum (DP)
 
-**π\* is a SAME-INFORMATION reference, NOT claimed optimal.** It has *exactly* the model's info
-(knows only {N, T, B} + "a distribution over N types"), via an **exchangeable Dirichlet(α) prior** —
-it has NO idea about the frequent/rare split and must infer everything from the stream, like the
-model. Construction: per-type Whittle-index DP (predictive `q(k,t)=(α+k)/(Nα+t)`) → build region in
-(k,t); the build price λ\* is tuned so expected builds = B (complementary slackness, uses only
-{N,T,B}). See `docs/whittle-asymptotic-optimality.md`.
+**π\* is the EXACT Bayes-optimal policy against the model's own information** — knows only {N, T, B} +
+"a distribution over N types", via an **exchangeable Dirichlet(α) prior** (no idea about the
+frequent/rare split; infers everything from the stream, like the model). It is computed by an exact
+finite-horizon belief-state DP — **not** a relaxation. **Implemented** in `exact_dp.py` (`ExactDP`);
+wired into the scorer as `skirental_scorer.exact_pistar_report` (called from `score_run`). Full
+construction, invariant, and optimal-policy structure in **`docs/same-info-optimal-dp.md`**.
 
-**The claim** (this is the headline, and it's clean): a policy with *identical information* to the
-model extracts **~6× the value** (self-test: π\* 1285 vs eager/model 209, g=1.0). So the model is bad
-at using the information it has. Since π\* ≤ the true optimum, **(π\* − model) is a conservative
-LOWER BOUND on the model's regret.** π\* WAITS (build-lateness ~1.5); the model builds on sight (0).
+**The claim** (headline): a policy with *identical information* to the model extracts far more value
+by **gathering evidence before spending an irreversible build** — it reserves the first sighting of a
+type and builds on the **2nd sighting** (demonstrated recurrence), spending its scarce builds on the
+demonstrated winners; the model builds the first B distinct types on sight (lateness 0). Because π\*
+is the exact same-info optimum, **(π\* − model) is the honest same-information regret** (not a bound).
+On the 3-seed Haiku dry-run: **exact regret ≈ 2293/seed** (positive on all seeds), π\* builds **0
+traps/seed** (never baited — it waits) vs the model's **1 trap/seed** built on sight.
 
-**Do NOT hold π\* to beating wait-one-repeat.** wait-one-repeat (build first B to reach 2nd sighting)
-*cheats* — its k=2 threshold bakes in structural knowledge (rare = one-off), which the model/π\* do
-not have. It scores higher (2030) precisely because it has more info; that only reinforces "the model
-is bad." Report it (and the clairvoyant upper bound, 3077) as **extra-info comparisons**, not the
-reference. (This retires the earlier idea of a mixture/hierarchical prior — unnecessary: we don't
-need π\* to be optimal, only same-info and much better than the model.)
+> **Tractability (the count-cap).** The uncapped joint DP is intractable at N=12,T=60 (~10¹³ states).
+> `ExactDP` caps *unbuilt* counts at `cap` (force-build a type on its (cap+1)-th sighting): this is a
+> valid same-info policy, and a K-sweep certified it is **lossless** here — `V(K=3)=V(4)=V(5)=V(6)`
+> exactly (and matches the uncapped exact at T≤40). So `cap=3` is the exact optimum at ~540k states /
+> ~3s, pure Python. The cap is a *state-space bound*, NOT the build rule (π\* builds on the 2nd
+> sighting, well inside it; the cap-forced 4th-sighting build essentially never fires). Re-run the
+> sweep to re-certify if the cost model or α changes.
 
-**Per-set clairvoyant** (knows realized counts, builds top-B at first sight; `optimal_build_set` /
-`fullinfo_value`) is the loose upper bound. (clairvoyant − π\*) = intrinsic price of online
-uncertainty; (π\* − model) = the reported lower bound on the model's excess regret.
+> **Retired — the old Whittle π\*.** `pi_star.py`'s Whittle-index construction (per-type DP under a
+> constant price λ\*) is superseded. At N≈12 the constant-price relaxation *over-builds* (builds at
+> first sight ≈44% of the time) and is structurally unable to match the exact optimum, whose decision
+> is context-dependent (on remaining budget and competing types). Its old numbers (π\* 1285 vs model
+> 209 ≈ "6×"; lateness ~1.5; 0.67 traps/seed) **understated** the regret — the exact DP roughly
+> doubles it (≈2293 vs ≈1263) and drives π\* traps to 0.
+
+**wait-one-repeat is ≈ the same-info optimum, NOT a cheat.** We earlier dismissed wait-one-repeat
+(build first B to reach the 2nd sighting) as using extra info ("rare = one-off"). The exact DP shows
+building on the 2nd sighting *is* the same-information optimal rule — so wait-one-repeat is a good
+cheap proxy for π\*, not an over-informed comparison. (This also retires the earlier
+mixture/hierarchical-prior idea — unnecessary.)
+
+**Per-set clairvoyant** (knows realized counts, builds top-B at first sight; `pi_star.clairvoyant_builds`)
+is the loose upper bound. (clairvoyant − π\*) = intrinsic price of online uncertainty (small: ~150–350
+on the dry-run seeds); (π\* − model) = the honest reported regret.
 
 ## Platform (decided 2026-07-02)
 
@@ -68,14 +85,17 @@ Bars: a_hand low (building buys accuracy) + a_script ≈ 1 (model writes a worki
 ## Next steps
 
 1. ~~Stochastic arrival mode in `stream_builder`~~ **DONE** (`build_stochastic_stream`, trap-early knob).
-2. ~~π\* (Whittle-index DP + λ-tuning)~~ **DONE** (`pi_star.py`, self-test certifies 6× vs model).
-3. ~~Wire π\* + clairvoyant into the scorer~~ **DONE** (`skirental_scorer.pistar_report` +
-   `model_builds_from_actions`; wired into `score_run`, keyed off `meta.json`). Values BOTH model and
-   π\* analytically over full realized sizes (truncation confound gone — built hot types get credited
-   downstream reuse even in a budget-truncated transcript); bait keyed off `role=="trap"`; reports
-   `regret_lb = value(π\*) − value(model)` + `clairvoyant_gap`. `score_run(pistar_price=...)` lets a
-   sweep tune the Whittle price ONCE (design constant) and reuse it. Verified on the cached 5-seed
-   smoke: regret_lb ≈ +1400/seed (pos 4/5), model 1.2 traps/seed & lateness 0 vs π\* 0.8 & ~0.5.
+2. ~~Reference policy π\*~~ **DONE, and upgraded from Whittle to the EXACT belief-state DP**
+   (`exact_dp.py`): canonical (exchangeability-reduced) DP, validated lossless against the brute-force
+   vector DP, with the count-cap certified converged (cap=3 exact, ~3s). Supersedes the retired
+   Whittle `pi_star.py`. See `docs/same-info-optimal-dp.md`.
+3. ~~Wire π\* + clairvoyant into the scorer~~ **DONE** (`skirental_scorer.exact_pistar_report` +
+   `model_builds_from_actions`, called from `score_run`, keyed off `meta.json`). Values BOTH model and
+   π\* analytically over full realized sizes (truncation confound gone); bait keyed off `role=="trap"`;
+   reports `regret = value(π\*) − value(model)` + `clairvoyant_gap`. `score_run(pistar_dp=...)` lets a
+   sweep build the DP value table ONCE (design constant of {N,T,B,cap,costs}) and reuse it. Re-scored
+   the 3-seed dry-run: exact regret ≈ 2293/seed (pos 3/3), model 1 trap/seed & lateness 0 vs π\* 0
+   traps & lateness ~0.67.
 4. **Haiku PoC run** on the new design (the frontier anchor). ← NEXT
 5. **Qwen-Coder main runs** (few sizes) + the **fine-tuning mitigation** arm.
 

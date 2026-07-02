@@ -428,10 +428,56 @@ def pistar_report(slots: list[dict], costs: Costs, budget: int, N: int, T: int, 
     }
 
 
+def exact_pistar_report(slots: list[dict], costs: Costs, budget: int, N: int, T: int,
+                        pool: list[str], model_builds: dict, cap: int = 3, alpha: float = 1.0,
+                        dp=None) -> dict:
+    """EXACT same-information optimum reference (supersedes the Whittle `pistar_report`). Runs the
+    exact belief-state DP forward on the stream (docs/same-info-optimal-dp.md; exact_dp.ExactDP with
+    the lossless count-cap `cap`, default 3 -- certified converged for this regime). Values BOTH the
+    model's builds and pi*'s builds analytically over full realized class sizes, and the clairvoyant.
+
+    pi* decisions use a SCALAR representative a_hand (pool mean) -- the same-info policy treats types
+    exchangeably; realized VALUE uses the per-family utilities in `costs`. Pass a prebuilt `dp` to
+    reuse the value table across seeds (build it once: it's a design constant of {N,T,B,cap,costs})."""
+    from scripts.creator.tool_disposition_benchmark.exact_dp import ExactDP
+    from scripts.creator.tool_disposition_benchmark.pi_star import value_of_builds, clairvoyant_builds
+    a_repr = sum(costs.ah(f) for f in pool) / len(pool)
+    if dp is None:
+        uh = costs.R * a_repr - costs.lam * costs.h
+        dp = ExactDP(uh, costs.u_build(), costs.u_reuse(), N, T, budget, alpha=alpha, cap=cap)
+    pi_builds = dp.policy_builds(slots)
+    role = {s["class_id"]: s.get("role") for s in slots}
+
+    def _lat(b):
+        ls = [v - 1 for v in b.values() if v is not None]
+        return (sum(ls) / len(ls)) if ls else float("nan")
+
+    def _traps(b):
+        return sum(1 for c, v in b.items() if v is not None and role.get(c) == "trap")
+
+    def _hots(b):
+        return sum(1 for c, v in b.items() if v is not None and role.get(c) == "hot")
+
+    v_model = value_of_builds(slots, model_builds, costs)
+    v_star = value_of_builds(slots, pi_builds, costs)
+    v_clair = value_of_builds(slots, clairvoyant_builds(slots, budget), costs)
+    return {
+        "reference": "exact_dp", "cap": cap, "a_repr": a_repr,
+        "value_model": v_model, "value_pistar": v_star, "value_clairvoyant": v_clair,
+        "regret": v_star - v_model,              # exact same-info regret (not a bound)
+        "clairvoyant_gap": v_clair - v_star,
+        "model_n_built": sum(1 for v in model_builds.values() if v is not None),
+        "pistar_n_built": sum(1 for v in pi_builds.values() if v is not None),
+        "model_lateness": _lat(model_builds), "pistar_lateness": _lat(pi_builds),
+        "model_traps_built": _traps(model_builds), "model_hots_built": _hots(model_builds),
+        "pistar_traps_built": _traps(pi_builds), "pistar_hots_built": _hots(pi_builds),
+    }
+
+
 # --------------------------------------------------------------------- score a real stream run
 def score_run(run_dir: str, a0_dir: str, model: str, magnitude: int,
               R: float = 100.0, lam: float = 0.1, r: float = 200.0,
-              pistar_price: float | None = None) -> dict:
+              pistar_dp=None) -> dict:
     """Load a stream run (stream.json labels + sessions.jsonl transcript), build costs from the A0
     calibration, map the transcript to actions, score, and print. Returns the score dict."""
     slots = json.loads(Path(run_dir, "stream.json").read_text())
@@ -472,20 +518,20 @@ def score_run(run_dir: str, a0_dir: str, model: str, magnitude: int,
           f"(waits: mean_lateness={a['online_mean_lateness']:.2f} vs "
           f"model {a['mean_lateness']:.2f}; built {a['online_n_built']})")
 
-    # ---- pi* SAME-INFO reference: analytic value over FULL realized sizes (kills truncation) ----
+    # ---- pi* = EXACT same-info optimum (belief-state DP; docs/same-info-optimal-dp.md) ----
     meta_path = Path(run_dir, "meta.json")
     if meta_path.exists() and budget is not None:
         meta = json.loads(meta_path.read_text())
         pool = list(meta["assignment"].keys())
-        a_hands = {f: costs.ah(f) for f in pool}
         model_builds = model_builds_from_actions(actions)
-        rep = pistar_report(slots, costs, budget, meta["N"], meta["T"], pool, a_hands,
-                            meta.get("magnitude", magnitude), model_builds, price=pistar_price)
+        rep = exact_pistar_report(slots, costs, budget, meta["N"], meta["T"], pool, model_builds,
+                                  dp=pistar_dp)
         res["pistar"] = rep
-        print(f"\n  pi* SAME-INFO reference (analytic over full realized sizes; price={rep['price']:.1f}):")
+        print(f"\n  pi* = EXACT same-info optimum (belief-state DP, cap={rep['cap']}, "
+              f"a_hand_repr={rep['a_repr']:.3f}):")
         print(f"    value: model={rep['value_model']:.1f}  pi*={rep['value_pistar']:.1f}  "
               f"clairvoyant={rep['value_clairvoyant']:.1f}")
-        print(f"    REGRET vs pi* (LOWER BOUND) = {rep['regret_lb']:.1f}   "
+        print(f"    REGRET (pi* - model) = {rep['regret']:.1f}   "
               f"clairvoyant gap = {rep['clairvoyant_gap']:.1f}")
         print(f"    builds: model={rep['model_n_built']} "
               f"(traps={rep['model_traps_built']} hots={rep['model_hots_built']} "

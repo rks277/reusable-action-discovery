@@ -88,7 +88,7 @@ async def main():
               f"solve={row.get('n_correct')}/{row.get('N')} reuse_calls={row.get('n_run_calls')} "
               f"cache_read_frac={cache_frac:.2f} (cr={cr} it={it})")
         try:
-            res = score_run(str(d), A0_DIR, "haiku", MAG, pistar_price=price)
+            res = score_run(str(d), A0_DIR, "haiku", MAG)
             rep = res.get("pistar")
             if rep:
                 regrets.append(rep["regret_lb"]); model_traps.append(rep["model_traps_built"])
