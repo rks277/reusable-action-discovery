@@ -31,10 +31,10 @@ QWEN3_MODELS = [
     ("vllm", "Qwen/Qwen3.5-2B"),
     ("vllm", "Qwen/Qwen3.5-4B"),
     ("vllm", "Qwen/Qwen3.5-9B"),
-    ("vllm", "Qwen/Qwen3.5-27B-GPTQ-Int4"),
+    ("vllm", "Qwen/Qwen3.5-27B"),   # full BF16 (~54GB) -- fits on H100 80GB
 ]
 
-CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2, "vllm": 6}
+CONCURRENCY = {"anthropic": 6, "openai": 4, "google": 4, "ollama": 2, "vllm": 32}
 
 # Budget headroom over a correct manual solve. Manual long division turns out CHEAP
 # (~2k tokens even at 20 digits -- see oracle_pilot.py findings), so budget mainly bounds

@@ -54,10 +54,14 @@ def _sys(sequential: bool, model: str) -> str:
 
 def build_labels(n: int, obfuscate: bool, relabel_seed: int) -> dict:
     """str(i) -> surface name for the n candidate tools. Default: config names; with
-    --obfuscate: fresh per-episode non-semantic alnum labels (uniform-random relabeling)."""
+    --obfuscate: fresh per-episode `tool_<random letter>` names (e.g. tool_a, tool_x,
+    tool_h), drawn via the uniform-random single-letter relabeling scheme. Capped at 26
+    tools (the alphabet); raises above that."""
     if obfuscate:
-        m = assign([f"tool{i}" for i in range(n)], seed=relabel_seed, scheme="alnum")
-        return {str(i): m[f"tool{i}"] for i in range(n)}
+        if n > 26:
+            raise ValueError(f"letter obfuscation supports <=26 tools, got n={n}")
+        m = assign([f"tool{i}" for i in range(n)], seed=relabel_seed, scheme="letter")
+        return {str(i): f"tool_{m[f'tool{i}']}" for i in range(n)}
     return {str(i): tool_specs_name(i) for i in range(n)}
 
 

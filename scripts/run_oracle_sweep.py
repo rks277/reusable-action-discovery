@@ -40,9 +40,9 @@ DIFFICULTY_VALUES = [8, 10, 12, 14, 16]   # linear step 2; spans 9B cliff (~12-1
 #   N=4:  5 reps → 4×5=20    N=8:  3 reps → 8×3=24
 #   N=12: 2 reps → 12×2=24   N=16: 1 rep  → 16×1=16
 #   N=20: 1 rep  → 20×1=20
-REPS_BY_N = {4: 5, 8: 3, 12: 2, 16: 1, 20: 1}
+REPS_BY_N = {4: 15, 8: 9, 12: 6, 16: 3, 20: 3}   # 3x the base {4:5,8:3,12:2,16:1,20:1}
 PROBLEM_KIND = "long_division"
-OBFUSCATE = False                     # non-semantic config names by default
+OBFUSCATE = True                      # tool_<random letter> per episode (tool_a, tool_x, ...)
 SEQUENTIAL = True                     # one tool call per turn (enforced in host + prompt)
 MAX_TURNS = 300
 
@@ -52,7 +52,13 @@ BUDGET = None                         # int to pin; None -> budget_for(difficult
 
 async def main():
     load_dotenv()
-    base = QWEN3_MODELS if "--qwen" in sys.argv else MODELS
+    if "--qwen3dense" in sys.argv:
+        from scripts.oracle_qwen3_dense_config import QWEN3_DENSE_MODELS
+        base = [("vllm", m) for m in QWEN3_DENSE_MODELS]
+    elif "--qwen" in sys.argv:
+        base = QWEN3_MODELS
+    else:
+        base = MODELS
     roster = base
     if "--model" in sys.argv:
         want = sys.argv[sys.argv.index("--model") + 1]
@@ -84,7 +90,13 @@ async def main():
           f"  budget={'pinned ' + str(BUDGET) if BUDGET else 'budget_for(difficulty, n)'}, "
           f"obfuscate={OBFUSCATE}", flush=True)
 
-    sems = {p: asyncio.Semaphore(CONCURRENCY.get(p, 4)) for p, _ in roster}
+    # optional per-run concurrency override: --concurrency N (applies to all providers
+    # in this run; used to throttle big memory-bound models like 27B BF16).
+    conc = dict(CONCURRENCY)
+    if "--concurrency" in sys.argv:
+        cval = int(sys.argv[sys.argv.index("--concurrency") + 1])
+        conc = {p: cval for p in conc}
+    sems = {p: asyncio.Semaphore(conc.get(p, 4)) for p, _ in roster}
     lock = asyncio.Lock()
 
     async def one(prov, model, n, difficulty, budget, rep):
