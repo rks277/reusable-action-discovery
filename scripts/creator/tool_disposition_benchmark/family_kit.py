@@ -176,7 +176,10 @@ LCG = Family(
 
 # --------------------------------------------------------------------- 4. modular power
 def _modpow_sampler(rng, m):
-    return {"BASE": _scale(rng, m), "EXP": rng.randint(12, 40), "MOD": _scale(rng, m)}
+    # EXP now scales with m too (was fixed 12-40): more repeated-squaring steps + bigger
+    # intermediate numbers compounds hand-error; reduces to ~the old [12,40] range at m=100.
+    exp_lo, exp_hi = max(10, m // 8), max(30, m // 3)
+    return {"BASE": _scale(rng, m), "EXP": rng.randint(exp_lo, exp_hi), "MOD": _scale(rng, m)}
 
 
 MODPOW = Family(
@@ -928,7 +931,12 @@ _CRT_PRIMES = [p for p in range(101, 3000) if _is_prime(p)]
 
 
 def _crt_sampler(rng, m):
-    n = rng.randint(4, 5)
+    # n (number of congruences to combine) now scales with m (was fixed 4-5): each extra modulus
+    # is another sequential extended-Euclid combination step, compounding hand-error. Reduces to
+    # the old [4,5] range at m=100; pool has 405 primes so n stays well within budget.
+    lo = 4 + max(0, (m - 100) // 300)
+    hi = min(lo + 1, len(_CRT_PRIMES))
+    n = rng.randint(lo, hi) if hi > lo else hi
     mods = rng.sample(_CRT_PRIMES, n)
     return {"REMAINDERS": [rng.randint(0, mm - 1) for mm in mods], "MODULI": mods}
 
@@ -953,7 +961,11 @@ CRT_SOLVE = Family("crt_solve", ["REMAINDERS", "MODULI"], _crt_sampler, referenc
 
 
 def _josephus_sampler(rng, m):
-    return {"N": rng.randint(80, 200), "K": rng.randint(3, 9)}
+    # N (circle size = recurrence length) now scales with m (was fixed 80-200): no closed form
+    # exists for general K, so more people = more O(N) recurrence steps to track by hand. Reduces
+    # to the old [80,200] range at m=100.
+    lo, hi = max(10, int(0.8 * m)), max(20, int(2.0 * m))
+    return {"N": rng.randint(lo, hi), "K": rng.randint(3, 9)}
 
 
 def _josephus_ref(v):

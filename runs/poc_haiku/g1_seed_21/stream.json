@@ -1,0 +1,2176 @@
+[
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 300,
+      "A": 2100,
+      "B": 400,
+      "M": 48500,
+      "K": 11
+    },
+    "vals_order": [
+      300,
+      2100,
+      400,
+      48500,
+      11
+    ],
+    "gold": 19900,
+    "question": "A register starts at X = 300. It is updated 11 times; each update replaces X with ((2100 * X) + 400) mod 48500. Report the final value of X.",
+    "slot_index": 0,
+    "class_id": 0,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        5,
+        3
+      ],
+      "SEEDS": [
+        190586,
+        82532,
+        981671
+      ],
+      "MOD": 866921,
+      "K": 17
+    },
+    "vals_order": [
+      [
+        6,
+        5,
+        3
+      ],
+      [
+        190586,
+        82532,
+        981671
+      ],
+      866921,
+      17
+    ],
+    "gold": 313538,
+    "question": "Let the three starting values be [190586, 82532, 981671] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 866921 using the last three terms a,b,c (a newest) with coefficients [6, 5, 3]. After 17 new terms, give the last.",
+    "slot_index": 1,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 1,
+    "members_remaining_after": 17,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        11661,
+        8352,
+        8814
+      ]
+    },
+    "vals_order": [
+      [
+        11661,
+        8352,
+        8814
+      ]
+    ],
+    "gold": 858419031483,
+    "question": "Given continued-fraction terms [11661, 8352, 8814], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 2,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 1,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 496798,
+      "EXP": 31,
+      "MOD": 711794
+    },
+    "vals_order": [
+      496798,
+      31,
+      711794
+    ],
+    "gold": 557154,
+    "question": "A key-exchange step needs g^x mod p with g = 496798, x = 31, and p = 711794. What is the result?",
+    "slot_index": 3,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 1,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        7,
+        4,
+        2
+      ],
+      "SEEDS": [
+        722434,
+        558605,
+        956052
+      ],
+      "MOD": 703642,
+      "K": 18
+    },
+    "vals_order": [
+      [
+        7,
+        4,
+        2
+      ],
+      [
+        722434,
+        558605,
+        956052
+      ],
+      703642,
+      18
+    ],
+    "gold": 317140,
+    "question": "Let the three starting values be [722434, 558605, 956052] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 703642 using the last three terms a,b,c (a newest) with coefficients [7, 4, 2]. After 18 new terms, give the last.",
+    "slot_index": 4,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 2,
+    "members_remaining_after": 16,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        4,
+        2,
+        7
+      ],
+      "SEEDS": [
+        528458,
+        544419,
+        407503
+      ],
+      "MOD": 713033,
+      "K": 18
+    },
+    "vals_order": [
+      [
+        4,
+        2,
+        7
+      ],
+      [
+        528458,
+        544419,
+        407503
+      ],
+      713033,
+      18
+    ],
+    "gold": 460018,
+    "question": "A sequence has seeds (oldest first) [528458, 544419, 407503]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 713033, where (c1, c2, c3) = [4, 2, 7] (c1 multiplies the most recent term). Advance 18 steps and report the last term.",
+    "slot_index": 5,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 3,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1050408813,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 22
+    },
+    "vals_order": [
+      1050408813,
+      11,
+      9,
+      15,
+      22
+    ],
+    "gold": 343608366,
+    "question": "A 32-bit register holds X = 1050408813. Repeat 22 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 6,
+    "class_id": 9,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        2252,
+        4794,
+        1508,
+        1899
+      ]
+    },
+    "vals_order": [
+      [
+        2252,
+        4794,
+        1508,
+        1899
+      ]
+    ],
+    "gold": 30916688773225,
+    "question": "Given continued-fraction terms [2252, 4794, 1508, 1899], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 7,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 2,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        4,
+        3,
+        9
+      ],
+      "SEEDS": [
+        858099,
+        440956,
+        825210
+      ],
+      "MOD": 791127,
+      "K": 22
+    },
+    "vals_order": [
+      [
+        4,
+        3,
+        9
+      ],
+      [
+        858099,
+        440956,
+        825210
+      ],
+      791127,
+      22
+    ],
+    "gold": 781797,
+    "question": "A sequence has seeds (oldest first) [858099, 440956, 825210]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 791127, where (c1, c2, c3) = [4, 3, 9] (c1 multiplies the most recent term). Advance 22 steps and report the last term.",
+    "slot_index": 8,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 4,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        2,
+        6
+      ],
+      "SEEDS": [
+        704109,
+        317655,
+        50150
+      ],
+      "MOD": 453631,
+      "K": 18
+    },
+    "vals_order": [
+      [
+        6,
+        2,
+        6
+      ],
+      [
+        704109,
+        317655,
+        50150
+      ],
+      453631,
+      18
+    ],
+    "gold": 383052,
+    "question": "A sequence has seeds (oldest first) [704109, 317655, 50150]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 453631, where (c1, c2, c3) = [6, 2, 6] (c1 multiplies the most recent term). Advance 18 steps and report the last term.",
+    "slot_index": 9,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 5,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        5147,
+        5615,
+        10756
+      ]
+    },
+    "vals_order": [
+      [
+        5147,
+        5615,
+        10756
+      ]
+    ],
+    "gold": 310852772083,
+    "question": "Given continued-fraction terms [5147, 5615, 10756], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 10,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 3,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8570,
+        4973,
+        7636,
+        7414
+      ]
+    },
+    "vals_order": [
+      [
+        8570,
+        4973,
+        7636,
+        7414
+      ]
+    ],
+    "gold": 2412780486757335,
+    "question": "Given continued-fraction terms [8570, 4973, 7636, 7414], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 11,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 4,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        8,
+        3,
+        7
+      ],
+      "SEEDS": [
+        690488,
+        956522,
+        166912
+      ],
+      "MOD": 172243,
+      "K": 22
+    },
+    "vals_order": [
+      [
+        8,
+        3,
+        7
+      ],
+      [
+        690488,
+        956522,
+        166912
+      ],
+      172243,
+      22
+    ],
+    "gold": 95455,
+    "question": "A sequence has seeds (oldest first) [690488, 956522, 166912]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 172243, where (c1, c2, c3) = [8, 3, 7] (c1 multiplies the most recent term). Advance 22 steps and report the last term.",
+    "slot_index": 12,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 6,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        4832,
+        11451,
+        11820,
+        2499
+      ]
+    },
+    "vals_order": [
+      [
+        4832,
+        11451,
+        11820,
+        2499
+      ]
+    ],
+    "gold": 1634383987382341,
+    "question": "For the continued fraction with terms [4832, 11451, 11820, 2499], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 13,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 5,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 346541557,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 12
+    },
+    "vals_order": [
+      346541557,
+      13,
+      7,
+      15,
+      12
+    ],
+    "gold": 2307234867,
+    "question": "Start with the 32-bit value 346541557. Apply the xorshift step 12 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 14,
+    "class_id": 9,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        552,
+        628,
+        1446,
+        589,
+        305
+      ],
+      "MODULI": [
+        1709,
+        2549,
+        2543,
+        1217,
+        569
+      ]
+    },
+    "vals_order": [
+      [
+        552,
+        628,
+        1446,
+        589,
+        305
+      ],
+      [
+        1709,
+        2549,
+        2543,
+        1217,
+        569
+      ]
+    ],
+    "gold": 2252894586647000,
+    "question": "Find the smallest non-negative integer x that leaves remainders [552, 628, 1446, 589, 305] when divided by the respective moduli [1709, 2549, 2543, 1217, 569] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 15,
+    "class_id": 6,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        4,
+        9
+      ],
+      "SEEDS": [
+        43374,
+        236094,
+        956830
+      ],
+      "MOD": 892683,
+      "K": 20
+    },
+    "vals_order": [
+      [
+        6,
+        4,
+        9
+      ],
+      [
+        43374,
+        236094,
+        956830
+      ],
+      892683,
+      20
+    ],
+    "gold": 714742,
+    "question": "A sequence has seeds (oldest first) [43374, 236094, 956830]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 892683, where (c1, c2, c3) = [6, 4, 9] (c1 multiplies the most recent term). Advance 20 steps and report the last term.",
+    "slot_index": 16,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 7,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 715816,
+      "EXP": 17,
+      "MOD": 713800
+    },
+    "vals_order": [
+      715816,
+      17,
+      713800
+    ],
+    "gold": 214456,
+    "question": "A key-exchange step needs g^x mod p with g = 715816, x = 17, and p = 713800. What is the result?",
+    "slot_index": 17,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 2,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        7,
+        8,
+        9
+      ],
+      "SEEDS": [
+        623068,
+        960132,
+        904299
+      ],
+      "MOD": 513712,
+      "K": 19
+    },
+    "vals_order": [
+      [
+        7,
+        8,
+        9
+      ],
+      [
+        623068,
+        960132,
+        904299
+      ],
+      513712,
+      19
+    ],
+    "gold": 277898,
+    "question": "A sequence has seeds (oldest first) [623068, 960132, 904299]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 513712, where (c1, c2, c3) = [7, 8, 9] (c1 multiplies the most recent term). Advance 19 steps and report the last term.",
+    "slot_index": 18,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 8,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 665611,
+      "EXP": 20,
+      "MOD": 117465
+    },
+    "vals_order": [
+      665611,
+      20,
+      117465
+    ],
+    "gold": 2131,
+    "question": "Compute 665611 raised to the power 20, modulo 117465 (the remainder when 665611^20 is divided by 117465).",
+    "slot_index": 19,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 3,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        4,
+        2
+      ],
+      "SEEDS": [
+        414639,
+        732287,
+        145697
+      ],
+      "MOD": 764152,
+      "K": 15
+    },
+    "vals_order": [
+      [
+        6,
+        4,
+        2
+      ],
+      [
+        414639,
+        732287,
+        145697
+      ],
+      764152,
+      15
+    ],
+    "gold": 206960,
+    "question": "Let the three starting values be [414639, 732287, 145697] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 764152 using the last three terms a,b,c (a newest) with coefficients [6, 4, 2]. After 15 new terms, give the last.",
+    "slot_index": 20,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 9,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 239342,
+      "EXP": 13,
+      "MOD": 381329
+    },
+    "vals_order": [
+      239342,
+      13,
+      381329
+    ],
+    "gold": 237912,
+    "question": "Find the remainder when 239342 to the 13th power is divided by 381329.",
+    "slot_index": 21,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 4,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 993856,
+      "EXP": 39,
+      "MOD": 752525
+    },
+    "vals_order": [
+      993856,
+      39,
+      752525
+    ],
+    "gold": 535796,
+    "question": "A key-exchange step needs g^x mod p with g = 993856, x = 39, and p = 752525. What is the result?",
+    "slot_index": 22,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 5,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        7,
+        5,
+        8
+      ],
+      "SEEDS": [
+        283390,
+        730030,
+        439009
+      ],
+      "MOD": 801848,
+      "K": 17
+    },
+    "vals_order": [
+      [
+        7,
+        5,
+        8
+      ],
+      [
+        283390,
+        730030,
+        439009
+      ],
+      801848,
+      17
+    ],
+    "gold": 739814,
+    "question": "A sequence has seeds (oldest first) [283390, 730030, 439009]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 801848, where (c1, c2, c3) = [7, 5, 8] (c1 multiplies the most recent term). Advance 17 steps and report the last term.",
+    "slot_index": 23,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 10,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        3931,
+        9159,
+        7211,
+        11005
+      ]
+    },
+    "vals_order": [
+      [
+        3931,
+        9159,
+        7211,
+        11005
+      ]
+    ],
+    "gold": 2857173868196335,
+    "question": "For the continued fraction with terms [3931, 9159, 7211, 11005], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 24,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 6,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 33610,
+      "EXP": 14,
+      "MOD": 539248
+    },
+    "vals_order": [
+      33610,
+      14,
+      539248
+    ],
+    "gold": 177792,
+    "question": "Find the remainder when 33610 to the 14th power is divided by 539248.",
+    "slot_index": 25,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 6,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 193,
+      "K": 9
+    },
+    "vals_order": [
+      193,
+      9
+    ],
+    "gold": 74,
+    "question": "193 people stand in a circle numbered 1..193. Counting around the circle, every 9-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 26,
+    "class_id": 7,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        11369,
+        11464,
+        11250,
+        11022
+      ]
+    },
+    "vals_order": [
+      [
+        11369,
+        11464,
+        11250,
+        11022
+      ]
+    ],
+    "gold": 16161117328100835,
+    "question": "Given continued-fraction terms [11369, 11464, 11250, 11022], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 27,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 7,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        4,
+        3,
+        8
+      ],
+      "SEEDS": [
+        112202,
+        209448,
+        40246
+      ],
+      "MOD": 686610,
+      "K": 22
+    },
+    "vals_order": [
+      [
+        4,
+        3,
+        8
+      ],
+      [
+        112202,
+        209448,
+        40246
+      ],
+      686610,
+      22
+    ],
+    "gold": 624482,
+    "question": "A sequence has seeds (oldest first) [112202, 209448, 40246]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 686610, where (c1, c2, c3) = [4, 3, 8] (c1 multiplies the most recent term). Advance 22 steps and report the last term.",
+    "slot_index": 28,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 11,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 54876,
+      "EXP": 24,
+      "MOD": 651089
+    },
+    "vals_order": [
+      54876,
+      24,
+      651089
+    ],
+    "gold": 647933,
+    "question": "A key-exchange step needs g^x mod p with g = 54876, x = 24, and p = 651089. What is the result?",
+    "slot_index": 29,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 7,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 748130,
+      "EXP": 26,
+      "MOD": 265596
+    },
+    "vals_order": [
+      748130,
+      26,
+      265596
+    ],
+    "gold": 198460,
+    "question": "Compute 748130 raised to the power 26, modulo 265596 (the remainder when 748130^26 is divided by 265596).",
+    "slot_index": 30,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 8,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 550314,
+      "C": 116620,
+      "MOD": 724644,
+      "K": 21
+    },
+    "vals_order": [
+      550314,
+      116620,
+      724644,
+      21
+    ],
+    "gold": 106868,
+    "question": "Iterate the map x -> (x^2 + 116620) mod 724644 for 21 steps, starting from x = 550314. What is the resulting value?",
+    "slot_index": 31,
+    "class_id": 8,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        3,
+        3,
+        6
+      ],
+      "SEEDS": [
+        146374,
+        332494,
+        578524
+      ],
+      "MOD": 353728,
+      "K": 21
+    },
+    "vals_order": [
+      [
+        3,
+        3,
+        6
+      ],
+      [
+        146374,
+        332494,
+        578524
+      ],
+      353728,
+      21
+    ],
+    "gold": 293144,
+    "question": "Let the three starting values be [146374, 332494, 578524] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 353728 using the last three terms a,b,c (a newest) with coefficients [3, 3, 6]. After 21 new terms, give the last.",
+    "slot_index": 32,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 12,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 165,
+      "K": 3
+    },
+    "vals_order": [
+      165,
+      3
+    ],
+    "gold": 23,
+    "question": "165 people stand in a circle numbered 1..165. Counting around the circle, every 3-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 33,
+    "class_id": 7,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        5,
+        4,
+        4
+      ],
+      "SEEDS": [
+        206578,
+        912847,
+        409863
+      ],
+      "MOD": 225114,
+      "K": 23
+    },
+    "vals_order": [
+      [
+        5,
+        4,
+        4
+      ],
+      [
+        206578,
+        912847,
+        409863
+      ],
+      225114,
+      23
+    ],
+    "gold": 110935,
+    "question": "A sequence has seeds (oldest first) [206578, 912847, 409863]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 225114, where (c1, c2, c3) = [5, 4, 4] (c1 multiplies the most recent term). Advance 23 steps and report the last term.",
+    "slot_index": 34,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 13,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        2,
+        2,
+        8
+      ],
+      "SEEDS": [
+        500113,
+        920155,
+        80275
+      ],
+      "MOD": 430967,
+      "K": 24
+    },
+    "vals_order": [
+      [
+        2,
+        2,
+        8
+      ],
+      [
+        500113,
+        920155,
+        80275
+      ],
+      430967,
+      24
+    ],
+    "gold": 393291,
+    "question": "A sequence has seeds (oldest first) [500113, 920155, 80275]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 430967, where (c1, c2, c3) = [2, 2, 8] (c1 multiplies the most recent term). Advance 24 steps and report the last term.",
+    "slot_index": 35,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 14,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        5,
+        6,
+        7
+      ],
+      "SEEDS": [
+        795737,
+        57647,
+        270298
+      ],
+      "MOD": 421460,
+      "K": 17
+    },
+    "vals_order": [
+      [
+        5,
+        6,
+        7
+      ],
+      [
+        795737,
+        57647,
+        270298
+      ],
+      421460,
+      17
+    ],
+    "gold": 68928,
+    "question": "Let the three starting values be [795737, 57647, 270298] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 421460 using the last three terms a,b,c (a newest) with coefficients [5, 6, 7]. After 17 new terms, give the last.",
+    "slot_index": 36,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 15,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 584549,
+      "EXP": 16,
+      "MOD": 112810
+    },
+    "vals_order": [
+      584549,
+      16,
+      112810
+    ],
+    "gold": 7121,
+    "question": "A key-exchange step needs g^x mod p with g = 584549, x = 16, and p = 112810. What is the result?",
+    "slot_index": 37,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 9,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8983,
+        9270,
+        7423
+      ]
+    },
+    "vals_order": [
+      [
+        8983,
+        9270,
+        7423
+      ]
+    ],
+    "gold": 618131115836,
+    "question": "Given continued-fraction terms [8983, 9270, 7423], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 38,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 8,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        9689,
+        1204,
+        3752,
+        6221
+      ]
+    },
+    "vals_order": [
+      [
+        9689,
+        1204,
+        3752,
+        6221
+      ]
+    ],
+    "gold": 272288077664770,
+    "question": "For the continued fraction with terms [9689, 1204, 3752, 6221], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 39,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 9,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        7509,
+        3482,
+        2585,
+        10164
+      ]
+    },
+    "vals_order": [
+      [
+        7509,
+        3482,
+        2585,
+        10164
+      ]
+    ],
+    "gold": 686967444573475,
+    "question": "For the continued fraction with terms [7509, 3482, 2585, 10164], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 40,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 10,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "look_and_say",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 44,
+      "K": 3
+    },
+    "vals_order": [
+      44,
+      3
+    ],
+    "gold": 11121114,
+    "question": "Start with the digit string 44. Apply the 'look-and-say' step 3 times: read off each run of equal consecutive digits as (count)(digit), left to right. Report the resulting number.",
+    "slot_index": 41,
+    "class_id": 4,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 213246,
+      "EXP": 26,
+      "MOD": 402274
+    },
+    "vals_order": [
+      213246,
+      26,
+      402274
+    ],
+    "gold": 44354,
+    "question": "Compute 213246 raised to the power 26, modulo 402274 (the remainder when 213246^26 is divided by 402274).",
+    "slot_index": 42,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 10,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        9658,
+        6057,
+        11257
+      ]
+    },
+    "vals_order": [
+      [
+        9658,
+        6057,
+        11257
+      ]
+    ],
+    "gold": 658517702957,
+    "question": "Given continued-fraction terms [9658, 6057, 11257], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 43,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 11,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 401719,
+      "EXP": 17,
+      "MOD": 155207
+    },
+    "vals_order": [
+      401719,
+      17,
+      155207
+    ],
+    "gold": 31891,
+    "question": "Find the remainder when 401719 to the 17th power is divided by 155207.",
+    "slot_index": 44,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 11,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        9,
+        3
+      ],
+      "SEEDS": [
+        585612,
+        644082,
+        76668
+      ],
+      "MOD": 546599,
+      "K": 24
+    },
+    "vals_order": [
+      [
+        6,
+        9,
+        3
+      ],
+      [
+        585612,
+        644082,
+        76668
+      ],
+      546599,
+      24
+    ],
+    "gold": 371387,
+    "question": "Let the three starting values be [585612, 644082, 76668] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 546599 using the last three terms a,b,c (a newest) with coefficients [6, 9, 3]. After 24 new terms, give the last.",
+    "slot_index": 45,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 16,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        2873,
+        3826,
+        8198,
+        4472
+      ]
+    },
+    "vals_order": [
+      [
+        2873,
+        3826,
+        8198,
+        4472
+      ]
+    ],
+    "gold": 402986377676299,
+    "question": "Given continued-fraction terms [2873, 3826, 8198, 4472], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 46,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 12,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 23126689,
+      "K": 4
+    },
+    "vals_order": [
+      23126689,
+      4
+    ],
+    "gold": 86526432,
+    "question": "From 23126689, run 4 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 47,
+    "class_id": 3,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        11611,
+        10630,
+        4193,
+        5374
+      ]
+    },
+    "vals_order": [
+      [
+        11611,
+        10630,
+        4193,
+        5374
+      ]
+    ],
+    "gold": 2781156619382887,
+    "question": "For the continued fraction with terms [11611, 10630, 4193, 5374], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 48,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 13,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 843872,
+      "EXP": 38,
+      "MOD": 466857
+    },
+    "vals_order": [
+      843872,
+      38,
+      466857
+    ],
+    "gold": 93454,
+    "question": "Find the remainder when 843872 to the 38th power is divided by 466857.",
+    "slot_index": 49,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 12,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        6,
+        5
+      ],
+      "SEEDS": [
+        80519,
+        660104,
+        867962
+      ],
+      "MOD": 355265,
+      "K": 18
+    },
+    "vals_order": [
+      [
+        6,
+        6,
+        5
+      ],
+      [
+        80519,
+        660104,
+        867962
+      ],
+      355265,
+      18
+    ],
+    "gold": 126883,
+    "question": "Let the three starting values be [80519, 660104, 867962] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 355265 using the last three terms a,b,c (a newest) with coefficients [6, 6, 5]. After 18 new terms, give the last.",
+    "slot_index": 50,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 17,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 895338,
+      "EXP": 13,
+      "MOD": 337336
+    },
+    "vals_order": [
+      895338,
+      13,
+      337336
+    ],
+    "gold": 273392,
+    "question": "Compute 895338 raised to the power 13, modulo 337336 (the remainder when 895338^13 is divided by 337336).",
+    "slot_index": 51,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 13,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "matrix_power_mod",
+    "magnitude": 100,
+    "keys": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "A": 4,
+      "B": 8,
+      "C": 16,
+      "D": 24,
+      "MOD": 578419,
+      "K": 33
+    },
+    "vals_order": [
+      4,
+      8,
+      16,
+      24,
+      578419,
+      33
+    ],
+    "gold": 125427,
+    "question": "Compute the matrix power M^33 mod 578419 for M = [[4, 8], [16, 24]] (i.e. M multiplied together 33 times: M^1 = M, M^2 = M*M, ..., taking mod 578419 throughout); give the sum of the entries of the result.",
+    "slot_index": 52,
+    "class_id": 10,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        3,
+        7,
+        8
+      ],
+      "SEEDS": [
+        126533,
+        923832,
+        93505
+      ],
+      "MOD": 697070,
+      "K": 16
+    },
+    "vals_order": [
+      [
+        3,
+        7,
+        8
+      ],
+      [
+        126533,
+        923832,
+        93505
+      ],
+      697070,
+      16
+    ],
+    "gold": 367151,
+    "question": "Let the three starting values be [126533, 923832, 93505] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 697070 using the last three terms a,b,c (a newest) with coefficients [3, 7, 8]. After 16 new terms, give the last.",
+    "slot_index": 53,
+    "class_id": 11,
+    "class_size": 18,
+    "class_position": 18,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 210,
+      "A": 1300,
+      "B": 2700,
+      "M": 64000,
+      "K": 8
+    },
+    "vals_order": [
+      210,
+      1300,
+      2700,
+      64000,
+      8
+    ],
+    "gold": 16700,
+    "question": "Initialize s = 210. Repeat the following 8 times: s = (1300 * s + 2700) % 64000. Give the resulting value of s.",
+    "slot_index": 54,
+    "class_id": 0,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 451100,
+      "EXP": 24,
+      "MOD": 939109
+    },
+    "vals_order": [
+      451100,
+      24,
+      939109
+    ],
+    "gold": 865128,
+    "question": "Find the remainder when 451100 to the 24th power is divided by 939109.",
+    "slot_index": 55,
+    "class_id": 1,
+    "class_size": 14,
+    "class_position": 14,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        6377,
+        9532,
+        5265
+      ]
+    },
+    "vals_order": [
+      [
+        6377,
+        9532,
+        5265
+      ]
+    ],
+    "gold": 320036006102,
+    "question": "For the continued fraction with terms [6377, 9532, 5265], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 56,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 14,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        5005,
+        10897,
+        5645
+      ]
+    },
+    "vals_order": [
+      [
+        5005,
+        10897,
+        5645
+      ]
+    ],
+    "gold": 307875403475,
+    "question": "Given continued-fraction terms [5005, 10897, 5645], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 57,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 15,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        7533,
+        8750,
+        7681
+      ]
+    },
+    "vals_order": [
+      [
+        7533,
+        8750,
+        7681
+      ]
+    ],
+    "gold": 506283528964,
+    "question": "Given continued-fraction terms [7533, 8750, 7681], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 58,
+    "class_id": 5,
+    "class_size": 16,
+    "class_position": 16,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 38313263,
+      "K": 7
+    },
+    "vals_order": [
+      38313263,
+      7
+    ],
+    "gold": 86308632,
+    "question": "Start with n = 38313263. Repeat 7 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 59,
+    "class_id": 3,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  }
+]

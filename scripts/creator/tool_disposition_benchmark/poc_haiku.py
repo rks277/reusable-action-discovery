@@ -30,8 +30,8 @@ BASE = Path("runs/poc_haiku")
 DRYRUN_G1 = [Path(f"runs/dryrun_stochastic_haiku/seed_{s}") for s in (0, 1, 2)]  # reuse (already paid)
 
 CAP_USD = 27.4          # this run's ceiling ($2.61 already spent today -> total < $30)
-EST = 1.2               # conservative per-session estimate for the projected-spend guard
-CONC = 4
+EST = 1.5               # conservative per-session estimate for the projected-spend guard
+CONC = 12               # sessions are independent; per-session time is fixed (~sequential turns)
 IN, OUT, CR, CW = 1.0, 5.0, 0.10, 1.25   # Haiku 4.5 $/1M
 
 
@@ -69,7 +69,7 @@ async def main():
     BASE.mkdir(parents=True, exist_ok=True)
     client = RawChat()
 
-    tasks = [(1.0, s) for s in range(3, 30)] + [(0.0, s) for s in range(1000, 1010)]
+    tasks = [(0.0, s) for s in range(1000, 1010)]   # g=0 natural-rate control (fidelity check)
     cumulative = 0.0
     inflight = 0
     idx = 0

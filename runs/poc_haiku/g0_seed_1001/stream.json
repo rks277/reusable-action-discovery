@@ -1,0 +1,2133 @@
+[
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3238220240,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 14
+    },
+    "vals_order": [
+      3238220240,
+      13,
+      9,
+      15,
+      14
+    ],
+    "gold": 3582298293,
+    "question": "Start with the 32-bit value 3238220240. Apply the xorshift step 14 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 0,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 1,
+    "members_remaining_after": 21,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1533793267,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 14
+    },
+    "vals_order": [
+      1533793267,
+      11,
+      7,
+      15,
+      14
+    ],
+    "gold": 801518378,
+    "question": "A 32-bit register holds X = 1533793267. Repeat 14 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 1,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 2,
+    "members_remaining_after": 20,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 97163358,
+      "K": 5
+    },
+    "vals_order": [
+      97163358,
+      5
+    ],
+    "gold": 42108876,
+    "question": "Start with n = 97163358. Repeat 5 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 2,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 1,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        9,
+        6,
+        7
+      ],
+      "SEEDS": [
+        947120,
+        780579,
+        406777
+      ],
+      "MOD": 61868,
+      "K": 21
+    },
+    "vals_order": [
+      [
+        9,
+        6,
+        7
+      ],
+      [
+        947120,
+        780579,
+        406777
+      ],
+      61868,
+      21
+    ],
+    "gold": 33757,
+    "question": "A sequence has seeds (oldest first) [947120, 780579, 406777]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 61868, where (c1, c2, c3) = [9, 6, 7] (c1 multiplies the most recent term). Advance 21 steps and report the last term.",
+    "slot_index": 3,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 1,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 56452281,
+      "K": 7
+    },
+    "vals_order": [
+      56452281,
+      7
+    ],
+    "gold": 85317642,
+    "question": "From 56452281, run 7 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 4,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 2,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 128,
+      "K": 6
+    },
+    "vals_order": [
+      128,
+      6
+    ],
+    "gold": 1,
+    "question": "128 people stand in a circle numbered 1..128. Counting around the circle, every 6-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 5,
+    "class_id": 7,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        4,
+        7,
+        5
+      ],
+      "SEEDS": [
+        475844,
+        962900,
+        154779
+      ],
+      "MOD": 865877,
+      "K": 22
+    },
+    "vals_order": [
+      [
+        4,
+        7,
+        5
+      ],
+      [
+        475844,
+        962900,
+        154779
+      ],
+      865877,
+      22
+    ],
+    "gold": 544208,
+    "question": "Let the three starting values be [475844, 962900, 154779] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 865877 using the last three terms a,b,c (a newest) with coefficients [4, 7, 5]. After 22 new terms, give the last.",
+    "slot_index": 6,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 2,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        8,
+        5,
+        9
+      ],
+      "SEEDS": [
+        680678,
+        468422,
+        759815
+      ],
+      "MOD": 869132,
+      "K": 17
+    },
+    "vals_order": [
+      [
+        8,
+        5,
+        9
+      ],
+      [
+        680678,
+        468422,
+        759815
+      ],
+      869132,
+      17
+    ],
+    "gold": 113151,
+    "question": "A sequence has seeds (oldest first) [680678, 468422, 759815]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 869132, where (c1, c2, c3) = [8, 5, 9] (c1 multiplies the most recent term). Advance 17 steps and report the last term.",
+    "slot_index": 7,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 3,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 92674033,
+      "K": 5
+    },
+    "vals_order": [
+      92674033,
+      5
+    ],
+    "gold": 86108832,
+    "question": "From 92674033, run 5 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 8,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 3,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 18547189,
+      "K": 5
+    },
+    "vals_order": [
+      18547189,
+      5
+    ],
+    "gold": 86526432,
+    "question": "Start with n = 18547189. Repeat 5 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 9,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 4,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 32891707,
+      "K": 5
+    },
+    "vals_order": [
+      32891707,
+      5
+    ],
+    "gold": 86326632,
+    "question": "From 32891707, run 5 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 10,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 5,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        4,
+        7,
+        5
+      ],
+      "SEEDS": [
+        740002,
+        290275,
+        548252
+      ],
+      "MOD": 905936,
+      "K": 22
+    },
+    "vals_order": [
+      [
+        4,
+        7,
+        5
+      ],
+      [
+        740002,
+        290275,
+        548252
+      ],
+      905936,
+      22
+    ],
+    "gold": 427177,
+    "question": "Let the three starting values be [740002, 290275, 548252] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 905936 using the last three terms a,b,c (a newest) with coefficients [4, 7, 5]. After 22 new terms, give the last.",
+    "slot_index": 11,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 4,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        2,
+        8,
+        3
+      ],
+      "SEEDS": [
+        814263,
+        718621,
+        939497
+      ],
+      "MOD": 531625,
+      "K": 19
+    },
+    "vals_order": [
+      [
+        2,
+        8,
+        3
+      ],
+      [
+        814263,
+        718621,
+        939497
+      ],
+      531625,
+      19
+    ],
+    "gold": 393598,
+    "question": "Let the three starting values be [814263, 718621, 939497] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 531625 using the last three terms a,b,c (a newest) with coefficients [2, 8, 3]. After 19 new terms, give the last.",
+    "slot_index": 12,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 5,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 25,
+      "MOD": 902719
+    },
+    "vals_order": [
+      25,
+      902719
+    ],
+    "gold": 596228,
+    "question": "What is (25!) mod 902719?",
+    "slot_index": 13,
+    "class_id": 2,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        9,
+        7,
+        5
+      ],
+      "SEEDS": [
+        460277,
+        595390,
+        380142
+      ],
+      "MOD": 262230,
+      "K": 18
+    },
+    "vals_order": [
+      [
+        9,
+        7,
+        5
+      ],
+      [
+        460277,
+        595390,
+        380142
+      ],
+      262230,
+      18
+    ],
+    "gold": 231621,
+    "question": "A sequence has seeds (oldest first) [460277, 595390, 380142]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 262230, where (c1, c2, c3) = [9, 7, 5] (c1 multiplies the most recent term). Advance 18 steps and report the last term.",
+    "slot_index": 14,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 6,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 93135856,
+      "K": 6
+    },
+    "vals_order": [
+      93135856,
+      6
+    ],
+    "gold": 65426544,
+    "question": "From 93135856, run 6 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 15,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 6,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 4182470562,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 12
+    },
+    "vals_order": [
+      4182470562,
+      13,
+      7,
+      15,
+      12
+    ],
+    "gold": 131676390,
+    "question": "Start with the 32-bit value 4182470562. Apply the xorshift step 12 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 16,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 3,
+    "members_remaining_after": 19,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 196,
+      "A": 2400,
+      "B": 700,
+      "M": 82600,
+      "K": 6
+    },
+    "vals_order": [
+      196,
+      2400,
+      700,
+      82600,
+      6
+    ],
+    "gold": 69300,
+    "question": "A register starts at X = 196. It is updated 6 times; each update replaces X with ((2400 * X) + 700) mod 82600. Report the final value of X.",
+    "slot_index": 17,
+    "class_id": 0,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        2,
+        4,
+        5
+      ],
+      "SEEDS": [
+        264692,
+        132290,
+        904156
+      ],
+      "MOD": 867334,
+      "K": 16
+    },
+    "vals_order": [
+      [
+        2,
+        4,
+        5
+      ],
+      [
+        264692,
+        132290,
+        904156
+      ],
+      867334,
+      16
+    ],
+    "gold": 681250,
+    "question": "A sequence has seeds (oldest first) [264692, 132290, 904156]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 867334, where (c1, c2, c3) = [2, 4, 5] (c1 multiplies the most recent term). Advance 16 steps and report the last term.",
+    "slot_index": 18,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 7,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 833312,
+      "C": 144203,
+      "MOD": 111376,
+      "K": 29
+    },
+    "vals_order": [
+      833312,
+      144203,
+      111376,
+      29
+    ],
+    "gold": 63371,
+    "question": "Iterate the map x -> (x^2 + 144203) mod 111376 for 29 steps, starting from x = 833312. What is the resulting value?",
+    "slot_index": 19,
+    "class_id": 8,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 11215946,
+      "K": 6
+    },
+    "vals_order": [
+      11215946,
+      6
+    ],
+    "gold": 86326632,
+    "question": "Start with n = 11215946. Repeat 6 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 20,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 7,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        9,
+        8,
+        9
+      ],
+      "SEEDS": [
+        305167,
+        89467,
+        577308
+      ],
+      "MOD": 721808,
+      "K": 25
+    },
+    "vals_order": [
+      [
+        9,
+        8,
+        9
+      ],
+      [
+        305167,
+        89467,
+        577308
+      ],
+      721808,
+      25
+    ],
+    "gold": 239513,
+    "question": "Let the three starting values be [305167, 89467, 577308] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 721808 using the last three terms a,b,c (a newest) with coefficients [9, 8, 9]. After 25 new terms, give the last.",
+    "slot_index": 21,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 8,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2426439568,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 13
+    },
+    "vals_order": [
+      2426439568,
+      13,
+      9,
+      15,
+      13
+    ],
+    "gold": 3940315850,
+    "question": "Start with the 32-bit value 2426439568. Apply the xorshift step 13 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 22,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 4,
+    "members_remaining_after": 18,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1503681372,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 21
+    },
+    "vals_order": [
+      1503681372,
+      11,
+      9,
+      15,
+      21
+    ],
+    "gold": 1180987743,
+    "question": "A 32-bit register holds X = 1503681372. Repeat 21 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 23,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 5,
+    "members_remaining_after": 17,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 68941867,
+      "K": 7
+    },
+    "vals_order": [
+      68941867,
+      7
+    ],
+    "gold": 85317642,
+    "question": "Start with n = 68941867. Repeat 7 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 24,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 8,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 84665447,
+      "K": 6
+    },
+    "vals_order": [
+      84665447,
+      6
+    ],
+    "gold": 86326632,
+    "question": "Start with n = 84665447. Repeat 6 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 25,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 9,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 57395765,
+      "K": 5
+    },
+    "vals_order": [
+      57395765,
+      5
+    ],
+    "gold": 86508432,
+    "question": "Start with n = 57395765. Repeat 5 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 26,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 10,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 637288,
+      "EXP": 15,
+      "MOD": 434387
+    },
+    "vals_order": [
+      637288,
+      15,
+      434387
+    ],
+    "gold": 294844,
+    "question": "Compute 637288 raised to the power 15, modulo 434387 (the remainder when 637288^15 is divided by 434387).",
+    "slot_index": 27,
+    "class_id": 1,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1882867244,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 19
+    },
+    "vals_order": [
+      1882867244,
+      13,
+      7,
+      17,
+      19
+    ],
+    "gold": 606315075,
+    "question": "Start with the 32-bit value 1882867244. Apply the xorshift step 19 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 28,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 6,
+    "members_remaining_after": 16,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3173559121,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 15
+    },
+    "vals_order": [
+      3173559121,
+      11,
+      7,
+      15,
+      15
+    ],
+    "gold": 3655042752,
+    "question": "Start with the 32-bit value 3173559121. Apply the xorshift step 15 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 29,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 7,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        9,
+        5,
+        6
+      ],
+      "SEEDS": [
+        773853,
+        143377,
+        61820
+      ],
+      "MOD": 868483,
+      "K": 23
+    },
+    "vals_order": [
+      [
+        9,
+        5,
+        6
+      ],
+      [
+        773853,
+        143377,
+        61820
+      ],
+      868483,
+      23
+    ],
+    "gold": 247772,
+    "question": "Let the three starting values be [773853, 143377, 61820] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 868483 using the last three terms a,b,c (a newest) with coefficients [9, 5, 6]. After 23 new terms, give the last.",
+    "slot_index": 30,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 9,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        6,
+        2,
+        3
+      ],
+      "SEEDS": [
+        301494,
+        563480,
+        133783
+      ],
+      "MOD": 862023,
+      "K": 15
+    },
+    "vals_order": [
+      [
+        6,
+        2,
+        3
+      ],
+      [
+        301494,
+        563480,
+        133783
+      ],
+      862023,
+      15
+    ],
+    "gold": 322661,
+    "question": "A sequence has seeds (oldest first) [301494, 563480, 133783]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 862023, where (c1, c2, c3) = [6, 2, 3] (c1 multiplies the most recent term). Advance 15 steps and report the last term.",
+    "slot_index": 31,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 10,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 819406,
+      "C": 935680,
+      "MOD": 244210,
+      "K": 22
+    },
+    "vals_order": [
+      819406,
+      935680,
+      244210,
+      22
+    ],
+    "gold": 119096,
+    "question": "Start with x = 819406. Repeat 22 times: replace x with (x*x + 935680) mod 244210. Report the final x.",
+    "slot_index": 32,
+    "class_id": 8,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3992942342,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 13
+    },
+    "vals_order": [
+      3992942342,
+      13,
+      9,
+      15,
+      13
+    ],
+    "gold": 523368180,
+    "question": "A 32-bit register holds X = 3992942342. Repeat 13 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 33,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 8,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 665238896,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 18
+    },
+    "vals_order": [
+      665238896,
+      13,
+      9,
+      15,
+      18
+    ],
+    "gold": 2527845914,
+    "question": "A 32-bit register holds X = 665238896. Repeat 18 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 34,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 9,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "matrix_power_mod",
+    "magnitude": 100,
+    "keys": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "A": 25,
+      "B": 38,
+      "C": 38,
+      "D": 30,
+      "MOD": 390709,
+      "K": 43
+    },
+    "vals_order": [
+      25,
+      38,
+      38,
+      30,
+      390709,
+      43
+    ],
+    "gold": 34594,
+    "question": "Let M = [[25, 38], [38, 30]]. Compute M raised to the power 43 (the product of exactly 43 copies of M), reducing every entry modulo 390709 throughout, and report the sum of the four entries of M^43.",
+    "slot_index": 35,
+    "class_id": 10,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2340802677,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 20
+    },
+    "vals_order": [
+      2340802677,
+      11,
+      9,
+      15,
+      20
+    ],
+    "gold": 1426929810,
+    "question": "A 32-bit register holds X = 2340802677. Repeat 20 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 36,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 10,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        5,
+        7,
+        6
+      ],
+      "SEEDS": [
+        994254,
+        56889,
+        491430
+      ],
+      "MOD": 764367,
+      "K": 18
+    },
+    "vals_order": [
+      [
+        5,
+        7,
+        6
+      ],
+      [
+        994254,
+        56889,
+        491430
+      ],
+      764367,
+      18
+    ],
+    "gold": 378717,
+    "question": "Let the three starting values be [994254, 56889, 491430] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 764367 using the last three terms a,b,c (a newest) with coefficients [5, 7, 6]. After 18 new terms, give the last.",
+    "slot_index": 37,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 11,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        9,
+        4,
+        2
+      ],
+      "SEEDS": [
+        424411,
+        885331,
+        307838
+      ],
+      "MOD": 469918,
+      "K": 21
+    },
+    "vals_order": [
+      [
+        9,
+        4,
+        2
+      ],
+      [
+        424411,
+        885331,
+        307838
+      ],
+      469918,
+      21
+    ],
+    "gold": 415520,
+    "question": "A sequence has seeds (oldest first) [424411, 885331, 307838]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 469918, where (c1, c2, c3) = [9, 4, 2] (c1 multiplies the most recent term). Advance 21 steps and report the last term.",
+    "slot_index": 38,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 12,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        3,
+        9,
+        7
+      ],
+      "SEEDS": [
+        499479,
+        602629,
+        406376
+      ],
+      "MOD": 363588,
+      "K": 20
+    },
+    "vals_order": [
+      [
+        3,
+        9,
+        7
+      ],
+      [
+        499479,
+        602629,
+        406376
+      ],
+      363588,
+      20
+    ],
+    "gold": 194074,
+    "question": "A sequence has seeds (oldest first) [499479, 602629, 406376]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 363588, where (c1, c2, c3) = [3, 9, 7] (c1 multiplies the most recent term). Advance 20 steps and report the last term.",
+    "slot_index": 39,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 13,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3151048262,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 21
+    },
+    "vals_order": [
+      3151048262,
+      13,
+      9,
+      15,
+      21
+    ],
+    "gold": 84269740,
+    "question": "Start with the 32-bit value 3151048262. Apply the xorshift step 21 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 40,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 11,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3789686735,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 23
+    },
+    "vals_order": [
+      3789686735,
+      11,
+      7,
+      15,
+      23
+    ],
+    "gold": 1712401072,
+    "question": "Start with the 32-bit value 3789686735. Apply the xorshift step 23 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 41,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 12,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1918554434,
+      "A": 13,
+      "B": 9,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      1918554434,
+      13,
+      9,
+      17,
+      25
+    ],
+    "gold": 2999005019,
+    "question": "Start with the 32-bit value 1918554434. Apply the xorshift step 25 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 42,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 13,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 89002143,
+      "K": 4
+    },
+    "vals_order": [
+      89002143,
+      4
+    ],
+    "gold": 62108874,
+    "question": "From 89002143, run 4 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 43,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 11,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        301,
+        45,
+        514,
+        1719
+      ],
+      "MODULI": [
+        593,
+        1171,
+        2551,
+        1721
+      ]
+    },
+    "vals_order": [
+      [
+        301,
+        45,
+        514,
+        1719
+      ],
+      [
+        593,
+        1171,
+        2551,
+        1721
+      ]
+    ],
+    "gold": 2575266510462,
+    "question": "Find the smallest non-negative integer x that leaves remainders [301, 45, 514, 1719] when divided by the respective moduli [593, 1171, 2551, 1721] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 44,
+    "class_id": 6,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 459561929,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 16
+    },
+    "vals_order": [
+      459561929,
+      11,
+      7,
+      17,
+      16
+    ],
+    "gold": 327261076,
+    "question": "A 32-bit register holds X = 459561929. Repeat 16 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 45,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 14,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 454536309,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 22
+    },
+    "vals_order": [
+      454536309,
+      11,
+      7,
+      17,
+      22
+    ],
+    "gold": 3572451792,
+    "question": "Start with the 32-bit value 454536309. Apply the xorshift step 22 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 46,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 15,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2073085815,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 13
+    },
+    "vals_order": [
+      2073085815,
+      13,
+      9,
+      15,
+      13
+    ],
+    "gold": 1722768979,
+    "question": "A 32-bit register holds X = 2073085815. Repeat 13 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 47,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 16,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3305205626,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 17
+    },
+    "vals_order": [
+      3305205626,
+      11,
+      9,
+      15,
+      17
+    ],
+    "gold": 3032656420,
+    "question": "Start with the 32-bit value 3305205626. Apply the xorshift step 17 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 48,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 17,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3847497955,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 23
+    },
+    "vals_order": [
+      3847497955,
+      13,
+      7,
+      15,
+      23
+    ],
+    "gold": 2087342949,
+    "question": "A 32-bit register holds X = 3847497955. Repeat 23 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 49,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 18,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        5,
+        2,
+        7
+      ],
+      "SEEDS": [
+        708047,
+        597034,
+        147823
+      ],
+      "MOD": 736331,
+      "K": 21
+    },
+    "vals_order": [
+      [
+        5,
+        2,
+        7
+      ],
+      [
+        708047,
+        597034,
+        147823
+      ],
+      736331,
+      21
+    ],
+    "gold": 513654,
+    "question": "Let the three starting values be [708047, 597034, 147823] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 736331 using the last three terms a,b,c (a newest) with coefficients [5, 2, 7]. After 21 new terms, give the last.",
+    "slot_index": 50,
+    "class_id": 11,
+    "class_size": 14,
+    "class_position": 14,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 572901595,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 16
+    },
+    "vals_order": [
+      572901595,
+      11,
+      9,
+      17,
+      16
+    ],
+    "gold": 4072389873,
+    "question": "A 32-bit register holds X = 572901595. Repeat 16 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 51,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 19,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1887908733,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 21
+    },
+    "vals_order": [
+      1887908733,
+      11,
+      7,
+      17,
+      21
+    ],
+    "gold": 2963477477,
+    "question": "A 32-bit register holds X = 1887908733. Repeat 21 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 52,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 20,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 98407968,
+      "K": 7
+    },
+    "vals_order": [
+      98407968,
+      7
+    ],
+    "gold": 97508421,
+    "question": "From 98407968, run 7 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 53,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 12,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 76889449,
+      "K": 6
+    },
+    "vals_order": [
+      76889449,
+      6
+    ],
+    "gold": 87626322,
+    "question": "Start with n = 76889449. Repeat 6 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 54,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 13,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 20380643,
+      "K": 4
+    },
+    "vals_order": [
+      20380643,
+      4
+    ],
+    "gold": 86308632,
+    "question": "From 20380643, run 4 steps of Kaprekar's routine (biggest-digit-arrangement minus smallest). What is the result?",
+    "slot_index": 55,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 14,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 792719419,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      792719419,
+      13,
+      7,
+      17,
+      25
+    ],
+    "gold": 682606615,
+    "question": "A 32-bit register holds X = 792719419. Repeat 25 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 56,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 21,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 182,
+      "A": 700,
+      "B": 2700,
+      "M": 99500,
+      "K": 6
+    },
+    "vals_order": [
+      182,
+      700,
+      2700,
+      99500,
+      6
+    ],
+    "gold": 51200,
+    "question": "A register starts at X = 182. It is updated 6 times; each update replaces X with ((700 * X) + 2700) mod 99500. Report the final value of X.",
+    "slot_index": 57,
+    "class_id": 0,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3461443422,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      3461443422,
+      13,
+      7,
+      17,
+      25
+    ],
+    "gold": 990478312,
+    "question": "Start with the 32-bit value 3461443422. Apply the xorshift step 25 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 58,
+    "class_id": 9,
+    "class_size": 22,
+    "class_position": 22,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "kaprekar_routine",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 90461609,
+      "K": 6
+    },
+    "vals_order": [
+      90461609,
+      6
+    ],
+    "gold": 87517422,
+    "question": "Start with n = 90461609. Repeat 6 times: rearrange n's digits into the largest and smallest numbers possible and replace n with (largest minus smallest). Report the final n.",
+    "slot_index": 59,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 15,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  }
+]

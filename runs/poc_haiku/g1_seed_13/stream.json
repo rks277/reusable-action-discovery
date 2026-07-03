@@ -1,0 +1,1951 @@
+[
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 810575,
+      "EXP": 37,
+      "MOD": 381321
+    },
+    "vals_order": [
+      810575,
+      37,
+      381321
+    ],
+    "gold": 343637,
+    "question": "Compute 810575 raised to the power 37, modulo 381321 (the remainder when 810575^37 is divided by 381321).",
+    "slot_index": 0,
+    "class_id": 1,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 37,
+      "MOD": 908821
+    },
+    "vals_order": [
+      37,
+      908821
+    ],
+    "gold": 142645,
+    "question": "What is (37!) mod 908821?",
+    "slot_index": 1,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 1,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3475949498,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 24
+    },
+    "vals_order": [
+      3475949498,
+      13,
+      7,
+      17,
+      24
+    ],
+    "gold": 957100412,
+    "question": "A 32-bit register holds X = 3475949498. Repeat 24 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 2,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 1,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        7,
+        5,
+        6
+      ],
+      "SEEDS": [
+        633103,
+        111073,
+        283391
+      ],
+      "MOD": 761179,
+      "K": 17
+    },
+    "vals_order": [
+      [
+        7,
+        5,
+        6
+      ],
+      [
+        633103,
+        111073,
+        283391
+      ],
+      761179,
+      17
+    ],
+    "gold": 523827,
+    "question": "A sequence has seeds (oldest first) [633103, 111073, 283391]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 761179, where (c1, c2, c3) = [7, 5, 6] (c1 multiplies the most recent term). Advance 17 steps and report the last term.",
+    "slot_index": 3,
+    "class_id": 11,
+    "class_size": 3,
+    "class_position": 1,
+    "members_remaining_after": 2,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        4,
+        3,
+        2
+      ],
+      "SEEDS": [
+        587024,
+        686569,
+        162287
+      ],
+      "MOD": 653390,
+      "K": 23
+    },
+    "vals_order": [
+      [
+        4,
+        3,
+        2
+      ],
+      [
+        587024,
+        686569,
+        162287
+      ],
+      653390,
+      23
+    ],
+    "gold": 37887,
+    "question": "A sequence has seeds (oldest first) [587024, 686569, 162287]. Each later term is (c1*prev + c2*prev2 + c3*prev3) mod 653390, where (c1, c2, c3) = [4, 3, 2] (c1 multiplies the most recent term). Advance 23 steps and report the last term.",
+    "slot_index": 4,
+    "class_id": 11,
+    "class_size": 3,
+    "class_position": 2,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 470978566,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 18
+    },
+    "vals_order": [
+      470978566,
+      11,
+      9,
+      17,
+      18
+    ],
+    "gold": 597727888,
+    "question": "Start with the 32-bit value 470978566. Apply the xorshift step 18 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 5,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 2,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 31,
+      "MOD": 235699
+    },
+    "vals_order": [
+      31,
+      235699
+    ],
+    "gold": 53326,
+    "question": "Compute 31 factorial modulo 235699 (the remainder when 31! is divided by 235699).",
+    "slot_index": 6,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 2,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1676488013,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 19
+    },
+    "vals_order": [
+      1676488013,
+      13,
+      7,
+      15,
+      19
+    ],
+    "gold": 4060346578,
+    "question": "Start with the 32-bit value 1676488013. Apply the xorshift step 19 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 7,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 3,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 16819570,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 17
+    },
+    "vals_order": [
+      16819570,
+      11,
+      9,
+      17,
+      17
+    ],
+    "gold": 2306800856,
+    "question": "A 32-bit register holds X = 16819570. Repeat 17 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 8,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 4,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 33,
+      "MOD": 131413
+    },
+    "vals_order": [
+      33,
+      131413
+    ],
+    "gold": 47622,
+    "question": "Compute 33 factorial modulo 131413 (the remainder when 33! is divided by 131413).",
+    "slot_index": 9,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 3,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8381,
+        9738,
+        5695
+      ]
+    },
+    "vals_order": [
+      [
+        8381,
+        9738,
+        5695
+      ]
+    ],
+    "gold": 464792757786,
+    "question": "Given continued-fraction terms [8381, 9738, 5695], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 10,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 1,
+    "members_remaining_after": 19,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        3141,
+        4469,
+        6463,
+        7248
+      ]
+    },
+    "vals_order": [
+      [
+        3141,
+        4469,
+        6463,
+        7248
+      ]
+    ],
+    "gold": 657552883988218,
+    "question": "For the continued fraction with terms [3141, 4469, 6463, 7248], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 11,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 2,
+    "members_remaining_after": 18,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 20,
+      "MOD": 54413
+    },
+    "vals_order": [
+      20,
+      54413
+    ],
+    "gold": 19590,
+    "question": "What is (20!) mod 54413?",
+    "slot_index": 12,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 4,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 4026530895,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 14
+    },
+    "vals_order": [
+      4026530895,
+      11,
+      9,
+      17,
+      14
+    ],
+    "gold": 2859010203,
+    "question": "Start with the 32-bit value 4026530895. Apply the xorshift step 14 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 13,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 5,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        7887,
+        6017,
+        1529,
+        8435
+      ]
+    },
+    "vals_order": [
+      [
+        7887,
+        6017,
+        1529,
+        8435
+      ]
+    ],
+    "gold": 612046635192125,
+    "question": "Given continued-fraction terms [7887, 6017, 1529, 8435], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 14,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 3,
+    "members_remaining_after": 17,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 25,
+      "MOD": 690127
+    },
+    "vals_order": [
+      25,
+      690127
+    ],
+    "gold": 478120,
+    "question": "Compute 25 factorial modulo 690127 (the remainder when 25! is divided by 690127).",
+    "slot_index": 15,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 5,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1758477330,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 21
+    },
+    "vals_order": [
+      1758477330,
+      13,
+      7,
+      17,
+      21
+    ],
+    "gold": 4091956486,
+    "question": "Start with the 32-bit value 1758477330. Apply the xorshift step 21 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 16,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 6,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8988,
+        10343,
+        2098,
+        2409
+      ]
+    },
+    "vals_order": [
+      [
+        8988,
+        10343,
+        2098,
+        2409
+      ]
+    ],
+    "gold": 469842158361547,
+    "question": "Given continued-fraction terms [8988, 10343, 2098, 2409], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 17,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 4,
+    "members_remaining_after": 16,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "matrix_power_mod",
+    "magnitude": 100,
+    "keys": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "A": 19,
+      "B": 30,
+      "C": 2,
+      "D": 28,
+      "MOD": 978729,
+      "K": 29
+    },
+    "vals_order": [
+      19,
+      30,
+      2,
+      28,
+      978729,
+      29
+    ],
+    "gold": 398289,
+    "question": "Let M = [[19, 30], [2, 28]]. Compute M raised to the power 29 (the product of exactly 29 copies of M), reducing every entry modulo 978729 throughout, and report the sum of the four entries of M^29.",
+    "slot_index": 18,
+    "class_id": 10,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 676486,
+      "C": 559473,
+      "MOD": 160794,
+      "K": 22
+    },
+    "vals_order": [
+      676486,
+      559473,
+      160794,
+      22
+    ],
+    "gold": 143632,
+    "question": "Iterate the map x -> (x^2 + 559473) mod 160794 for 22 steps, starting from x = 676486. What is the resulting value?",
+    "slot_index": 19,
+    "class_id": 8,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 833867640,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 12
+    },
+    "vals_order": [
+      833867640,
+      13,
+      9,
+      15,
+      12
+    ],
+    "gold": 2936163428,
+    "question": "A 32-bit register holds X = 833867640. Repeat 12 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 20,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 7,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        741,
+        672,
+        89,
+        395
+      ],
+      "MODULI": [
+        1553,
+        1579,
+        149,
+        1283
+      ]
+    },
+    "vals_order": [
+      [
+        741,
+        672,
+        89,
+        395
+      ],
+      [
+        1553,
+        1579,
+        149,
+        1283
+      ]
+    ],
+    "gold": 256866121538,
+    "question": "Find the smallest non-negative integer x that leaves remainders [741, 672, 89, 395] when divided by the respective moduli [1553, 1579, 149, 1283] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 21,
+    "class_id": 6,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 142,
+      "K": 6
+    },
+    "vals_order": [
+      142,
+      6
+    ],
+    "gold": 85,
+    "question": "142 people stand in a circle numbered 1..142. Counting around the circle, every 6-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 22,
+    "class_id": 7,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "look_and_say",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 29,
+      "K": 3
+    },
+    "vals_order": [
+      29,
+      3
+    ],
+    "gold": 31123119,
+    "question": "Start with the digit string 29. Apply the 'look-and-say' step 3 times: read off each run of equal consecutive digits as (count)(digit), left to right. Report the resulting number.",
+    "slot_index": 23,
+    "class_id": 4,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        1152,
+        3488,
+        9822
+      ]
+    },
+    "vals_order": [
+      [
+        1152,
+        3488,
+        9822
+      ]
+    ],
+    "gold": 39466535646,
+    "question": "Given continued-fraction terms [1152, 3488, 9822], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 24,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 5,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        2580,
+        437,
+        232,
+        442
+      ],
+      "MODULI": [
+        2789,
+        587,
+        2083,
+        613
+      ]
+    },
+    "vals_order": [
+      [
+        2580,
+        437,
+        232,
+        442
+      ],
+      [
+        2789,
+        587,
+        2083,
+        613
+      ]
+    ],
+    "gold": 55500458321,
+    "question": "Find the smallest non-negative integer x that leaves remainders [2580, 437, 232, 442] when divided by the respective moduli [2789, 587, 2083, 613] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 25,
+    "class_id": 6,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 31,
+      "MOD": 339373
+    },
+    "vals_order": [
+      31,
+      339373
+    ],
+    "gold": 124760,
+    "question": "Compute 31 factorial modulo 339373 (the remainder when 31! is divided by 339373).",
+    "slot_index": 26,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 6,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        9798,
+        4503,
+        8168,
+        10299
+      ]
+    },
+    "vals_order": [
+      [
+        9798,
+        4503,
+        8168,
+        10299
+      ]
+    ],
+    "gold": 3711506249151637,
+    "question": "Given continued-fraction terms [9798, 4503, 8168, 10299], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 27,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 6,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        4439,
+        11404,
+        2559
+      ]
+    },
+    "vals_order": [
+      [
+        4439,
+        11404,
+        2559
+      ]
+    ],
+    "gold": 129542616002,
+    "question": "For the continued fraction with terms [4439, 11404, 2559], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 28,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 7,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "linrec_mod",
+    "magnitude": 100,
+    "keys": [
+      "COEFFS",
+      "SEEDS",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "COEFFS": [
+        9,
+        7,
+        8
+      ],
+      "SEEDS": [
+        619842,
+        867995,
+        612494
+      ],
+      "MOD": 537216,
+      "K": 24
+    },
+    "vals_order": [
+      [
+        9,
+        7,
+        8
+      ],
+      [
+        619842,
+        867995,
+        612494
+      ],
+      537216,
+      24
+    ],
+    "gold": 298446,
+    "question": "Let the three starting values be [619842, 867995, 612494] (oldest to newest). Repeatedly append (c1*a + c2*b + c3*c) mod 537216 using the last three terms a,b,c (a newest) with coefficients [9, 7, 8]. After 24 new terms, give the last.",
+    "slot_index": 29,
+    "class_id": 11,
+    "class_size": 3,
+    "class_position": 3,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        2196,
+        10186,
+        7434
+      ]
+    },
+    "vals_order": [
+      [
+        2196,
+        10186,
+        7434
+      ]
+    ],
+    "gold": 166287111534,
+    "question": "For the continued fraction with terms [2196, 10186, 7434], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 30,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 8,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2070938780,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 12
+    },
+    "vals_order": [
+      2070938780,
+      11,
+      7,
+      15,
+      12
+    ],
+    "gold": 347996914,
+    "question": "A 32-bit register holds X = 2070938780. Repeat 12 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 31,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 8,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        3706,
+        1356,
+        3721,
+        4134
+      ]
+    },
+    "vals_order": [
+      [
+        3706,
+        1356,
+        3721,
+        4134
+      ]
+    ],
+    "gold": 77302839636859,
+    "question": "For the continued fraction with terms [3706, 1356, 3721, 4134], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 32,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 9,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 28,
+      "MOD": 324661
+    },
+    "vals_order": [
+      28,
+      324661
+    ],
+    "gold": 41320,
+    "question": "Compute 28 factorial modulo 324661 (the remainder when 28! is divided by 324661).",
+    "slot_index": 33,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 7,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 27,
+      "MOD": 462373
+    },
+    "vals_order": [
+      27,
+      462373
+    ],
+    "gold": 368391,
+    "question": "Compute 27 factorial modulo 462373 (the remainder when 27! is divided by 462373).",
+    "slot_index": 34,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 8,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        4891,
+        8267,
+        10364
+      ]
+    },
+    "vals_order": [
+      [
+        4891,
+        8267,
+        10364
+      ]
+    ],
+    "gold": 419056923763,
+    "question": "For the continued fraction with terms [4891, 8267, 10364], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 35,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 10,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        2421,
+        9077,
+        9509,
+        3640
+      ]
+    },
+    "vals_order": [
+      [
+        2421,
+        9077,
+        9509,
+        3640
+      ]
+    ],
+    "gold": 760629899921538,
+    "question": "For the continued fraction with terms [2421, 9077, 9509, 3640], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 36,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 11,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 35,
+      "MOD": 131071
+    },
+    "vals_order": [
+      35,
+      131071
+    ],
+    "gold": 85781,
+    "question": "What is (35!) mod 131071?",
+    "slot_index": 37,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 9,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 20,
+      "MOD": 392263
+    },
+    "vals_order": [
+      20,
+      392263
+    ],
+    "gold": 106148,
+    "question": "What is (20!) mod 392263?",
+    "slot_index": 38,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 10,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1320782765,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 15
+    },
+    "vals_order": [
+      1320782765,
+      11,
+      9,
+      15,
+      15
+    ],
+    "gold": 1383808388,
+    "question": "Start with the 32-bit value 1320782765. Apply the xorshift step 15 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 39,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 9,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        6812,
+        11273,
+        1948
+      ]
+    },
+    "vals_order": [
+      [
+        6812,
+        11273,
+        1948
+      ]
+    ],
+    "gold": 149590193608,
+    "question": "For the continued fraction with terms [6812, 11273, 1948], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 40,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 12,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8087,
+        6094,
+        8007
+      ]
+    },
+    "vals_order": [
+      [
+        8087,
+        6094,
+        8007
+      ]
+    ],
+    "gold": 394602415340,
+    "question": "Given continued-fraction terms [8087, 6094, 8007], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 41,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 13,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        5396,
+        5713,
+        10585
+      ]
+    },
+    "vals_order": [
+      [
+        5396,
+        5713,
+        10585
+      ]
+    ],
+    "gold": 326307494561,
+    "question": "Given continued-fraction terms [5396, 5713, 10585], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 42,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 14,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 117085221,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      117085221,
+      11,
+      7,
+      17,
+      25
+    ],
+    "gold": 3761609312,
+    "question": "A 32-bit register holds X = 117085221. Repeat 25 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 43,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 10,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2794251537,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 15
+    },
+    "vals_order": [
+      2794251537,
+      11,
+      9,
+      17,
+      15
+    ],
+    "gold": 3950435063,
+    "question": "Start with the 32-bit value 2794251537. Apply the xorshift step 15 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 44,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 11,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 29,
+      "MOD": 625319
+    },
+    "vals_order": [
+      29,
+      625319
+    ],
+    "gold": 332058,
+    "question": "What is (29!) mod 625319?",
+    "slot_index": 45,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 11,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        5690,
+        4569,
+        2688,
+        11782
+      ]
+    },
+    "vals_order": [
+      [
+        5690,
+        4569,
+        2688,
+        11782
+      ]
+    ],
+    "gold": 823344849368967,
+    "question": "For the continued fraction with terms [5690, 4569, 2688, 11782], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 46,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 15,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        1870,
+        3056,
+        5268
+      ]
+    },
+    "vals_order": [
+      [
+        1870,
+        3056,
+        5268
+      ]
+    ],
+    "gold": 30105152098,
+    "question": "For the continued fraction with terms [1870, 3056, 5268], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 47,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 16,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        11332,
+        6103,
+        2741
+      ]
+    },
+    "vals_order": [
+      [
+        11332,
+        6103,
+        2741
+      ]
+    ],
+    "gold": 189565370309,
+    "question": "For the continued fraction with terms [11332, 6103, 2741], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 48,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 17,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 151,
+      "A": 2700,
+      "B": 1300,
+      "M": 64800,
+      "K": 9
+    },
+    "vals_order": [
+      151,
+      2700,
+      1300,
+      64800,
+      9
+    ],
+    "gold": 12100,
+    "question": "A pseudorandom counter begins at 151. For 9 rounds, set X = (2700 * X + 1300) mod 64800. What is X after the final round?",
+    "slot_index": 49,
+    "class_id": 0,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.016666666666666666
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8333,
+        10910,
+        2809,
+        1852
+      ]
+    },
+    "vals_order": [
+      [
+        8333,
+        10910,
+        2809,
+        1852
+      ]
+    ],
+    "gold": 472954058300055,
+    "question": "Given continued-fraction terms [8333, 10910, 2809, 1852], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 50,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 18,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 93449850,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 20
+    },
+    "vals_order": [
+      93449850,
+      11,
+      7,
+      17,
+      20
+    ],
+    "gold": 728864432,
+    "question": "A 32-bit register holds X = 93449850. Repeat 20 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 51,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 12,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 16,
+      "MOD": 959869
+    },
+    "vals_order": [
+      16,
+      959869
+    ],
+    "gold": 246657,
+    "question": "Compute 16 factorial modulo 959869 (the remainder when 16! is divided by 959869).",
+    "slot_index": 52,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 12,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        8925,
+        4923,
+        8933
+      ]
+    },
+    "vals_order": [
+      [
+        8925,
+        4923,
+        8933
+      ]
+    ],
+    "gold": 392496161933,
+    "question": "Given continued-fraction terms [8925, 4923, 8933], apply p <- a*p + p_prev across the terms and report the final numerator p.",
+    "slot_index": 53,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 19,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2454829037,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 21
+    },
+    "vals_order": [
+      2454829037,
+      13,
+      9,
+      15,
+      21
+    ],
+    "gold": 2145246947,
+    "question": "A 32-bit register holds X = 2454829037. Repeat 21 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 54,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 13,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 100,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        3146,
+        1133,
+        9127,
+        2545
+      ]
+    },
+    "vals_order": [
+      [
+        3146,
+        1133,
+        9127,
+        2545
+      ]
+    ],
+    "gold": 82795102453074,
+    "question": "For the continued fraction with terms [3146, 1133, 9127, 2545], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 55,
+    "class_id": 5,
+    "class_size": 20,
+    "class_position": 20,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 22,
+      "MOD": 585671
+    },
+    "vals_order": [
+      22,
+      585671
+    ],
+    "gold": 279751,
+    "question": "What is (22!) mod 585671?",
+    "slot_index": 56,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 13,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2254268542,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 13
+    },
+    "vals_order": [
+      2254268542,
+      13,
+      7,
+      15,
+      13
+    ],
+    "gold": 3953896365,
+    "question": "Start with the 32-bit value 2254268542. Apply the xorshift step 13 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 57,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 14,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3927346080,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      3927346080,
+      11,
+      9,
+      17,
+      25
+    ],
+    "gold": 4112455944,
+    "question": "A 32-bit register holds X = 3927346080. Repeat 25 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 58,
+    "class_id": 9,
+    "class_size": 15,
+    "class_position": 15,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "factorial_mod",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "MOD"
+    ],
+    "inputs": {
+      "N": 23,
+      "MOD": 109049
+    },
+    "vals_order": [
+      23,
+      109049
+    ],
+    "gold": 14486,
+    "question": "What is (23!) mod 109049?",
+    "slot_index": 59,
+    "class_id": 2,
+    "class_size": 14,
+    "class_position": 14,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  }
+]

@@ -1,118 +1,149 @@
-# LLMs Fail the Optimal Online Tool-Investment Policy
+# LLMs Don't Recognize Reusable-Tool Creation as Resource Allocation
 
-**Status:** Chosen reframe, 2026-07-01. **Supersedes** the *capability-graded recurrence-recognition* framing in `tool-amortization-plan.md` (and the earlier `net-negative-plan.md`), which the Haiku-vs-Sonnet runs **falsified** — the miscalibration is *not* capability-graded; it is uniform. All experiment infrastructure (family_kit, stream_builder, run_stream_session, skirental_scorer, per-model A0) carries over unchanged.
+**Status:** Active. Last rewrite 2026-07-03 (full consolidation — supersedes the incremental logs below). The headline **evolved** twice: `capability-graded recurrence-recognition` (falsified) → `fail the optimal online VoI policy` (partly right, wrong mechanism) → **the current framing below**, which the transcript analysis forced.
 
-## Thesis
+---
 
-Solving a stream of problems where a reusable tool can be **built once** (fixed write cost) and then **amortized** over future problems, under a **scarce write budget**, is an **online investment problem under an unknown reuse distribution**. There is a well-defined *optimal online policy* for this setting — one that **gathers evidence** (waits for a type to recur) before committing an irreversible write.
+## 1. The claim (current)
 
-**LLMs systematically deviate from it: they build eagerly on first encounter with a hand-hard problem, without waiting for evidence of recurrence.** This appears **uniform across capability** — Haiku and Sonnet both do it — so the contribution is not a capability law but a **general failure of online decision-making / value-of-information** in agentic tool building.
+A model that must solve a stream of numeric problems, where a **reusable script can be built once** (fixed write cost) and then **reused for free** on later problems of the same type, under a **scarce write budget**, is facing a **resource-allocation problem**: some types recur (a script pays off on every occurrence), some appear once (a script is wasted), and only *B* of them can get a script. The right behavior is to treat the *B* writes as a scarce budget and spend them on types that will recur.
 
-## Evidence so far (Claude, this benchmark)
+**LLMs don't do this. They treat `write_script` as "how I solve this one hard problem," build eagerly on first sight, and never reserve budget — even when told some types recur.** The failure is not that they gather too little information before committing (that was our previous, wrong framing); it is that **they never frame the task as allocation at all.** This is a **recognition/framing failure**, not a value-of-information failure.
 
-- **Haiku** — eager builder: tools the first ~4 distinct types it sees, on first sighting; with a one-off guaranteed early (oneoff_per_block) + budget 4 it wastes writes on one-offs and never tools all recurring classes → solve loss (easy 18/24). (`haiku-eager-builder-result`)
-- **Sonnet** — in the **easy** condition looked judicious (built **0** one-off tools, 24/24) — but that was an **artifact**: easy one-offs are hand-solvable for Sonnet, so its build-when-I-can't-hand-solve policy never fired on them. In the **hard** condition (one-offs *also* hand-hard) Sonnet builds a tool for the **first one-off it sees, on first sight, in all 3 seeds**. (`sonnet-builds-oneoffs-when-hard`)
-- **Conclusion:** both models "build when they can't hand-solve," on first sight, **without waiting for recurrence evidence**. Neither does online learning. Capability changes only (a) the **hand-solvability threshold** (which problems trigger a build) and (b) **tool generality** (Sonnet's tools are broader and reused more) — *not* the build-timing disposition.
+**Open question (the next experiment):** is this universal across the capability ladder, or does some model spontaneously recognize the allocation structure?
 
-## Why "the model didn't know the distribution" is NOT a valid defense
+Positioning: the lab's **recognition axis** (does the model recognize the structure of the task?), not the crowded VoI / premature-commitment / ski-rental slice. Per [[online-investment-novelty-verdict]]: do **not** headline "uniform across capability" (unproven) or "premature commitment" (Mehta owns the phrase).
 
-The setting *is* online learning under an unknown reuse distribution — the standard online-learning regime. Optimal policies for it (ski-rental competitive ratios; randomized / ML-augmented ski-rental; no-regret online learning) achieve strong guarantees **without** knowing the distribution a priori — they adapt to the observed sequence. So the optimal-online benchmark operates under the **same missing information** as the model. If the model does worse than the online optimum, that is a **genuine deficiency**, not an artifact of missing information — because the benchmark shares that handicap and still wins by waiting/adapting.
+---
 
-(Consequently an "announce the recurrence structure" control is **not required** to defend the claim — the online-optimal benchmark already answers it. Announce remains an interesting *secondary* probe: does telling the model the structure fix the over-eagerness?)
+## 2. Setup (stochastic design + exact reference)
 
-The precise, defensible claim: models are not doing *nothing* — they run *some* reactive heuristic — but that heuristic **deviates from the optimal online policy in a specific direction: over-eager irreversible commitment instead of value-of-information gathering.**
+Full detail in `docs/online-tool-investment-stochastic-design.md` and `docs/same-info-optimal-dp.md`.
 
-## Design log — what we've tried (2026-07-01)
+- **Streams:** *T* i.i.d. draws from a distribution over *N* types (*B* hot + *N−B* trap). Family↔rate assignment randomized per seed. A consequential-seed knob **g** = P(a trap is forced into the first *B* slots).
+- **Cost model (per Haiku A0):** R=100, λ=0.1; u_hand = −98.7, u_build = 49.2, u_reuse = 80. Building beats hand even single-use, so the real scarcity is the **write budget**, not per-token cost.
+- **Reference π\* = the EXACT finite-horizon belief-state DP** (`exact_dp.py`) — the same-information Bayes-optimal policy. Symmetric Dirichlet(α=1) predictive; canonical state = (built-count-multiset, unbuilt-count-multiset); closed-form budget=0 base case. Made tractable at N=12,T=60 by a **count-cap K**: a K-sweep certified `V(3)=V(4)=V(5)=V(6)` exactly → **cap=3 is exact** (~540k states, ~3s, pure Python). Replaces the retired Whittle relaxation (over-built at N≈12). Wired into the scorer as `exact_pistar_report`. π\* **reserves the first sighting** and builds on recurrence — never builds a type on first sight.
+- **Two-layer metric** (separates policy quality from draw luck — see [[exact-dp-reference-and-poc]]):
+  1. **Behavioral fidelity (luck-free, model-independent):** which policy is the model running? Read straight off the action log (build lateness; is built-set == first-*B* distinct arrivals?). No per-model calibration needed.
+  2. **Expected policy regret (luck-free headline number):** once fidelity pins the policy, price it vs π\* analytically over thousands of streams (tiny SE). Expensive model runs only need enough sessions to pin the policy.
 
-The instrument is built and validated; the open work is choosing a **regime** where building is unambiguously right for recurring types and unambiguously wrong for one-offs, so an eager build is faultable.
+---
 
-1. **Instrument validated.** Family kit expanded to ~30 exact-integer families with a `GEN_CLUSTER` constraint (no script reuses across classes); exact arbitrary-precision int grading (float sig-figs gave false positives on >16-digit golds); **budget-constrained knapsack** optimum in the scorer (per-class m*<1 means "build everything" is per-class optimal → real scarcity is the write budget, so the optimum builds the top-B classes by gain); `chat_tools` caching fix (see `chat-tools-caching-fix`) — N=80 dropped 2.5M→60k tokens (~40×).
-2. **Clean Haiku demonstrations.** eager build-on-first-sight, **mean_lateness = 0.00** (zero evidence-gathering — the thesis), wastes 1–2 of its 6 builds on one-off traps, starves 1–2 recurring classes. Reuse is **perfect** (1 tool/class, 0 rebuilds) so the failure is cleanly isolated to **build-timing/allocation**. (`tool-investment-pilot-haiku`)
-3. **a_hand≈1 regime pivot.** Made every problem hand-solvable (no "couldn't do otherwise" excuse) but token-tedious. **Complexity-confound discovered + fixed:** the first a_hand≈1 probe looked optimal but was an artifact — recurring were all complex, one-offs mostly simple, so Haiku's real heuristic ("build multi-step, hand-solve simple") *aligned* with recurrence. Fix = **complexity-match** the pools (equal-complexity recurring + one-offs → complexity gives no signal; recurrence detectable only by waiting).
-4. **The token channel is a DEAD END (key negative result).** Under caching, building never pays on tokens: reuse ≈ hand (both ~330–490 tok/problem, within noise), and the one-time **build cost dominates** (~5000 tok/build-problem, inflated by early-session *uncached* input — system+tools = 945 tokens is below the cache minimum, so it can't be pre-warmed). Net: build-a-recurring-class ≈ 8700 vs hand-it ≈ 4440 → building costs ~2×. So a token budget / "minimize tokens" objective would say **never build** — it cannot incentivize building. `run_and_submit` (collapse reuse to 1 turn) was added to try to rescue this, but **the model ignored it (0 uses)** and it wouldn't have fixed the build cost anyway → **removed**.
-5. **Conclusion → building must be justified by ACCURACY, not tokens.** That requires **a_hand < 1**. The clean, non-degenerate design is **moderate a_hand (~0.6)**: building buys real accuracy on recurring types, hand-solving is a weak (quantified) fallback. Headline = **build-decision regret** vs the budget-constrained online optimum (NOT solve — solve is noisy because hand-solving partially recovers starved classes).
-6. **The COMPOSABILITY pivot (key structural finding).** The `GEN_CLUSTER` "distinct direct operation" standard is **too weak** — verified empirically: in a moderate 4+5 run, Haiku built one `dot_product` tool and **reused it across weighted_sum + five arithmetic one-offs** (diff_of_products, pairwise, matvec, quad, sum_of_squares). So the entire **multiply-add "arithmetic web" (~19 families: products, dots, polynomials, matvec, pairwise, sum-of-powers) collapses into a SINGLE reusable skill** — those families are not independent classes. Real requirement: classes must be **genuinely non-composable** — operations no single tool can be stretched across. Those are the *iterative / number-theoretic / digit / order* primitives. Haiku's error profile is narrow (only big-mult, gcd, iterated-mod-product, big-division/modulo, and long digit procedures are hard), so moderate-**and**-non-composable families are scarce and must be tuned individually.
-7. **Arrival fix.** Early runs degenerated because one-offs arrived *after* the budget was spent on recurring classes (forced "correct-skip" for the wrong reason). Fixed with **`random_oneoff_early`**: fully random order, but ≥1 one-off guaranteed in the first 6 slots — the eager-vs-wait decision is forced early, while budget is still free.
+## 3. What we've established (Haiku)
 
-## Result so far — clean single-seed Haiku demonstration (2026-07-01)
+All on the stochastic design with the exact-DP reference.
 
-`runs/stream_disposition_20260701_171639`. **5 recurring + 5 one-off, all non-composable, difficulty-matched** (a_hand 0.30–0.90, pool means 0.63 vs 0.65), budget = 5, `random_oneoff_early`, N=80. Recurring: euclid_gcd_chain, factorial_mod, lcg, int_div_sum, count_inversions. One-offs: kaprekar_routine, look_and_say, luhn_sum, continued_frac, mod_pair_sum. Calibrated in `runs/a0_moderate_tuned`.
+- **Eager open-loop, 100%.** Across 30 g=1 sessions / 88 builds: **every build at first sight** (lateness 0.000), and **30/30** built-set == first-*B* distinct arrivals. Haiku ≡ "build the first *B* distinct types on sight." Zero exceptions, never reserves. Within-class reuse is **perfect** (1 tool/class, 0 rebuilds) — so the failure is cleanly isolated to **build allocation**, not tool quality.
+- **Regret is distribution-dependent, so it is NOT the headline.** g=1: analytic E[regret] = 1417 ± 40 over 1500 streams (eager traps 1.21 vs π\* 0.50; realized 30-seed 1107 ± 275, consistent). **g=0 control DONE:** under natural draws model traps/seed collapse 1.10 → 0.10 = π\* 0.10; on the uniform-hard pool analytic regret falls g=1 983 → g=0 71. So the big regret number is a **trap-early-conditioning artifact**. The headline is the **open-loop policy itself** (distribution-independent), not the regret magnitude.
+- **Disclosure-immune (A1 announce, n=12).** Told non-prescriptively that some types recur several times and others appear once, Haiku *still* builds 35/35 at first sight (lateness 0.000). Open-loop whether recurrence must be **inferred** (A0) or is **disclosed** (A1).
+- **MECHANISM — recognition/framing, not VoI (transcript analysis).** Haiku's build rationale is *always* per-problem — *"I need to solve X, let me write a script."* It **never** reasons about types recurring, reserving budget, or waiting: "recur" appears 148× but is entirely "recurrence **relation**" (algorithm-speak); "budget" 47× is entirely **retrospective** (*"since I've used up my budget…"* after exhaustion); "reserve/conserve" 0×. It spends its *B* writes greedily on the first hard problems and only *notices* the budget once it's gone. It **reactively** reuses a saved script when a type repeats but **never proactively allocates**. So "doesn't wait for recurrence evidence" is the wrong description — it isn't deliberating about *when* to build at all.
 
-- **Cross-family reuse = ZERO** (verified: each of 5 built tools maps to exactly one family) — the non-composable redesign holds, so the failure is genuine, not a reuse artifact.
-- **mean_lateness = 0.00** — every build on first sighting; no evidence-gathering. *The thesis.*
-- Haiku **built a tool for `continued_frac` at slot 0** — the very first problem, a **one-off** — an irreversible commitment with zero recurrence evidence. That wasted 1 of 5 budget slots.
-- When **lcg** (a recurring class) first appeared at slot 10, budget was exhausted → **lcg wrongly-skipped** → all 15 members hand-solved at a_hand 0.60. The entire regret (**1870** vs budget-optimum) traces to that one eager commitment.
-- Decision tally: **4 correct-build, 1 wrongly-built, 1 wrongly-skipped, 4 correct-skip.** Within-class reuse perfect (15/15), 0 rebuilds.
-- **No excuse:** continued_frac has a_hand 0.85 (trivially hand-solvable) and is non-composable — building it was pure waste the model couldn't reuse its way out of.
+### Prior (constructed-design) evidence — consistent, superseded metric
+The earlier hand-constructed recurring+one-off design showed the same behavior across a full Claude ladder (Haiku/Sonnet/Opus): bait rate ~100%, mean lateness 0.00, disclosure-immune. That work established the phenomenon and built the instrument, but used bait/lateness on constructed streams rather than the stochastic design + exact-DP regret; treat it as corroborating, not as the capability result. (Its "uniform across capability" conclusion is **not** carried forward — see §4.)
 
-### 20-seed Haiku sweep (`runs/stream_sweep_haiku_n20`, all 20 OK)
+---
 
-The single-seed pattern holds across seeds with striking consistency (seeds vary arrival order + instance sampling; runner = `run_stream_sweep.py`):
+## 4. What's next — the capability axis (THE experiment)
 
-| metric | value |
-|---|---|
-| **bait rate** (built ≥1 one-off) | **20/20 = 100%** (rule-of-three 95% lower bound ≈ 0.86) |
-| **mean lateness** | **0.00, sd 0.00** — every build on first sight, every seed |
-| one-offs built / seed | 1.0 (sd 0) — wastes exactly 1 of 5 budget slots |
-| recurring classes starved / seed | 1.05 (sd 0.22) |
-| solve / 80 | 74.2 (sd 6.1) |
-| regret vs budget-optimum | 1152 (sd 735) |
+**Question:** does **any** model spontaneously recognize the allocation structure, or is eager open-loop building universal? Operationally: **does build lateness stay 0 as capability rises?**
 
-Not a family artifact: the wasted build lands on **whichever one-off arrives early** (continued_frac, look_and_say, luhn_sum, kaprekar all appear across seeds) and the starved recurring class varies (lcg, count_inversions, factorial_mod, euclid, int_div). It is a **general disposition** — Haiku *always* commits an irreversible build to a freshly-seen one-off rather than waiting for recurrence evidence.
+**Why this is #1:** it turns "Haiku does X" into a phenomenon, and it's the one question the neutral setup answers directly with no intervention. Two capability ladders, doing different jobs — **they don't substitute**:
+- **Qwen-Coder ladder = the slope.** Many cheap points on the GPU box ([[oss-gpu-box-access]]), one controlled family, no per-point cost pressure. At small sizes it's *cleaner* than Claude — models can't hand-solve uniform-hard, so building is forced and the only DOF is timing.
+- **Opus = the frontier anchor (non-substitutable).** The universality claim lives or dies at the frontier — a reviewer will say "a frontier model would recognize it," and Qwen-72B can't answer that; Opus can. And our own line says the interesting recognition effects are **frontier phenomena** that the Qwen ladder tops out below ([[creator-frontier-inversion-cross-family]], [[creator-qwen3b-floor-is-curiosity-gate]]). It pays off either way: Qwen flat → Opus upgrades "small models fail" to "everyone fails"; Qwen rising → Opus is the payoff point (does the trend continue or plateau?).
+- **Sonnet dropped** — a redundant mid-ladder point the Qwen sizes already cover.
 
-### Awareness arm — disclosure does NOT fix it (`runs/stream_sweep_haiku_n20_announce`)
+**Design:**
+- **Arm:** A0 (neutral prompt). The claim is *spontaneous* recognition, so no disclosure. (A1 already known not to move Haiku; becomes a follow-up only for a model that shows nonzero lateness under A0.)
+- **Pool:** uniform-hard N=8 (`lcg, modpow, continued_frac, crt_solve, josephus, quadratic_map_mod, xorshift_steps, matrix_power_mod`), MAG=100. All a_hand=0 → removes the hand-solvability confound so the *only* DOF is when/which to build.
+- **Params:** T=60, B=3, cap=3, g=1, token_cap=300k, max_tokens=4096.
+- **Seeds:** **shared across all models** (paired design — identical streams, so the only variable is the model). Directories keyed on model (`runs/arm_capability/{model}/seed_X`), seed range shared (e.g. 3000–3011). 12 seeds/model (~36 builds) — fidelity is near-deterministic, so this catches even a ~10% reserve rate; expand only on a signal.
 
-The system prompt was given a factual note that some problem types recur (several times) and others appear once, unlabeled — *without* prescribing "wait" (so we can't be accused of leading the model). Result across 20 seeds: **bait 20/20 = 100%, mean lateness 0.00 — identical to the hidden arm.** Even told recurrence exists, Haiku still commits builds on first sight. This rules out the "it didn't know recurrence was possible" objection: the failure is a genuine **online-decision** deficiency (over-eager irreversible commitment), not a recognition gap. (Run truncated at budget-exhaustion; solve/regret are not comparable across truncation, but the decision metrics — bait, lateness — are, and they match.)
+**Primary metric — behavioral fidelity, with a 3-way outcome taxonomy** (needed so we don't misread capability as recognition):
+1. **Eager (lateness 0):** built on first sight → the failure.
+2. **Reserved (lateness > 0):** saw the type, chose hand/skip, built on a *later* sighting → the recognition signal.
+3. **Hand-solved throughout (never builds):** capability, *not* recognition — reported separately. On uniform-hard this should be ~0; if a strong model cracks e.g. `josephus` by hand it lands here, and if this creeps up we bump MAG to keep building forced.
 
-**Cross-model note (Sonnet):** hidden-arm bait was also 100% (lateness 0). Sonnet additionally *flails* — it runs existing tools on the wrong family before writing the correct one — which is why build decisions are now attributed by the **authoring event** (which class was on screen when `write_script` fired), robust to that and to truncation.
+**Predictions:** flat lateness 0 across all → **universal recognition failure** (clean, strong headline). Lateness rises with scale → recognition **is** capability-graded (different, also-good framing). Higher models hand-solve instead of reserve → capability substitutes for allocation (bump MAG).
 
-### Full capability ladder — uniform, and disclosure-immune
+**Scope — fidelity only.** The regret/π\* layer needs per-model A0 constants (R,λ,C,r,h); we only have Haiku's. Defer per-model A0 + regret to a small Phase 2 (~$5/model), run only if fidelity shows something worth pricing.
 
-Each model uses its **own** difficulty-calibrated non-composable set (moderate a_hand is model-specific: Haiku 5+5, Sonnet 4+4, Opus 3+3 — raw-arithmetic families like int_div/mod_pair fall out as capability rises since long division becomes perfect; continued_frac drops for Opus as its value explodes). Arrival guarantees the first one-off within the first **B** (=budget) slots, so the bait decision is always faced *with budget free* (this fixed a false-restraint artifact where an eager model spent its whole budget on early recurring first-sightings before any one-off appeared).
+**Cost:** Haiku fresh A0/uniform-hard ~$6 (existing Haiku runs are A1 or the N=12 pool — not strictly comparable, so re-run for a clean shared-seed anchor); Opus 12× ~$2.5 ≈ $30; Qwen ladder ~free on the GPU box (wall-clock only). Spend-guarded + resumable (cached seeds free), hard cap ~$55.
 
-**Announced arm, 20 seeds each, bait rate / mean lateness:**
+**Harness:** generalize `arm_a1_announce.py` → `arm_capability.py`: `--model` arg, `set_profile(model)`, per-model price multipliers in `cost_of` (Haiku 1/5/0.1/1.25 → Sonnet 3/15/0.3/3.75 → Opus 5/25/0.5/6.25), `announce_recurrence=False`, shared seeds, per-model dirs, fidelity report per model + a comparison table. Qwen runs via the Ollama/OSS path on the A10 box.
 
-| model | set | bait rate | mean lateness |
-|---|---|---|---|
-| Haiku | 5+5, budget 5 | 20/20 = 100% | 0.00 |
-| Sonnet | 4+4, budget 4 | ~100%¹ | 0.00 |
-| Opus | 3+3, budget 3 | 20/20 = 100% | 0.00 |
+---
 
-¹ Sonnet's announced arm predates the arrival fix; raw 18/20 with two false-restraint seeds (budget exhausted before the one-off appeared) → true rate ~100%. To be re-run under the final setup.
+## 4b. Abstraction-gap control — IN PROGRESS (result of first run INVALIDATED)
 
-**The failure is uniform across the capability ladder and immune to disclosure of the recurrence structure.** Even the strongest model, told some types recur, commits an irreversible build to a one-off on first sight in every seed, with zero evidence-gathering. (Opus run cost $1.15 total — truncation at budget-exhaustion + the first-B one-off guarantee make eager seeds terminate within a handful of problems.)
+The "urn/balls" isomorph (`urn_session.py`, `runs/urn_haiku/`): the byte-identical decision to the tool task, stripped of the tool cover story. Balls of clear colors are drawn from the SAME stochastic streams (paired by seed 3000–3011, uniform-hard N=8, g=1, T=60, B=3); KEEP collects the current ball + all future same-color (= build + reuse), PASS/never-keep scores 0 (= hand-solve at a_hand 0). Keeps map onto `model_builds`; reference π\* is the same `exact_dp`. A0 information (told T, B; not N or which colors are hot). Interactive turn-by-turn (matches the tool session's online mode).
 
-## Where to go next (steps to the end goal)
+The first run had an **observation-parity bug** (kept-color recurrences *silently skipped* → gappy < T stream, lost horizon), now **fixed**: kept colors are auto-collected IN PLACE and reported to the model ("another green ball → auto-collected, +1"), and the system prompt states the bag is unchanged and all T draws happen. The model observes exactly the same T-length stream as the tool player — never effectively >T or <T.
 
-**End goal:** a defensible, quantitative demonstration that LLMs deviate from the optimal online tool-investment policy — building eagerly on first sight without gathering recurrence evidence — reported as **decision-regret vs the online optimum**, ideally uniform across the capability ladder.
+**Info condition = A1, not A0.** The urn prompt ("a bag of colored balls; you don't know the counts"; KEEP collects all future same-color) *discloses that colors recur* — so it is A1-equivalent (if anything more disclosing). The matched tool arm is therefore **A1**, and we already have it: the A1 announce run is Haiku, uniform-hard N=8, g=1, T=60, B=3 on seeds 2000–2011 — identical stream params. So the paired comparison runs the urn on the SAME seeds 2000–2011 and scores the existing A1 tool sessions for regret.
 
-1. ~~Commit to moderate-a_hand regime~~ **DONE** — regime chosen, non-composable family set built + calibrated (Haiku 5+5, Sonnet 4+4 via per-model difficulty profiles), arrival fixed (`random_oneoff_early`).
-2. ~~Multi-seed Haiku sweep~~ **DONE, both arms** — hidden (100% bait, lateness 0) and announced (100% bait, lateness 0). Sonnet hidden also 100%; Sonnet announced running.
-3. **Definitive re-runs under the final prompt** — the sweeps above that predate the final prompt (Haiku hidden full, Sonnet hidden) should be re-run under it for a clean dataset; report realized solve too (needs full, non-truncated runs). *(gated)*
-4. **Opus** (+ optional OSS ladder). Needs its **own A0 recalibration** (moderate is model-specific; int_div/mod_pair already fell out for Sonnet — expect more raw-arithmetic families to drop for Opus). *(gated)*
-5. **Confirm the online-optimal reference** in `skirental_scorer` (budget-constrained knapsack is in; verify against a 2-competitive ski-rental lower bound).
+**PAIRED result (Haiku, seeds 2000–2011, uniform-hard, A1 disclosure both sides, identical streams; urn $0.12):**
 
-Infra now in place: authoring-based build attribution, `--stop-on-budget-exhausted` (cheap truncated arms), per-seed `--session-timeout` guard, per-model difficulty profiles, `--announce` awareness arm.
+| metric | A1 tool (coding framing) | urn (allocation framing) |
+|---|---|---|
+| first-sight | 100% (35/35) | 53% (19/36) |
+| mean lateness | **0.000** | **0.86** (max 6) |
+| regret vs π\* | **1308 ± 520** | **640 ± 285** |
+| traps/seed | — | 0.92 (π\* 0.75) |
 
-## Surviving capability signals (secondary, not the headline)
+**Read — real but PARTIAL (earlier "H2 confirmed / competence exists" was too strong):** removing the coding framing, on identical streams, roughly HALVES the misallocation (regret 1308→640) and makes Haiku reserve budget (lateness 0→0.86, first-sight 100%→53%); transcripts show genuine frequency-tracking + use of the auto-collect feedback. So framing matters a lot — but it is **not a clean dissociation**: (1) urn regret is 640, not ≈0, and Haiku builds MORE traps than π\* (0.92 vs 0.75), so the tool failure is **partly framing, partly a genuine allocation weakness even in the abstract** (ceiling only partially met). (2) **Regret is noisy + seed-dependent** — urn regret was −30 on seeds 3000–3011 vs +640 on 2000–2011 (both n=12); **lead with LATENESS** (stable: 0.75/0.86 vs tool's 0.000), not the regret level. (3) Even in the urn Haiku sometimes keeps on first sight.
 
-- **Hand-solvability threshold:** stronger models hand-solve more → fewer builds triggered (same disposition, shifted threshold). Requires per-model A0 to locate (done: Haiku band m≈10, Sonnet band m≈1000).
-- **Tool generality:** stronger models write broader, more reusable tools (Sonnet's `poly_eval_exact`, built for a one-off, was reused on 14 problems across families; Haiku builds narrow single-purpose tools).
+**Defensible claim:** the tool/coding framing SUBSTANTIALLY suppresses the allocation reasoning Haiku demonstrably can do — a large partial effect, not a switch.
 
-## Scope / honest limits
+**Opus urn (seeds 2000–2011, same streams; $0.54)** — urn competence is CAPABILITY-GRADED:
 
-- The claim is about a **specific decision structure** — online irreversible investment under unknown reuse — not "LLMs are bad at all decision-making."
-- It stands or falls on the **optimal-online benchmark being well-defined and computed** (or tightly bounded). This is the analytical crux.
-- Irreversibility matters: waiting costs the early instances you pass (can't go back). The value of waiting scales with the reuse horizon; the larger test must use horizons where waiting demonstrably pays.
+| metric | Haiku urn | Opus urn |
+|---|---|---|
+| first-sight | 53% | **8%** (3/36) |
+| lateness | 0.86 | **1.14** |
+| regret vs π\* | 640 | **−655 ± 389** (beats π\*) |
+| traps/seed | 0.92 | **0.33** (π\* 0.75) |
 
-## Related work / novelty (confirm via focused scan before committing)
+Opus essentially aces the urn — waits for a repeat before keeping, keeps almost no traps (0.33 ≪ π\*'s 0.75), and beats π\* on realized g=1 streams by being more trap-averse than the Bayes-optimum. **Ceiling check strongly passes for Opus** (unlike Haiku's partial pass), so for Opus the abstraction-gap is a *clean* dissociation-in-waiting. **This reframes/subsumes the (crowded) capability axis:** if Opus is eager in the *tool* task (prior constructed-design: bait 20/20, lateness 0), the recognition gap *widens* with capability — the stronger model has MORE allocation competence for the tool framing to suppress. The claim becomes "tool framing suppresses allocation reasoning even in a model that demonstrably has it," which the urn supplies the competence baseline for. Caveats: regret noisy (don't headline −655; lead with first-sight 8% / traps 0.33); **no paired Opus tool baseline yet** (need Opus A1 tool on seeds 2000–2011, ~$6, to complete the Haiku/Opus × urn/tool 2×2).
 
-- LLM decision-making under uncertainty — bandits/exploration, optimal stopping (secretary problem), test-time-compute allocation. Some prior work exists; **confirm the "fail to gather information before an irreversible tool-building investment" angle is fresh.**
-- Ski-rental / rent-vs-buy applied to **LLM tool creation** — unclaimed per the two prior scans.
-- Positioning: *LLMs fail online value-of-information in agentic tool building, uniformly across capability* — with model-vs-online-optimal regret as the quantitative result.
+Design caveats / next: R0 removes three things at once (surface, act-conflation, computation load) — R1 (declarative-lock-in) isolates which, deferred; Opus A1 tool run completes the paired 2×2; more seeds for a stable regret level. See [[abstraction-gap-urn-haiku]].
 
-## Instrument (built, validated)
+## 5. Deferred experiments (do NOT run without go-ahead — [[no-auto-reps]])
 
-`family_kit.py` (owned exact-integer procedures; recurring families + easy/hard one-off pools, A0-calibrated per model), `stream_builder.py` (arrival incl. `oneoff_per_block`; controllable horizons / one-offs / difficulty), `run_stream_session.py` (persistent session, write budget, non-binding token cap), `skirental_scorer.py` (cost model + decision classification + regret; **needs the online-optimal policy plugged into its pluggable slot**), `a0_oracle_gap.py` (per-model hand-vs-build calibration).
+- **Cost-regime / m\* sweep.** Vary R/λ so building is *not* a per-instance win (m\*>1); show the eager failure persists where "build-everything" is genuinely wrong — kills the degenerate-cost critique. Mostly analytic, ~$10. *(The other original "existential check"; run alongside or after the capability axis.)*
+- **Framing / allocation intervention — DEMOTED.** Previously slated as central; now optional depth-probe. Rationale: the current prompt is **already fair and method-neutral** and supplies all the information (scarce persistent scripts), and the model fails it — so the recognition failure stands on the neutral prompt with no intervention. **F2 (prescriptive "wait until a type recurs") is cheating** (tests instruction-following, not disposition) — drop it. **F1 (non-prescriptive allocation framing)** has one narrow use: distinguishing "recognition gap, fixable by framing" from "robust inability" — but its "fixes it" branch *softens* the claim, so it's a later depth-probe, not a priority.
+- **Demonstration / few-shot.** Does showing the wait-then-build policy transfer? ~$10.
+- **Fine-tuning Qwen + held-out generalization eval.** Strongest mitigation and the reason Qwen is the platform, but contingent on the above; value is entirely in generalizing to held-out families/configs (else circular). Expensive; defer.
+- **Robustness batch (cheap):** prompt-framing sensitivity (neutral vs tool-encouraging — framing dominated small models in CREATOR); design-param sensitivity (α, N, T, B), mostly analytic.
+- **Realism bridge (stretch):** demonstrate the failure in a naturalistic tool-use setting (real coding tools / MCP). Best external-validity payoff; new harness, likely argued in prose instead.
 
-**Recommended next step:** characterize the optimal online policy (item 1) — it is simultaneously the benchmark *and* the rebuttal to the "missing information" critique — then scale the test (item 2), then the model ladder (item 3).
+---
+
+## 5b. Related work & novelty (adversarial lit check, 2026-07-03)
+
+Five parallel adversarial searches. **Verdict: CLEAR on the core; the defensible contribution is the *conjunction* — three of four ingredients are individually crowded.** Position accordingly.
+
+- **Core (tool-building as budget-constrained investment under recurrence) — CLEAR.** No result collision. Neighbors to cite + distinguish: **TroVE** (per-problem Create/Skip/Import, no budget, retrospective), **"Library Learning Doesn't"** (2410.20274 — single-use libraries, but a post-hoc audit, *not* our claim), **LATM** (2305.17126 — owns the amortization *framing*, assumes the decision away), **Calibrate-Then-Act** (2602.16699 — cost-aware when-to-commit, but per-*action* cost not irreversible fixed-cost creation). White space = **irreversible fixed-cost creation × unknown recurrence × scarce build budget × measured as a recognition/allocation failure.**
+- **Recognition mechanism + abstraction-gap control — METHOD NOT NOVEL, domain is.** The paired abstract-vs-embedded design is well-trodden: **2601.23048 "From Abstract to Contextual"** (near-exact, math domain), **Dasgupta content effects** (2207.07051), **GSM-Symbolic** (2410.05229), **LogiQAte** (2602.01132). Frame the control as a *borrowed, validated method* applied to a new domain; our differentiator = **hold computation constant** to isolate framing-as-allocation. Tensions: Dasgupta shows content usually *helps* (we claim it hurts — must engage); **2604.02910** shows abstraction doesn't always dominate → the clean dissociation may not appear. **Pre-register, and verify the abstract urn task is at ceiling before calling the gap recognition.**
+- **Capability axis — CROWDED (most exposed flank).** Cannot claim first-to-show capability-graded tool disposition: **Model-Adaptive Tool Necessity / "knowing-doing gap"** (2605.14038, closest), **SMART** (2502.11435, large models under-use), **Tool-Use Tax** (2605.00136), **BAGEN** (2606.00198), **"When the Tool Decides"** (2606.14476, *opposite* direction — stronger defer more). Direction is contested. Make the capability axis **secondary**, positioned against this disagreement — never "first." (Consistent with our own [[build-proportion-inverse-in-capability]] / [[tool-disposition-inverse-capability]], now with external company.)
+- **Decision-theory reference — no over-claim risk; cite as standard oracle.** An assembly of textbook primitives, not a named problem. Method: exact finite-horizon **belief-state DP** (Bellman 1957; DeGroot 1970; Bertsekas; Kaelbling–Littman–Cassandra 1998). Primitives: rent-or-buy (Karlin–Manasse–McGeoch–Owicki 1994), k-secretary (Kleinberg 2005), Dirichlet–multinomial (DeGroot 1970; Blackwell–MacQueen 1973). Flag Gittins (1979)/Whittle (1988; Weber–Weiss 1990) as related-but-heuristic to justify exact DP. Do **not** name the "claim → collect all future same-type" accrual as a problem or present the DP as a result; note tractability is a property of our small instance. Misattribution guard: 1988 Snoopy Caching = Karlin/Manasse/**Rudolph/Sleator**.
+
+**Phrases owned by others — do NOT headline:** "premature commitment" (Mehta 2606.22936), "budget-aware tool use" (BATS 2511.17006), "knowing-doing gap" (2605.14038), "content effects" (Dasgupta), "tool overuse"/"self-aware agent" (SMART), "single-use library" (2410.20274), "tool-use tax" (2605.00136); always qualify "regret" as **amortization/ski-rental regret**.
+
+**Strategic upshot:** lead with the amortization/investment mechanism (the open conjunction); capability axis is secondary vs a contested field; abstraction-gap is a borrowed method in a novel domain; reference is an explicit oracle. Nothing we've *done* collides — the exposure is entirely in the *framing* of the two planned experiments.
+
+## 6. Scope / honest limits
+
+- The claim is about a **specific decision structure** — allocating a scarce, reusable, irreversible build budget under recurrence — not "LLMs are bad at all decision-making."
+- It rests on the reference being well-defined and computed. **Done:** the exact belief-state DP is the same-information optimum, certified lossless at cap=3.
+- Regret is **distribution-dependent** (g=0 defused it). The distribution-independent claim is the **open-loop policy** (fidelity), which is what the capability axis measures.
+
+## 7. Surviving capability signals (secondary)
+
+- **Hand-solvability threshold:** stronger models hand-solve more → fewer builds triggered (same disposition, shifted threshold). Per-model A0: Haiku band m≈10, Sonnet m≈1000.
+- **Tool generality:** stronger models write broader, more reusable tools (Sonnet's `poly_eval_exact`, built for a one-off, reused on 14 problems; Haiku builds narrow single-purpose tools).
+
+## 8. Instrument (built, validated)
+
+`family_kit.py` (exact-integer families, A0-calibrated per model), `stream_builder.py` (`StochasticStreamSpec`), `exact_dp.py` (the reference π\*), `run_stream_session.py` (persistent session, write budget, non-binding token cap), `skirental_scorer.py` (cost model + decision classification + `exact_pistar_report`), `a0_oracle_gap.py` (per-model hand-vs-build calibration), `poc_haiku.py` / `arm_a1_announce.py` (spend-guarded, resumable harnesses; reuse=1.00 confirmed).
+
+**Next step:** build `arm_capability.py` and run the capability axis (Haiku + Opus first for the frontier verdict; Qwen ladder for the slope). Nothing runs without explicit go-ahead.

@@ -1,0 +1,89 @@
+{
+  "seed": 2005,
+  "model_key": "haiku",
+  "kept": {
+    "3": 1,
+    "7": 1,
+    "6": 2
+  },
+  "collected": 37,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 389,
+      "output_tokens": 69,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 516,
+      "output_tokens": 79,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 628,
+      "output_tokens": 110,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 771,
+      "output_tokens": 82,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "3": "red",
+    "7": "blue",
+    "6": "green",
+    "1": "yellow",
+    "2": "purple",
+    "0": "orange",
+    "4": "black"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "reply": "I'll need to think strategically about this. Since this is the first ball and I have no information yet about the distribution of colors, keeping red now will lock in all future red balls. It's generally good to keep early balls since they're likely to have more future draws ahead of them.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 2,
+      "color": "blue",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 2: another red ball (already kept -> auto-collected, +1).) Draw 3 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "reply": "Good - red is already paying off with at least 2 balls. Now I see a blue ball. Since I have no information about how many blues there are or what other colors exist, and I still have 57 draws remaining, keeping blue now will secure all future blue balls. It's a reasonable decision with plenty of game left.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 3,
+      "color": "green",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "reply": "I've now seen 4 draws with 3 different colors (red, blue, green), each appearing at least once. I have only 1 keep left for the remaining 56 draws. I should be very selective. Green just appeared for the first time, so I don't know yet if it will appear again. I'll pass on green now and wait to see if a color appears multiple times soon, which would be a stronger signal that it's worth my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "green",
+      "class_id": 6,
+      "class_position": 2,
+      "prompt": "Draw 5 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "reply": "Green has now appeared twice in quick succession (draws 4 and 5), suggesting it's a reasonably frequent color in the bag. With 55 draws remaining and only 1 keep left, I should use it on a color that appears multiple times. Green showing up twice already is a good signal that keeping it will secure multiple future balls.\n\nDECISION: KEEP"
+    }
+  ]
+}

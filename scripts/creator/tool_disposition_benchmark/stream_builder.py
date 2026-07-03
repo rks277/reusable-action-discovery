@@ -274,10 +274,54 @@ class StochasticStreamSpec:
     guarantee_trap_early: float = 1.0
     magnitude: int = 100
     seed: int = 0
+    pinned_last_trap: str | None = None      # force this family to be a single-occurrence trap at
+    #   the FINAL slot (T-1), never drawn i.i.d. -- neutralizes a family whose hand-difficulty can't
+    #   be tuned (e.g. hand-easy for a strong model at any magnitude): by the last slot there are 0
+    #   remaining draws, so building can never pay off regardless of hand-difficulty, and it cannot
+    #   have influenced any earlier build/reserve decision. See docs/online-tool-investment-plan.md.
 
     def __post_init__(self):
         assert 0 < self.n_hot < len(self.families), (self.n_hot, len(self.families))
         assert abs(self.hot_share + self.trap_share - 1.0) < 1e-9, "shares must sum to 1"
+        if self.pinned_last_trap is not None:
+            assert self.pinned_last_trap in self.families
+            assert self.n_hot < len(self.families) - 1, "need >=1 real trap besides the pinned one"
+
+
+def _build_pinned_trap_stream(spec: StochasticStreamSpec) -> tuple[list[dict], dict]:
+    """spec.pinned_last_trap handling: draw the OTHER N-1 families i.i.d. over T-1 slots (recursing
+    into the normal path -- the recursion's own hot/trap-share split over N-1 families automatically
+    renormalizes: trap rate becomes trap_share/(n_trap-1) per real trap, hot rate unchanged), then
+    append the pinned family as a single forced trap at slot T-1 (the last draw)."""
+    pinned = spec.pinned_last_trap
+    sub_fams = [f for f in spec.families if f != pinned]
+    sub_slots, sub_meta = build_stochastic_stream(StochasticStreamSpec(
+        families=sub_fams, n_hot=spec.n_hot, hot_share=spec.hot_share, trap_share=spec.trap_share,
+        T=spec.T - 1, budget=spec.budget, guarantee_trap_early=spec.guarantee_trap_early,
+        magnitude=spec.magnitude, seed=spec.seed))
+
+    N, n_trap = len(spec.families), len(spec.families) - spec.n_hot
+    pin_rate = spec.trap_share / n_trap                      # cosmetic (never actually drawn)
+    pin_cid = len(sub_fams)                                  # one past the sub-stream's max class_id
+    rng_pin = random.Random(f"{spec.seed}-pinned-{pinned}")
+    member = ALL_FAMILIES[pinned].make_member(rng_pin, spec.magnitude)
+    pinned_slot = {
+        **member, "slot_index": spec.T - 1, "class_id": pin_cid, "class_size": 1,
+        "class_position": 1, "members_remaining_after": 0, "is_recurring": False,
+        "role": "trap", "rate": pin_rate,
+    }
+    slots = sub_slots + [pinned_slot]
+    meta = {
+        "N": N, "n_hot": spec.n_hot, "n_trap": n_trap, "T": spec.T, "budget": spec.budget,
+        "hot_share": spec.hot_share, "trap_share": spec.trap_share,
+        "guarantee_trap_early": spec.guarantee_trap_early,
+        "want_early": sub_meta["want_early"], "trap_early_realized": sub_meta["trap_early_realized"],
+        "assignment": {**sub_meta["assignment"], pinned: {"role": "trap", "rate": pin_rate}},
+        "pmf": {**sub_meta["pmf"], pinned: pin_rate},
+        "realized_counts": {**sub_meta["realized_counts"], pinned: 1},
+        "seed": spec.seed, "magnitude": spec.magnitude, "pinned_last_trap": pinned,
+    }
+    return slots, meta
 
 
 def build_stochastic_stream(spec: StochasticStreamSpec) -> tuple[list[dict], dict]:
@@ -285,6 +329,8 @@ def build_stochastic_stream(spec: StochasticStreamSpec) -> tuple[list[dict], dic
     (slot_index, class_id, class_size=REALIZED count, class_position, members_remaining_after,
     is_recurring=(role==hot), role, rate). meta carries the family->rate/role assignment, pmf,
     realized counts, and the trap-early conditioning outcome (for the scorer + pi*)."""
+    if spec.pinned_last_trap is not None:
+        return _build_pinned_trap_stream(spec)
     rng = random.Random(spec.seed)
     fams = list(spec.families)
     N, n_hot = len(fams), spec.n_hot
