@@ -44,6 +44,18 @@ RECURRENCE_NOTE = (
     "with their type, and you are not told in advance how many times any type will recur.")
 
 
+def n_types_note(n_types: int) -> str:
+    """A2 arm: discloses the exact number of distinct underlying problem TYPES. Added 2026-07-03:
+    pi*'s Dirichlet-multinomial predictive (alpha+k)/(N*alpha+t) is CONSTRUCTED WITH exact N, so
+    without disclosing N to the model too, the 'same-information' regret comparison against pi* is
+    not actually same-information -- pi* has strictly more information. Non-prescriptive: states the
+    count, not which types are common/rare or how to use the information."""
+    return (f"\n\nAbout the sequence: these problems are drawn from exactly {n_types} distinct "
+            "underlying TYPES (some may recur many times, others may not recur at all). The problems "
+            "are not labeled with their type, and you are not told which type is which or how often "
+            "each will recur.")
+
+
 def problem_prompt(problem: dict, position: int, total: int) -> str:
     keys = ", ".join(problem["keys"])
     return f"""PROBLEM {position} of {total}:

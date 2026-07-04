@@ -1,149 +1,110 @@
 # LLMs Don't Recognize Reusable-Tool Creation as Resource Allocation
 
-**Status:** Active. Last rewrite 2026-07-03 (full consolidation — supersedes the incremental logs below). The headline **evolved** twice: `capability-graded recurrence-recognition` (falsified) → `fail the optimal online VoI policy` (partly right, wrong mechanism) → **the current framing below**, which the transcript analysis forced.
+**Status (2026-07-04): core result CONFIRMED on a clean same-information footing.** A same-information audit added an N-disclosed arm; the headline survived it and got *stronger*. Pre-audit docs preserved in `docs/old/`. Next open thread = Phase 3 fine-tune transfer (§7; demo corpus already built).
 
 ---
 
-## 1. The claim (current)
+## 0. Orientation (read first) — notation, files, conventions
 
-A model that must solve a stream of numeric problems, where a **reusable script can be built once** (fixed write cost) and then **reused for free** on later problems of the same type, under a **scarce write budget**, is facing a **resource-allocation problem**: some types recur (a script pays off on every occurrence), some appear once (a script is wasted), and only *B* of them can get a script. The right behavior is to treat the *B* writes as a scarce budget and spend them on types that will recur.
+**The task.** A model answers a stream of **T** numeric problems one at a time, drawn i.i.d. from **N** distinct problem *types* (a.k.a. classes). It may `write_script` (build a reusable solver — a fixed one-time cost, capped at **B** writes for the whole session) and later `run_script` for free on same-type problems. Some types recur often (**hot**), most appear rarely (**trap**). Optimal play spends the B scarce writes on hot types once they've shown they recur.
 
-**LLMs don't do this. They treat `write_script` as "how I solve this one hard problem," build eagerly on first sight, and never reserve budget — even when told some types recur.** The failure is not that they gather too little information before committing (that was our previous, wrong framing); it is that **they never frame the task as allocation at all.** This is a **recognition/framing failure**, not a value-of-information failure.
+**Key quantities.**
+- **π\*** — the reference optimal policy: an exact finite-horizon belief-state DP (`exact_dp.ExactDP`), symmetric Dirichlet(α=1) prior over the type mix. "Same-information optimum" *only if* the model also knows N (see §2). Reserves budget, builds on the ~2nd sighting.
+- **lateness** — build/keep position minus first sighting (0 = built on first sight = "eager"; ≥1 = waited for recurrence). **first-sight %** — fraction of builds at lateness 0. These are the **lead metrics** (behavioral, robust).
+- **regret** — value(π\*) − value(model), analytic over full realized streams. **Secondary/noisy** at n=12–24 seeds; lead with lateness, not regret level.
+- **traps/seed** — how many of the model's builds were on trap (rarely-recurring) types (wasted budget). π\* itself builds ~0.75 traps/seed here.
+- **a_hand / a_script** — P(model solves a problem correctly *by hand* / *with a correct script*), measured per-model by `a0_oracle_gap.py`. The pool is "uniform-hard" = a_hand≈0 (no closed form; must iterate). a_script feeds the regret cost model.
+- **g** (`guarantee_trap_early`) — fraction of seeds forced to have a trap in the first B slots (g=1 = every seed; stresses eager-vs-wait early). **MAG** — number-magnitude difficulty dial (100 for Haiku/Qwen, 1000 needed to make Opus's pool hand-hard). **m\*** — break-even reuse horizon (build pays iff a type recurs ≥ m\* times).
+- The 8-family uniform-hard pool + all params live in `scripts/creator/tool_disposition_benchmark/` (`stream_builder.py`, `family_kit.py`). Models: **Haiku** = claude-haiku-4-5, **Opus** = claude-opus-4-8, **Qwen** = qwen2.5-coder:{0.5b…32b} (open-weights, for fine-tuning).
 
-**Open question (the next experiment):** is this universal across the capability ladder, or does some model spontaneously recognize the allocation structure?
+**Conventions.** `[[name]]` = a cross-reference to the author's memory notes (not in-repo); the key one, **[[no-auto-reps]]**, means: do NOT launch expensive/multi-seed runs without explicit user go-ahead — propose plan + cost first. All code is under `scripts/creator/tool_disposition_benchmark/`; run with `PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.<module>`.
 
-Positioning: the lab's **recognition axis** (does the model recognize the structure of the task?), not the crowded VoI / premature-commitment / ski-rental slice. Per [[online-investment-novelty-verdict]]: do **not** headline "uniform across capability" (unproven) or "premature commitment" (Mehta owns the phrase).
-
----
-
-## 2. Setup (stochastic design + exact reference)
-
-Full detail in `docs/online-tool-investment-stochastic-design.md` and `docs/same-info-optimal-dp.md`.
-
-- **Streams:** *T* i.i.d. draws from a distribution over *N* types (*B* hot + *N−B* trap). Family↔rate assignment randomized per seed. A consequential-seed knob **g** = P(a trap is forced into the first *B* slots).
-- **Cost model (per Haiku A0):** R=100, λ=0.1; u_hand = −98.7, u_build = 49.2, u_reuse = 80. Building beats hand even single-use, so the real scarcity is the **write budget**, not per-token cost.
-- **Reference π\* = the EXACT finite-horizon belief-state DP** (`exact_dp.py`) — the same-information Bayes-optimal policy. Symmetric Dirichlet(α=1) predictive; canonical state = (built-count-multiset, unbuilt-count-multiset); closed-form budget=0 base case. Made tractable at N=12,T=60 by a **count-cap K**: a K-sweep certified `V(3)=V(4)=V(5)=V(6)` exactly → **cap=3 is exact** (~540k states, ~3s, pure Python). Replaces the retired Whittle relaxation (over-built at N≈12). Wired into the scorer as `exact_pistar_report`. π\* **reserves the first sighting** and builds on recurrence — never builds a type on first sight.
-- **Two-layer metric** (separates policy quality from draw luck — see [[exact-dp-reference-and-poc]]):
-  1. **Behavioral fidelity (luck-free, model-independent):** which policy is the model running? Read straight off the action log (build lateness; is built-set == first-*B* distinct arrivals?). No per-model calibration needed.
-  2. **Expected policy regret (luck-free headline number):** once fidelity pins the policy, price it vs π\* analytically over thousands of streams (tiny SE). Expensive model runs only need enough sessions to pin the policy.
+**Data / compute location (2026-07-04).** Claude A2 runs are LOCAL (`runs/urn_haiku_n-announced/`, `runs/urn_opus_n-announced/`, `runs/arm_a1_announce_n-announced/`). **The Qwen A2 raw run dirs are NOT local — they were produced on an ephemeral H100 box that is now DOWN; only the aggregate numbers in §3 survive.** GPU boxes here are transient (fresh IP each time, no persistent disk); each needs full re-setup — **the complete, verified runbook is `docs/box-setup.md`** (Ollama + concurrency override, model pulls, repo/venv/.env sync, smoke test, launch commands, vLLM for Phase 3, and the "always rsync `runs/` back before releasing the box" rule that we learned the hard way). Re-run Qwen work only if the raw transcripts are needed again.
 
 ---
 
-## 3. What we've established (Haiku)
+## 1. The claim
 
-All on the stochastic design with the exact-DP reference.
+When a stream of numeric problems lets you **build a reusable script once** (fixed cost) and **reuse it free** on later same-type problems, under a **scarce write budget**, the right behavior is to treat the *B* writes as a budget and spend them on types that recur. **LLMs don't frame it that way — they build eagerly on first sight and never reserve.** This is a **recognition/framing failure**, not an inability to allocate: the *same model* allocates competently when the identical decision is posed as a bare urn/balls game, and fails the moment it's dressed as tool-writing.
 
-- **Eager open-loop, 100%.** Across 30 g=1 sessions / 88 builds: **every build at first sight** (lateness 0.000), and **30/30** built-set == first-*B* distinct arrivals. Haiku ≡ "build the first *B* distinct types on sight." Zero exceptions, never reserves. Within-class reuse is **perfect** (1 tool/class, 0 rebuilds) — so the failure is cleanly isolated to **build allocation**, not tool quality.
-- **Regret is distribution-dependent, so it is NOT the headline.** g=1: analytic E[regret] = 1417 ± 40 over 1500 streams (eager traps 1.21 vs π\* 0.50; realized 30-seed 1107 ± 275, consistent). **g=0 control DONE:** under natural draws model traps/seed collapse 1.10 → 0.10 = π\* 0.10; on the uniform-hard pool analytic regret falls g=1 983 → g=0 71. So the big regret number is a **trap-early-conditioning artifact**. The headline is the **open-loop policy itself** (distribution-independent), not the regret magnitude.
-- **Disclosure-immune (A1 announce, n=12).** Told non-prescriptively that some types recur several times and others appear once, Haiku *still* builds 35/35 at first sight (lateness 0.000). Open-loop whether recurrence must be **inferred** (A0) or is **disclosed** (A1).
-- **MECHANISM — recognition/framing, not VoI (transcript analysis).** Haiku's build rationale is *always* per-problem — *"I need to solve X, let me write a script."* It **never** reasons about types recurring, reserving budget, or waiting: "recur" appears 148× but is entirely "recurrence **relation**" (algorithm-speak); "budget" 47× is entirely **retrospective** (*"since I've used up my budget…"* after exhaustion); "reserve/conserve" 0×. It spends its *B* writes greedily on the first hard problems and only *notices* the budget once it's gone. It **reactively** reuses a saved script when a type repeats but **never proactively allocates**. So "doesn't wait for recurrence evidence" is the wrong description — it isn't deliberating about *when* to build at all.
+## 2. Two information conditions (why there are two, and both matter)
 
-### Prior (constructed-design) evidence — consistent, superseded metric
-The earlier hand-constructed recurring+one-off design showed the same behavior across a full Claude ladder (Haiku/Sonnet/Opus): bait rate ~100%, mean lateness 0.00, disclosure-immune. That work established the phenomenon and built the instrument, but used bait/lateness on constructed streams rather than the stochastic design + exact-DP regret; treat it as corroborating, not as the capability result. (Its "uniform across capability" conclusion is **not** carried forward — see §4.)
+The reference policy π\* (`exact_dp.ExactDP`) is constructed knowing the number of distinct types **N** (its Dirichlet-multinomial predictive `(α+k)/(N·α+t)` needs N). The model's information relative to π\* defines two conditions:
 
----
+- **no-N (ecologically realistic).** The model is *not* told N — the real-deployment setting, since an agent never knows the size of the type-space it will face. Regret vs π\*(known-N) is then an **upper bound** on same-information regret (π\* is strictly stronger), and the question is "how close to an N-informed optimum can you get *without* knowing N."
+- **A2 (same-information, N disclosed).** The model *is* told the exact N (`--announce-n`; urn system prompt states "exactly N distinct colors," tool prompt adds `prompts.n_types_note`). Now the model and π\* have identical information, so regret vs π\* is the honest same-information regret, and any residual gap **isolates framing from N-ignorance**.
 
-## 4. What's next — the capability axis (THE experiment)
+The A2 arm was added after we noticed π\* had been given N while the model wasn't (the "audit," 2026-07-03). It did not overturn anything — it sharpened it.
 
-**Question:** does **any** model spontaneously recognize the allocation structure, or is eager open-loop building universal? Operationally: **does build lateness stay 0 as capability rises?**
+## 3. The core result — the abstraction gap (recognition, not competence)
 
-**Why this is #1:** it turns "Haiku does X" into a phenomenon, and it's the one question the neutral setup answers directly with no intervention. Two capability ladders, doing different jobs — **they don't substitute**:
-- **Qwen-Coder ladder = the slope.** Many cheap points on the GPU box ([[oss-gpu-box-access]]), one controlled family, no per-point cost pressure. At small sizes it's *cleaner* than Claude — models can't hand-solve uniform-hard, so building is forced and the only DOF is timing.
-- **Opus = the frontier anchor (non-substitutable).** The universality claim lives or dies at the frontier — a reviewer will say "a frontier model would recognize it," and Qwen-72B can't answer that; Opus can. And our own line says the interesting recognition effects are **frontier phenomena** that the Qwen ladder tops out below ([[creator-frontier-inversion-cross-family]], [[creator-qwen3b-floor-is-curiosity-gate]]). It pays off either way: Qwen flat → Opus upgrades "small models fail" to "everyone fails"; Qwen rising → Opus is the payoff point (does the trend continue or plateau?).
-- **Sonnet dropped** — a redundant mid-ladder point the Qwen sizes already cover.
+Same allocation decision, two framings, identical streams (seeds 2000–2011, uniform-hard N=8, g=1, T=60, B=3), reference = the exact belief-state DP π\*. **Lead metric = lateness / first-sight** (build position vs first sighting); regret is secondary.
 
-**Design:**
-- **Arm:** A0 (neutral prompt). The claim is *spontaneous* recognition, so no disclosure. (A1 already known not to move Haiku; becomes a follow-up only for a model that shows nonzero lateness under A0.)
-- **Pool:** uniform-hard N=8 (`lcg, modpow, continued_frac, crt_solve, josephus, quadratic_map_mod, xorshift_steps, matrix_power_mod`), MAG=100. All a_hand=0 → removes the hand-solvability confound so the *only* DOF is when/which to build.
-- **Params:** T=60, B=3, cap=3, g=1, token_cap=300k, max_tokens=4096.
-- **Seeds:** **shared across all models** (paired design — identical streams, so the only variable is the model). Directories keyed on model (`runs/arm_capability/{model}/seed_X`), seed range shared (e.g. 3000–3011). 12 seeds/model (~36 builds) — fidelity is near-deterministic, so this catches even a ~10% reserve rate; expand only on a signal.
+### Haiku 2×2 — no-N and A2 side by side
 
-**Primary metric — behavioral fidelity, with a 3-way outcome taxonomy** (needed so we don't misread capability as recognition):
-1. **Eager (lateness 0):** built on first sight → the failure.
-2. **Reserved (lateness > 0):** saw the type, chose hand/skip, built on a *later* sighting → the recognition signal.
-3. **Hand-solved throughout (never builds):** capability, *not* recognition — reported separately. On uniform-hard this should be ~0; if a strong model cracks e.g. `josephus` by hand it lands here, and if this creeps up we bump MAG to keep building forced.
+| | urn — no-N | urn — A2 | tool — no-N | tool — A2 |
+|---|---|---|---|---|
+| first-sight | 53% | 28% | 100% | **100%** |
+| lateness | 0.86 | 1.19 | 0.000 | **0.000** |
+| regret vs π\* | 640±285 | **0±344** | 1308±520 | **1633±553** |
+| traps/seed | 0.92 | 0.58 | — | 1.25 (π\* 0.75) |
 
-**Predictions:** flat lateness 0 across all → **universal recognition failure** (clean, strong headline). Lateness rises with scale → recognition **is** capability-graded (different, also-good framing). Higher models hand-solve instead of reserve → capability substitutes for allocation (bump MAG).
+**Reading:**
+1. **Told N, Haiku allocates *perfectly* in the urn** — regret 0, matches π\* exactly. It provably *has* the competence.
+2. **Told the *same* N, Haiku ignores it entirely in the tool task** — 100% first-sight, lateness 0, regret 1633 (N disclosure gave *zero* benefit here — even slightly worse, more traps). The coding framing suppresses allocation reasoning the model demonstrably has.
+3. The old "partial gap" reading (urn regret 640, nonzero) was an artifact of *urn-side* N-ignorance. Remove it (A2) and the dissociation is **clean**: optimal in one framing, fully open-loop in the other, same information.
 
-**Scope — fidelity only.** The regret/π\* layer needs per-model A0 constants (R,λ,C,r,h); we only have Haiku's. Defer per-model A0 + regret to a small Phase 2 (~$5/model), run only if fidelity shows something worth pricing.
+### Opus urn — near-optimal, robust to the audit
 
-**Cost:** Haiku fresh A0/uniform-hard ~$6 (existing Haiku runs are A1 or the N=12 pool — not strictly comparable, so re-run for a clean shared-seed anchor); Opus 12× ~$2.5 ≈ $30; Qwen ladder ~free on the GPU box (wall-clock only). Spend-guarded + resumable (cached seeds free), hard cap ~$55.
-
-**Harness:** generalize `arm_a1_announce.py` → `arm_capability.py`: `--model` arg, `set_profile(model)`, per-model price multipliers in `cost_of` (Haiku 1/5/0.1/1.25 → Sonnet 3/15/0.3/3.75 → Opus 5/25/0.5/6.25), `announce_recurrence=False`, shared seeds, per-model dirs, fidelity report per model + a comparison table. Qwen runs via the Ollama/OSS path on the A10 box.
-
----
-
-## 4b. Abstraction-gap control — IN PROGRESS (result of first run INVALIDATED)
-
-The "urn/balls" isomorph (`urn_session.py`, `runs/urn_haiku/`): the byte-identical decision to the tool task, stripped of the tool cover story. Balls of clear colors are drawn from the SAME stochastic streams (paired by seed 3000–3011, uniform-hard N=8, g=1, T=60, B=3); KEEP collects the current ball + all future same-color (= build + reuse), PASS/never-keep scores 0 (= hand-solve at a_hand 0). Keeps map onto `model_builds`; reference π\* is the same `exact_dp`. A0 information (told T, B; not N or which colors are hot). Interactive turn-by-turn (matches the tool session's online mode).
-
-The first run had an **observation-parity bug** (kept-color recurrences *silently skipped* → gappy < T stream, lost horizon), now **fixed**: kept colors are auto-collected IN PLACE and reported to the model ("another green ball → auto-collected, +1"), and the system prompt states the bag is unchanged and all T draws happen. The model observes exactly the same T-length stream as the tool player — never effectively >T or <T.
-
-**Info condition = A1, not A0.** The urn prompt ("a bag of colored balls; you don't know the counts"; KEEP collects all future same-color) *discloses that colors recur* — so it is A1-equivalent (if anything more disclosing). The matched tool arm is therefore **A1**, and we already have it: the A1 announce run is Haiku, uniform-hard N=8, g=1, T=60, B=3 on seeds 2000–2011 — identical stream params. So the paired comparison runs the urn on the SAME seeds 2000–2011 and scores the existing A1 tool sessions for regret.
-
-**PAIRED result (Haiku, seeds 2000–2011, uniform-hard, A1 disclosure both sides, identical streams; urn $0.12):**
-
-| metric | A1 tool (coding framing) | urn (allocation framing) |
+| | no-N | A2 |
 |---|---|---|
-| first-sight | 100% (35/35) | 53% (19/36) |
-| mean lateness | **0.000** | **0.86** (max 6) |
-| regret vs π\* | **1308 ± 520** | **640 ± 285** |
-| traps/seed | — | 0.92 (π\* 0.75) |
+| first-sight | 8% | 0% |
+| lateness | 1.14 | 1.28 |
+| regret vs π\* | −655±389 | **−685±390** (beats π\*) |
+| traps/seed | 0.33 | 0.33 (π\* 0.75) |
 
-**Read — real but PARTIAL (earlier "H2 confirmed / competence exists" was too strong):** removing the coding framing, on identical streams, roughly HALVES the misallocation (regret 1308→640) and makes Haiku reserve budget (lateness 0→0.86, first-sight 100%→53%); transcripts show genuine frequency-tracking + use of the auto-collect feedback. So framing matters a lot — but it is **not a clean dissociation**: (1) urn regret is 640, not ≈0, and Haiku builds MORE traps than π\* (0.92 vs 0.75), so the tool failure is **partly framing, partly a genuine allocation weakness even in the abstract** (ceiling only partially met). (2) **Regret is noisy + seed-dependent** — urn regret was −30 on seeds 3000–3011 vs +640 on 2000–2011 (both n=12); **lead with LATENESS** (stable: 0.75/0.86 vs tool's 0.000), not the regret level. (3) Even in the urn Haiku sometimes keeps on first sight.
+Opus essentially aces the urn under both conditions (waits for a repeat, near-zero traps). **Do NOT headline "beats π\*."** The negative regret is (a) only ~1.75 SE below 0 at n=12, and (b) possible at all only because π\* is optimal against its *mis-specified* symmetric-Dirichlet prior — the real generator has fixed hot-count + trap-early (g=1) structure the prior doesn't model, so a more trap-averse policy can edge it. **Report as: "reaches the same-information optimum (regret ≈ 0 within noise) while being systematically more trap-averse (0.33 vs π\* 0.75)."** Lead with the behavioral signals (waits, avoids traps), not the regret sign. **Opus's paired tool cell is ASSUMED eager** (prior constructed-design: bait 20/20, lateness 0; shelved pre-publication — see §5). Combined reading: real allocation competence exists (Opus, and Haiku-in-the-urn), and the tool framing squanders it.
 
-**Defensible claim:** the tool/coding framing SUBSTANTIALLY suppresses the allocation reasoning Haiku demonstrably can do — a large partial effect, not a switch.
+### Cross-model urn: competence is a plateau + frontier jump (holds under A2)
+Qwen-Coder 0.5b→32b is a noisy *suboptimal plateau* under **both** conditions — no-N regret ~500–1700; A2 (N disclosed) regret 844/1743/1197/1494/737/216 for 0.5b→32b. Only Opus breaks fully away (beats π\*). **Do NOT claim "widens smoothly with capability"** — flat-then-frontier-jump (matches [[creator-frontier-inversion-cross-family]]).
 
-**Opus urn (seeds 2000–2011, same streams; $0.54)** — urn competence is CAPABILITY-GRADED:
+**The decisive A2 finding: N-disclosure does NOT rescue the Qwen ladder** the way it rescued Haiku (640→0). Told N, Qwen 0.5b–14b stay suboptimal (737–1743); only 32b moves toward optimal (216, lowest, CI brushing 0 — the frontier beginning to show). So **"has latent allocation competence when told N" tracks the frontier: Haiku and Opus have it, the Qwen ladder up to 14b does not, 32b is starting to.** This distinguishes two failure modes — *framing suppression of an existing competence* (Haiku) vs *genuine absence of the competence* (Qwen ≤14b) — see the Qwen-14b 2×2 below.
 
-| metric | Haiku urn | Opus urn |
-|---|---|---|
-| first-sight | 53% | **8%** (3/36) |
-| lateness | 0.86 | **1.14** |
-| regret vs π\* | 640 | **−655 ± 389** (beats π\*) |
-| traps/seed | 0.92 | **0.33** (π\* 0.75) |
+### Qwen-14b 2×2 (the fine-tune target) — genuine incompetence, not suppression
 
-Opus essentially aces the urn — waits for a repeat before keeping, keeps almost no traps (0.33 ≪ π\*'s 0.75), and beats π\* on realized g=1 streams by being more trap-averse than the Bayes-optimum. **Ceiling check strongly passes for Opus** (unlike Haiku's partial pass), so for Opus the abstraction-gap is a *clean* dissociation-in-waiting. **This reframes/subsumes the (crowded) capability axis:** if Opus is eager in the *tool* task (prior constructed-design: bait 20/20, lateness 0), the recognition gap *widens* with capability — the stronger model has MORE allocation competence for the tool framing to suppress. The claim becomes "tool framing suppresses allocation reasoning even in a model that demonstrably has it," which the urn supplies the competence baseline for. Caveats: regret noisy (don't headline −655; lead with first-sight 8% / traps 0.33); **no paired Opus tool baseline yet** (need Opus A1 tool on seeds 2000–2011, ~$6, to complete the Haiku/Opus × urn/tool 2×2).
+| Qwen-14b | urn no-N | urn A2 | tool no-N | tool A2 |
+|---|---|---|---|---|
+| lateness | 0.17 | 0.36 | 0.043 | 0.125 |
+| regret vs π\* | 491 | 737 | 3268 | 2934 |
+| first-sight | — | 76% | 96% | 88% |
 
-Design caveats / next: R0 removes three things at once (surface, act-conflation, computation load) — R1 (declarative-lock-in) isolates which, deferred; Opus A1 tool run completes the paired 2×2; more seeds for a stable regret level. See [[abstraction-gap-urn-haiku]].
+Unlike Haiku, N-disclosure barely moves 14b anywhere: urn stays suboptimal (737), tool stays eager (2934, positive regret on all 12 seeds). **14b lacks the allocation policy in both framings** — the clean "codes fine (a_script 0.83), allocates badly, and it's not N-ignorance" profile the fine-tuning experiment (§6) targets: teach a competence it demonstrably doesn't have, then test urn learning + tool transfer.
 
-## 5. Deferred experiments (do NOT run without go-ahead — [[no-auto-reps]])
+## 4. Mechanism — recognition/framing, not value-of-information
+Transcript analysis (tool sessions): Haiku's build rationale is *always* per-problem ("I need to solve X, let me write a script"). "recur" = "recurrence *relation*" (algorithm-speak); "budget" appears only *retrospectively* ("since I've used up my budget"); "reserve/conserve" = 0×. It reactively reuses a saved script when a type repeats but never *proactively* allocates — even when told N. The A2 tool result (N known, still 100% eager) is the quantitative counterpart: it isn't deliberating about *when* to build at all.
 
-- **Cost-regime / m\* sweep.** Vary R/λ so building is *not* a per-instance win (m\*>1); show the eager failure persists where "build-everything" is genuinely wrong — kills the degenerate-cost critique. Mostly analytic, ~$10. *(The other original "existential check"; run alongside or after the capability axis.)*
-- **Framing / allocation intervention — DEMOTED.** Previously slated as central; now optional depth-probe. Rationale: the current prompt is **already fair and method-neutral** and supplies all the information (scarce persistent scripts), and the model fails it — so the recognition failure stands on the neutral prompt with no intervention. **F2 (prescriptive "wait until a type recurs") is cheating** (tests instruction-following, not disposition) — drop it. **F1 (non-prescriptive allocation framing)** has one narrow use: distinguishing "recognition gap, fixable by framing" from "robust inability" — but its "fixes it" branch *softens* the claim, so it's a later depth-probe, not a priority.
-- **Demonstration / few-shot.** Does showing the wait-then-build policy transfer? ~$10.
-- **Fine-tuning Qwen + held-out generalization eval.** Strongest mitigation and the reason Qwen is the platform, but contingent on the above; value is entirely in generalizing to held-out families/configs (else circular). Expensive; defer.
-- **Robustness batch (cheap):** prompt-framing sensitivity (neutral vs tool-encouraging — framing dominated small models in CREATOR); design-param sensitivity (α, N, T, B), mostly analytic.
-- **Realism bridge (stretch):** demonstrate the failure in a naturalistic tool-use setting (real coding tools / MCP). Best external-validity payoff; new harness, likely argued in prose instead.
+## 5. What's solid vs. pending
+**Solid (measured, clean):** Haiku urn+tool under both no-N and A2; Opus urn under both. The A2 Haiku 2×2 is the airtight same-information proof. a_script calibration (Qwen 0.21→0.96). Instrument (exact-DP cap=3 lossless; harness; scorer; urn isomorph). Novelty verdict (`docs/old/online-tool-investment-related-work.md`).
 
----
+**Pending (do NOT run without go-ahead — [[no-auto-reps]]):**
+- ~~Qwen A2 reruns~~ **DONE (2026-07-03)** — urn ladder + 14b tool, folded into §3.
+- **Fine-tune transfer (Phase 3)** — the main open thread; demo corpus already built (§7 step 1 DONE); see §7.
+- **Paired Opus tool cell** — replace the assumed cell with a measured one on the hardened pool (MAG=1000, josephus pinned-last, continued_frac bounded, drop matrix_power_mod). ~$30; buys rigor not a new finding.
+- R1 rung (declarative lock-in), cost-regime/m\* sweep, more seeds for a stable regret *level*.
 
-## 5b. Related work & novelty (adversarial lit check, 2026-07-03)
+## 6. Positioning (from the adversarial novelty check — `docs/old/online-tool-investment-related-work.md`)
+Lead with the amortization/investment mechanism + the abstraction-gap 2×2 (recognition-vs-competence in the tool-creation domain). Capability axis is CROWDED → secondary. Abstraction-gap is a *borrowed, validated method* in a novel domain; differentiator = **hold computation constant**. Reference is an explicit textbook oracle. **Phrases owned by others — do not headline:** "premature commitment," "budget-aware tool use," "knowing-doing gap," "content effects." Always qualify "regret" as amortization/ski-rental regret.
 
-Five parallel adversarial searches. **Verdict: CLEAR on the core; the defensible contribution is the *conjunction* — three of four ingredients are individually crowded.** Position accordingly.
+## 7. Next steps — Phase 3 fine-tune transfer (the main open thread)
 
-- **Core (tool-building as budget-constrained investment under recurrence) — CLEAR.** No result collision. Neighbors to cite + distinguish: **TroVE** (per-problem Create/Skip/Import, no budget, retrospective), **"Library Learning Doesn't"** (2410.20274 — single-use libraries, but a post-hoc audit, *not* our claim), **LATM** (2305.17126 — owns the amortization *framing*, assumes the decision away), **Calibrate-Then-Act** (2602.16699 — cost-aware when-to-commit, but per-*action* cost not irreversible fixed-cost creation). White space = **irreversible fixed-cost creation × unknown recurrence × scarce build budget × measured as a recognition/allocation failure.**
-- **Recognition mechanism + abstraction-gap control — METHOD NOT NOVEL, domain is.** The paired abstract-vs-embedded design is well-trodden: **2601.23048 "From Abstract to Contextual"** (near-exact, math domain), **Dasgupta content effects** (2207.07051), **GSM-Symbolic** (2410.05229), **LogiQAte** (2602.01132). Frame the control as a *borrowed, validated method* applied to a new domain; our differentiator = **hold computation constant** to isolate framing-as-allocation. Tensions: Dasgupta shows content usually *helps* (we claim it hurts — must engage); **2604.02910** shows abstraction doesn't always dominate → the clean dissociation may not appear. **Pre-register, and verify the abstract urn task is at ceiling before calling the gap recognition.**
-- **Capability axis — CROWDED (most exposed flank).** Cannot claim first-to-show capability-graded tool disposition: **Model-Adaptive Tool Necessity / "knowing-doing gap"** (2605.14038, closest), **SMART** (2502.11435, large models under-use), **Tool-Use Tax** (2605.00136), **BAGEN** (2606.00198), **"When the Tool Decides"** (2606.14476, *opposite* direction — stronger defer more). Direction is contested. Make the capability axis **secondary**, positioned against this disagreement — never "first." (Consistent with our own [[build-proportion-inverse-in-capability]] / [[tool-disposition-inverse-capability]], now with external company.)
-- **Decision-theory reference — no over-claim risk; cite as standard oracle.** An assembly of textbook primitives, not a named problem. Method: exact finite-horizon **belief-state DP** (Bellman 1957; DeGroot 1970; Bertsekas; Kaelbling–Littman–Cassandra 1998). Primitives: rent-or-buy (Karlin–Manasse–McGeoch–Owicki 1994), k-secretary (Kleinberg 2005), Dirichlet–multinomial (DeGroot 1970; Blackwell–MacQueen 1973). Flag Gittins (1979)/Whittle (1988; Weber–Weiss 1990) as related-but-heuristic to justify exact DP. Do **not** name the "claim → collect all future same-type" accrual as a problem or present the DP as a result; note tractability is a property of our small instance. Misattribution guard: 1988 Snoopy Caching = Karlin/Manasse/**Rudolph/Sleator**.
+**Question:** can we *install* the allocation policy Qwen-14b lacks (via SFT on π\*-optimal urn demonstrations) and have it **transfer to the tool framing**? 14b is the right subject because its urn failure is genuine absence, not framing-suppression (§3) — so a gain would be real learning, and a *negative* transfer result (learns the urn, still eager in the tool) is itself a strong finding: it would show the framing gap is a hard wall even for a model freshly taught to allocate.
 
-**Phrases owned by others — do NOT headline:** "premature commitment" (Mehta 2606.22936), "budget-aware tool use" (BATS 2511.17006), "knowing-doing gap" (2605.14038), "content effects" (Dasgupta), "tool overuse"/"self-aware agent" (SMART), "single-use library" (2410.20274), "tool-use tax" (2605.00136); always qualify "regret" as **amortization/ski-rental regret**.
+**All new runs are on the A2 (N-disclosed) protocol** — demonstrations must disclose N, matching the corrected same-information footing.
 
-**Strategic upshot:** lead with the amortization/investment mechanism (the open conjunction); capability axis is secondary vs a contested field; abstraction-gap is a borrowed method in a novel domain; reference is an explicit oracle. Nothing we've *done* collides — the exposure is entirely in the *framing* of the two planned experiments.
+1. **Demo generator (`phase3_demos.py`) — DONE (2026-07-04), both tweaks applied + regenerated.** Redone under A2: both slices disclose N; stream params (N∈{6,8}, T∈{60,80,100}, B/N≈0.25–0.35) fixed so π\* genuinely reserves. Self-test (`--selftest`) confirms **93% of π\* urn commits at k≥2** and the eager control at 0% (clean contrast). Corpus at **`runs/phase3_sft_data/`**: `{urn,tool_bridge}_{pistar,eager}.jsonl` — **170 urn + 6 tool-bridge** sessions per policy. **The two pre-training tweaks are now applied** (2026-07-04): (i) tool-bridge cut 30→6 sessions so it is ~85/15 urn:tool *by token* — measured tool share 16.8% (pistar) / 12.0% (eager), ≈15% averaged over the two arms [tool sessions run ~6× longer than urn, so the old 30 was ~50/50 by token — the doc's earlier "~8 sessions" estimate was too high]; (ii) each URN_VOCAB entry now carries a per-vocab attribute word (ball→color, ticket→material, coin→metal, tile→symbol, gem→kind, card→suit, token→shape) threaded through the prompt + rationales, instead of hard-coding "color" — all 7 words appear ~evenly across the 170 urn sessions. Self-test still green.
+   - *Design note:* on "wait" turns the tool-bridge demo submits the gold answer with no shown work — fine for teaching the build/wait *decision* (we score build-timing, and a_hand≈0 is already in the cost model), but it trains "emit the number" on those turns.
+2. **Two SFT arms + control (LoRA, on a fresh GPU box — see §0 for setup):** treatment = π\* demonstrations; control = eager-policy demonstrations (same volume/format) to rule out "any SFT helps." Serve the fine-tuned model via vLLM (`LOCAL_BACKEND=vllm` branch in `lomekwi/raw_chat.py`, untested this project → smoke-test first). Need the HF checkpoint `Qwen/Qwen2.5-Coder-14B-Instruct` (Ollama GGUF isn't fine-tunable).
+3. **Eval in order:** (a) held-out urn A2 (fresh seeds, disjoint from training seeds 4000/5000-range) — did it learn to allocate off the plateau toward π\*? (b) tool A2 on the paired seeds 2000–2011 — does it transfer, vs the 14b pre-FT baseline (urn A2 737, tool A2 2934)? (c) re-run `a0_oracle_gap` post-FT — a_script may drift, so regret needs recalibrated costs. Lead with lateness/first-sight, not the regret level.
+4. **Optional stronger subject:** 32b (urn A2 216 — already near-frontier) would test transfer in a model that *has* nascent competence; slower to iterate, hold as a follow-up.
 
-## 6. Scope / honest limits
-
-- The claim is about a **specific decision structure** — allocating a scarce, reusable, irreversible build budget under recurrence — not "LLMs are bad at all decision-making."
-- It rests on the reference being well-defined and computed. **Done:** the exact belief-state DP is the same-information optimum, certified lossless at cap=3.
-- Regret is **distribution-dependent** (g=0 defused it). The distribution-independent claim is the **open-loop policy** (fidelity), which is what the capability axis measures.
-
-## 7. Surviving capability signals (secondary)
-
-- **Hand-solvability threshold:** stronger models hand-solve more → fewer builds triggered (same disposition, shifted threshold). Per-model A0: Haiku band m≈10, Sonnet m≈1000.
-- **Tool generality:** stronger models write broader, more reusable tools (Sonnet's `poly_eval_exact`, built for a one-off, reused on 14 problems; Haiku builds narrow single-purpose tools).
-
-## 8. Instrument (built, validated)
-
-`family_kit.py` (exact-integer families, A0-calibrated per model), `stream_builder.py` (`StochasticStreamSpec`), `exact_dp.py` (the reference π\*), `run_stream_session.py` (persistent session, write budget, non-binding token cap), `skirental_scorer.py` (cost model + decision classification + `exact_pistar_report`), `a0_oracle_gap.py` (per-model hand-vs-build calibration), `poc_haiku.py` / `arm_a1_announce.py` (spend-guarded, resumable harnesses; reuse=1.00 confirmed).
-
-**Next step:** build `arm_capability.py` and run the capability axis (Haiku + Opus first for the frontier verdict; Qwen ladder for the slope). Nothing runs without explicit go-ahead.
+**Next actionable step:** the corpus is finalized (both tweaks applied + regenerated 2026-07-04) — next is to request a GPU box (setup in `docs/box-setup.md`) for the LoRA training + eval in (2)–(3). Propose a plan + cost first per [[no-auto-reps]].

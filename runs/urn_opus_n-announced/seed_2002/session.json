@@ -1,0 +1,230 @@
+{
+  "seed": 2002,
+  "model_key": "opus",
+  "kept": {
+    "7": 2,
+    "0": 2,
+    "5": 3
+  },
+  "collected": 28,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 544,
+      "output_tokens": 50,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 635,
+      "output_tokens": 31,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 706,
+      "output_tokens": 39,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 787,
+      "output_tokens": 41,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 869,
+      "output_tokens": 44,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 955,
+      "output_tokens": 74,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 67,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1102,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 181,
+      "cache_read_tokens": 1102,
+      "cache_write_tokens": 141,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 48,
+      "cache_read_tokens": 1243,
+      "cache_write_tokens": 222,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 42,
+      "cache_read_tokens": 1465,
+      "cache_write_tokens": 88,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 91,
+      "cache_read_tokens": 1553,
+      "cache_write_tokens": 82,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 75,
+      "cache_read_tokens": 1635,
+      "cache_write_tokens": 131,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "0": "red",
+    "2": "blue",
+    "5": "green",
+    "7": "yellow",
+    "1": "purple",
+    "4": "orange",
+    "3": "black",
+    "6": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Early in the game with no information yet, but keeping red now locks in all future red balls. Let me gather a little info first before committing.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Still gathering information about which colors are common. Too early to commit.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Still learning the color frequencies. I'll pass a bit longer to identify common colors.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 3,
+      "color": "yellow",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a yellow ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Four distinct colors in four draws \u2014 all appear roughly equal so far. Still gathering info.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "purple",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Draw 5 of 60: a purple ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Five distinct colors in five draws, all singletons so far. Still no clear frequent color to commit to.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 5,
+      "color": "yellow",
+      "class_id": 7,
+      "class_position": 2,
+      "prompt": "Draw 6 of 60: a yellow ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Yellow is the first color to repeat (2 occurrences now). With 54 draws left and yellow showing early strength, keeping it locks in all future yellows. This is a reasonable candidate.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 7,
+      "color": "red",
+      "class_id": 0,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 7: another yellow ball (already kept -> auto-collected, +1).) Draw 8 of 60: a red ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Yellow already paying off (3 total). Red is repeating now (2nd occurrence). With ~52 draws left and red showing a repeat, it's a decent candidate.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 9,
+      "color": "blue",
+      "class_id": 2,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 9: another red ball (already kept -> auto-collected, +1).) Draw 10 of 60: a blue ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I have one keep left, so I should be careful. Blue is on its 2nd occurrence. But I want to make sure I pick a strong color for my final keep. With 50 draws left and blue repeating, it's a candidate, but let me consider \u2014 yellow and red both showed quick repeats. Blue's 2nd appearance at draw 10 is a bit slower.\n\nStill, blue is repeating and I have plenty of draws left. It's a reasonable choice, but I'll hold my last keep briefly to see if a stronger color emerges.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 10,
+      "color": "orange",
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Draw 11 of 60: a orange ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Orange is new (1st occurrence). Not enough evidence. Holding my last keep for a proven frequent color.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 11,
+      "color": "black",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 12 of 60: a black ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Black is the 8th distinct color, first occurrence. No evidence of frequency. Holding.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 12,
+      "color": "green",
+      "class_id": 5,
+      "class_position": 2,
+      "prompt": "Draw 13 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Green is on its 2nd occurrence (draws 3 and 13). That's a fairly slow repeat. With 47 draws left, I want a strong color. Blue also had 2 occurrences. Let me keep watching for a clearer frequent color.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 13,
+      "color": "green",
+      "class_id": 5,
+      "class_position": 3,
+      "prompt": "Draw 14 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Green just repeated again (3rd occurrence: draws 3, 13, 14). Two in quick succession now \u2014 showing strength. With 46 draws left and my last keep, green is a strong candidate.\n\nDECISION: KEEP"
+    }
+  ]
+}

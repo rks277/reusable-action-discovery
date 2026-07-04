@@ -39,6 +39,9 @@ class SessionState:
     #   awareness-vs-enforcement decoupling): the counter hits 0 at `announce_budget` but writes are
     #   only refused at `budget`. None → identical to the old behavior.
     announce_recurrence: bool = False          # awareness arm: disclose the recurring-type structure
+    announce_n_types: int | None = None        # A2 arm: also disclose the exact number of distinct
+    #   types -- pi*'s Dirichlet-multinomial predictive is CONSTRUCTED WITH exact N, so without this
+    #   the "same-information" regret comparison isn't actually same-information (2026-07-03 audit).
 
     scripts: dict[str, str] = field(default_factory=dict)
     cur: int = 0                               # index of the problem currently being solved

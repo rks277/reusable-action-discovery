@@ -30,7 +30,7 @@ def _est_tokens(system: str, messages: list, turn) -> int:
 async def run_session(client: RawChat, model: str, state: SessionState, *,
                       token_cap: int = 200_000, max_tokens: int = DEFAULT_MAX_TOKENS,
                       max_turns: int | None = None, announce_cap: bool = True,
-                      stop_on_budget_exhausted: bool = False) -> dict:
+                      stop_on_budget_exhausted: bool = False, progress_cb=None) -> dict:
     """token_cap is always enforced as a hard ceiling. announce_cap=False ('no-cap' arm) hides it
     from the model: the system prompt omits the budget paragraph and tool results omit
     tokens_remaining — token_cap then acts only as a silent safety ceiling on cost."""
@@ -43,6 +43,9 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     if getattr(state, "announce_recurrence", False):   # awareness arm (appended so system_prompt's
         from scripts.creator.tool_disposition_benchmark.prompts import RECURRENCE_NOTE  # signature
         system += RECURRENCE_NOTE                       # stays 3-arg for the AIME monkeypatch)
+    if getattr(state, "announce_n_types", None) is not None:   # A2 arm: disclose exact N (see
+        from scripts.creator.tool_disposition_benchmark.prompts import n_types_note  # 2026-07-03 audit)
+        system += n_types_note(state.announce_n_types)
 
     messages: list[dict] = [{"role": "user",
                              "content": problem_prompt(state.current(), 1, state.n)}]
@@ -130,6 +133,10 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
             messages.append({"role": "user",
                              "content": problem_prompt(state.current(), state.cur + 1, state.n)})
             presented = state.cur
+
+        if progress_cb is not None:
+            progress_cb(n_turns=n_turns, problem=min(state.cur + 1, state.n), n=state.n,
+                       spent=spent, elapsed=time.time() - t0)
 
     score = state.score()
     return {

@@ -34,16 +34,38 @@ UNIFORM = ["lcg", "modpow", "continued_frac", "crt_solve", "josephus", "quadrati
 N, T, B, MAG, G = len(UNIFORM), 60, 3, 100, 1.0
 
 _ap = argparse.ArgumentParser()
-_ap.add_argument("--model", default="haiku", choices=["haiku", "sonnet", "opus"])
-MODEL_KEY = _ap.parse_known_args()[0].model
-BASE = Path(f"runs/urn_{MODEL_KEY}")
-SEEDS = list(range(2000, 2012))          # 12 -- same streams as the Haiku urn + A1 tool run
-CAP_USD, EST, CONC = 12.0, 0.6, 6
-PALETTE = ["red", "blue", "green", "yellow", "purple", "orange", "black", "white"]
+# --model accepts a Claude key (haiku/sonnet/opus) OR any raw model tag. A tag containing ":"
+# (e.g. "qwen2.5-coder:7b") routes to Ollama via RawChat (set OLLAMA_BASE_URL); local models are
+# free, so pricing/spend-guard are disabled for them.
+_ap.add_argument("--model", default="haiku")
+_ap.add_argument("--conc", type=int, default=None, help="override concurrency (Ollama serializes; use 2-4)")
+_ap.add_argument("--seeds", type=int, nargs="+", default=None, help="override seed list")
+_ap.add_argument("--announce-n", action="store_true",
+                 help="A2 arm: tell the model the exact number of distinct colors N (matches pi*'s "
+                      "own information -- pi*'s Dirichlet-multinomial predictive (alpha+k)/(N*alpha+t) "
+                      "is CONSTRUCTED WITH exact N, so without this flag the 'same-information' "
+                      "regret comparison is not actually same-information; see 2026-07-03 audit)")
+_ARGS = _ap.parse_known_args()[0]
+MODEL_KEY = _ARGS.model
+MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)      # Claude key -> id; else pass the raw tag through
+IS_LOCAL = MODEL_KEY not in CLAUDE                # non-Claude => Ollama/vLLM, free
+ANNOUNCE_N = _ARGS.announce_n
+_safe = MODEL_KEY.replace(":", "_").replace("/", "_")
+BASE = Path(f"runs/urn_{_safe}" + ("_n-announced" if ANNOUNCE_N else ""))
+SEEDS = _ARGS.seeds if _ARGS.seeds else list(range(2000, 2012))  # 12 -- same streams as Haiku/Opus urn
+CAP_USD, EST = 12.0, 0.6
+CONC = _ARGS.conc if _ARGS.conc else (3 if IS_LOCAL else 6)      # Ollama loads one model; keep low
 _PRICES = {"haiku": (1.0, 5.0, 0.10, 1.25), "sonnet": (3.0, 15.0, 0.30, 3.75),
            "opus": (5.0, 25.0, 0.50, 6.25)}       # $/1e6 (in, out, cache_read, cache_write)
-IN, OUT, CR, CW = _PRICES[MODEL_KEY]
+IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))   # local models: no cost
+PALETTE = ["red", "blue", "green", "yellow", "purple", "orange", "black", "white"]
 PAIR_TOOL = MODEL_KEY == "haiku"          # the A1 tool baseline (runs/arm_a1_announce) is Haiku-only
+
+_N_NOTE = (f"There are exactly {N} distinct colors in the bag, but you are not told which colors are "
+          "common or rare, nor how many balls of each color there are; you learn the rates only from "
+          "the draws you have seen.") if ANNOUNCE_N else (
+          "You do not know in advance how many colors there are or how many balls of each color are "
+          "in the bag; you learn only from the draws you have seen.")
 
 SYSTEM = f"""You are playing a game with a bag of colored balls.
 
@@ -65,8 +87,7 @@ If you PASS a ball it is gone and scores nothing. Balls of a color you never kee
 
 Your goal is to MAXIMIZE the total number of balls you collect by the end of the game.
 
-You do not know in advance how many colors there are or how many balls of each color are in the bag; \
-you learn only from the draws you have seen. Decide as each ball appears -- decisions are final.
+{_N_NOTE} Decide as each ball appears -- decisions are final.
 
 For each draw, think briefly (one or two sentences), then end your reply with EXACTLY one line:
 DECISION: KEEP
@@ -81,15 +102,22 @@ def cost_of(turn_usages):
             + sum(t.get("cache_write_tokens", 0) for t in turn_usages) * CW) / 1e6
 
 
-def parse_decision(text: str) -> str:
-    """KEEP / PASS from the model's reply; last explicit DECISION line wins, else scan tail."""
-    hits = re.findall(r"DECISION:\s*(KEEP|PASS)", text or "", re.I)
+def parse_decision(text: str):
+    """Return (decision, how). Robust to small models that emit a bare 'KEEP'/'PASS' + rambling
+    (which often contains the other word, e.g. '...nothing to pass') instead of the DECISION: line.
+    Priority: (1) explicit DECISION: line (last wins); (2) a LEADING KEEP/PASS token; (3) first
+    standalone token anywhere; (4) default PASS. `how` == 'default' flags a true parse failure."""
+    t = (text or "").strip()
+    hits = re.findall(r"DECISION:\s*(KEEP|PASS)", t, re.I)
     if hits:
-        return hits[-1].upper()
-    tail = (text or "").strip().upper()[-40:]
-    if "KEEP" in tail and "PASS" not in tail:
-        return "KEEP"
-    return "PASS"                              # conservative default (also logged as unparsed)
+        return hits[-1].upper(), "tag"
+    m = re.match(r"[\W]*(KEEP|PASS)\b", t, re.I)
+    if m:
+        return m.group(1).upper(), "lead"
+    m2 = re.search(r"\b(KEEP|PASS)\b", t, re.I)
+    if m2:
+        return m2.group(1).upper(), "scan"
+    return "PASS", "default"
 
 
 async def run_one(client, model, seed):
@@ -137,11 +165,12 @@ async def run_one(client, model, seed):
             reply, u = f"DECISION: PASS   [error {type(e).__name__}]", {}
         turn_usages.append(u)
         messages.append({"role": "assistant", "content": reply})
-        dec = parse_decision(reply)
-        if not re.search(r"DECISION:\s*(KEEP|PASS)", reply or "", re.I):
+        dec, how = parse_decision(reply)
+        if how == "default":                       # no KEEP/PASS token at all -> true parse failure
             unparsed += 1
         transcript.append({"slot": s["slot_index"], "color": color[cid], "class_id": cid,
-                           "class_position": pos, "prompt": user, "decision": dec, "reply": reply})
+                           "class_position": pos, "prompt": user, "decision": dec, "how": how,
+                           "reply": reply})
         if dec == "KEEP":
             kept[cid] = pos
             budget_left -= 1
@@ -159,7 +188,7 @@ async def run_one(client, model, seed):
 
 async def main():
     load_dotenv()
-    model = CLAUDE[MODEL_KEY]; BASE.mkdir(parents=True, exist_ok=True)
+    model = MODEL_STR; BASE.mkdir(parents=True, exist_ok=True)
     client = RawChat()
     cumulative = 0.0; inflight = 0; idx = 0; paused = False; lock = asyncio.Lock()
 

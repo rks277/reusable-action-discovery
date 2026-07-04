@@ -9,7 +9,7 @@ describes how it is computed and used. **Implemented** in `exact_dp.py` (`ExactD
 scorer as `skirental_scorer.exact_pistar_report`; validated lossless against a brute-force DP and
 certified exact-at-scale via the count-cap (§6).
 
-Companion to `online-tool-investment-stochastic-design.md` (§ "Reference policy π\*").
+Companion to `online-tool-investment-working-notes.md` (§ "Reference policy π\*").
 
 ---
 

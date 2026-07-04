@@ -1,0 +1,179 @@
+{
+  "seed": 2007,
+  "model_key": "haiku",
+  "kept": {
+    "2": 1,
+    "0": 2,
+    "4": 4
+  },
+  "collected": 31,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 402,
+      "output_tokens": 82,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 517,
+      "output_tokens": 69,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 644,
+      "output_tokens": 93,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 770,
+      "output_tokens": 96,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 899,
+      "output_tokens": 91,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1048,
+      "output_tokens": 119,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1225,
+      "output_tokens": 118,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1376,
+      "output_tokens": 114,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1548,
+      "output_tokens": 122,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "2": "red",
+    "0": "blue",
+    "4": "green",
+    "1": "yellow",
+    "3": "purple",
+    "5": "orange",
+    "7": "black",
+    "6": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I'm starting the game with no information about color frequencies. Red is the first ball, so I have no basis yet to compare it against other colors. However, keeping the first ball is a reasonable opening strategy since I need to keep exactly 3 colors out of 8 possible, and I'll learn about the color distribution as the game progresses.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've now seen red and blue, each appearing once. With 58 draws remaining and 2 keeps left, I should gather more information before committing to another color. Passing here allows me to see the frequency patterns of more colors before deciding which ones are likely to be common.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 3,
+      "color": "green",
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 3: another red ball (already kept -> auto-collected, +1).) Draw 4 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Good - red appeared twice in the first 3 draws, confirming it was worth keeping. Green is a new color appearing at draw 4. I've now seen 3 distinct colors (red, blue, green) with only red appearing multiple times so far. I should continue gathering information before committing my remaining 2 keeps, as I need to identify which colors are likely to be frequent.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "yellow",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Draw 5 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Yellow is a new color appearing at draw 5. I've now seen 4 distinct colors (red, blue, green, yellow) in 5 draws. Red has appeared twice, while blue, green, and yellow have each appeared once. With 55 draws remaining and needing to use 2 more keeps wisely, I should continue observing to identify which colors are more frequent before committing.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 5,
+      "color": "blue",
+      "class_id": 0,
+      "class_position": 2,
+      "prompt": "Draw 6 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Blue has now appeared twice (draws 2 and 6), matching red's frequency. I've seen 4 colors total with red and blue each appearing twice. With 54 draws left and 2 keeps remaining, I'm starting to see patterns. Blue appears to be reasonably common, and keeping it now locks in all future blue balls while I continue to observe the remaining colors.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 7,
+      "color": "green",
+      "class_id": 4,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 7: another red ball (already kept -> auto-collected, +1).) Draw 8 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Red appeared again at draw 7 (auto-collected, now at +2 from red). Green has appeared twice now (draws 4 and 8). I've seen: red (3 times), blue (2 times, kept), green (2 times), yellow (1 time). With 52 draws left and only 1 keep remaining, I need to be very selective. I should pass on green and observe more colors to identify which remaining color is likely most common before using my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 9,
+      "color": "purple",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 9: another red ball (already kept -> auto-collected, +1).) Draw 10 of 60: a purple ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Red appeared again at draw 9 (auto-collected, now at +3 from red). Purple is a new color at draw 10. So far I've seen: red (4 times), blue (2 times, kept), green (2 times), yellow (1 time), purple (1 time). With 50 draws remaining and only 1 keep left, I need to identify the most frequent remaining color. I should pass on purple and continue observing before committing my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 10,
+      "color": "green",
+      "class_id": 4,
+      "class_position": 3,
+      "prompt": "Draw 11 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Green has now appeared 3 times (draws 4, 8, 11), making it tied with red for frequency so far. Current tally: red (4), green (3), blue (2, kept), yellow (1), purple (1). With 49 draws left and my final keep to use, green is showing strong frequency. However, I should continue observing a bit longer to see if any other colors emerge or if one color clearly dominates before committing my last keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 12,
+      "color": "green",
+      "class_id": 4,
+      "class_position": 4,
+      "prompt": "(Since your last choice: draw 12: another red ball (already kept -> auto-collected, +1).) Draw 13 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Red appeared again at draw 12 (auto-collected, now at +4 from red). Green has now appeared 4 times (draws 4, 8, 11, 13), tying red's frequency. Current tally: red (5), green (4), blue (2, kept), yellow (1), purple (1). Green is clearly one of the more common colors. With 47 draws remaining and only 1 keep left, I should commit to green now to lock in all its remaining balls.\n\nDECISION: KEEP"
+    }
+  ]
+}

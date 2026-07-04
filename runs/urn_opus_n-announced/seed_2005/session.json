@@ -1,0 +1,161 @@
+{
+  "seed": 2005,
+  "model_key": "opus",
+  "kept": {
+    "3": 2,
+    "6": 2,
+    "1": 3
+  },
+  "collected": 49,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 544,
+      "output_tokens": 53,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 637,
+      "output_tokens": 54,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 732,
+      "output_tokens": 38,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 810,
+      "output_tokens": 35,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 885,
+      "output_tokens": 48,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 975,
+      "output_tokens": 48,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 94,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1120,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 67,
+      "cache_read_tokens": 1120,
+      "cache_write_tokens": 169,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "3": "red",
+    "7": "blue",
+    "6": "green",
+    "1": "yellow",
+    "2": "purple",
+    "0": "orange",
+    "4": "black"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "This is the first draw with no information about color frequencies. Keeping now locks in all future red balls, but I should gather a bit of info first.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 1,
+      "color": "red",
+      "class_id": 3,
+      "class_position": 2,
+      "prompt": "Draw 2 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Red has appeared twice in two draws, suggesting it may be a common color. With 58 draws left, keeping red now could collect many.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 2,
+      "color": "blue",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Blue is new; I have no info on its frequency yet. I'll wait to see more.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 3,
+      "color": "green",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Green is new with no frequency info yet. I'll gather more data before committing.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "green",
+      "class_id": 6,
+      "class_position": 2,
+      "prompt": "Draw 5 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Green has now appeared twice, similar early rate to red. With 55 draws left, keeping it could be valuable.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 5,
+      "color": "yellow",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Draw 6 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Yellow is new. I only have 1 keep left, so I should be more selective and save it for a demonstrably common color.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 8,
+      "color": "yellow",
+      "class_id": 1,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 7: another red ball (already kept -> auto-collected, +1); draw 8: another red ball (already kept -> auto-collected, +1).) Draw 9 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Yellow has now appeared twice (draws 6 and 9). Red is proving strong. With 51 draws left and only 1 keep, yellow at ~2 in 9 could still be worthwhile, but I want to make my last keep count on the clearest common color.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 10,
+      "color": "yellow",
+      "class_id": 1,
+      "class_position": 3,
+      "prompt": "(Since your last choice: draw 10: another red ball (already kept -> auto-collected, +1).) Draw 11 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Yellow has now appeared 3 times (draws 6, 9, 11), showing it's fairly common. With 49 draws left and my last keep, this is a solid choice.\n\nDECISION: KEEP"
+    }
+  ]
+}

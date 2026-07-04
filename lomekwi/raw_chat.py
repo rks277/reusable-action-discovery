@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -267,8 +269,12 @@ class RawChat:
             )
             choice = resp.choices[0]
             msg = choice.message
-            return ChatTurn(content=msg.content or "",
-                            tool_calls=_norm_oai_tool_calls(getattr(msg, "tool_calls", None)),
+            content = msg.content or ""
+            tcs = _norm_oai_tool_calls(getattr(msg, "tool_calls", None))
+            if not tcs and prov in ("ollama", "vllm") and tools:
+                known = {t["function"]["name"] for t in tools}
+                tcs, content = _extract_untagged_tool_call(content, known)
+            return ChatTurn(content=content, tool_calls=tcs,
                             finish_reason=getattr(choice, "finish_reason", None))
 
         if prov == "anthropic":
@@ -308,6 +314,81 @@ class RawChat:
                             finish_reason=getattr(resp, "stop_reason", None))
 
         raise ValueError(f"chat_tools: unsupported provider {prov!r}")
+
+
+def _coerce_tool_call_obj(obj, known_names: set[str]) -> dict | None:
+    """Recognizes shapes seen from qwen2.5-coder via Ollama: (A) {"name": <tool>, "arguments": {...}}
+    (the templated shape, sometimes emitted untagged); (B) {<tool>: {...args...}} (tool name used as
+    the dict key directly, args as the value, no "name"/"arguments" wrapper at all); (C) a write_script
+    call where the model puts the SCRIPT's name in the top-level "name" slot (where the tool name
+    belongs) and leaves only "code" nested in "arguments" -- {"name": <script name>, "arguments":
+    {"code": ...}} -- observed 2026-07-03: the model conflates the tool-call envelope with the tool's
+    own (name, code) parameters. "code" is a write_script-only argument in this schema (run_script
+    takes "inputs"), so its presence unambiguously identifies the intended tool."""
+    if not isinstance(obj, dict):
+        return None
+    if obj.get("name") in known_names:                        # shape A
+        name, args = obj["name"], obj.get("arguments", {})
+    elif len(obj) == 1 and next(iter(obj)) in known_names and isinstance(next(iter(obj.values())), dict):
+        name, args = next(iter(obj.items()))                  # shape B
+    elif ("write_script" in known_names and isinstance(obj.get("name"), str)
+          and isinstance(obj.get("arguments"), dict) and "code" in obj["arguments"]
+          and "name" not in obj["arguments"]):
+        name, args = "write_script", {"name": obj["name"], "code": obj["arguments"]["code"]}  # shape C
+    else:
+        return None
+    if isinstance(args, str):                  # some templates put a JSON-encoded string here
+        try:
+            args = json.loads(args)
+        except json.JSONDecodeError:
+            pass
+    return {"id": f"untagged_{uuid.uuid4().hex[:8]}", "name": name,
+            "arguments": json.dumps(args), "args": args if isinstance(args, dict) else {}}
+
+
+_TRIPLE_QUOTED = re.compile(r'"""(.*?)"""', re.DOTALL)
+
+
+def _repair_triple_quoted_strings(content: str) -> str:
+    """qwen2.5-coder sometimes writes a JSON string value as a Python triple-quoted literal (a
+    'code' field opened and closed with three double-quote characters, wrapping raw unescaped
+    newlines) instead of a properly escaped JSON string -- invalid JSON (an empty string
+    immediately followed by a stray quote token), so every write_script call carrying real
+    multi-line code fails to parse. Three consecutive double-quotes are never valid syntax inside
+    well-formed JSON, so replacing each triple-quoted span with a correctly escaped JSON string
+    literal (via json.dumps) can only turn a guaranteed decode failure into a valid parse -- never
+    breaks an already-parseable document."""
+    return _TRIPLE_QUOTED.sub(lambda m: json.dumps(m.group(1)), content)
+
+
+def _extract_untagged_tool_call(content: str, known_names: set[str]) -> tuple[list[dict], str]:
+    """Fallback for local models (observed: qwen2.5-coder via Ollama) whose chat template asks for
+    a <tool_call>{"name":..,"arguments":..}</tool_call> block, but which instead emit the JSON with
+    no tags, wrapped in a Markdown code fence (```json ... ```, sometimes with a stray trailing
+    second fence), and/or with the tool name used as the top-level dict KEY instead of a "name"
+    field -> Ollama's parser only recognizes the exact tagged shape-A form, so `message.tool_calls`
+    comes back empty and the call silently looks like a plain text turn (all reproduced 2026-07-03;
+    chat_tools() had never been exercised against Ollama before, so this is new territory, not a
+    regression). Scans for every '{' and tries a real JSON decode from there (json.JSONDecoder.
+    raw_decode -- correctly handles nested braces, unlike a brace-matching regex, which truncates at
+    the first inner '}'), taking the first result matching a known tool call shape. Only fires for
+    openai/ollama/vllm providers when the SDK found no tool_calls; a real tool_calls response is
+    used as-is and this is never consulted."""
+    content = _repair_triple_quoted_strings(content)
+    dec = json.JSONDecoder()
+    i = content.find("{")
+    while i != -1:
+        try:
+            obj, end = dec.raw_decode(content, i)
+        except json.JSONDecodeError:
+            i = content.find("{", i + 1)
+            continue
+        tc = _coerce_tool_call_obj(obj, known_names)
+        if tc:
+            remaining = (content[:i] + content[end:]).strip()
+            return [tc], remaining
+        i = content.find("{", i + 1)
+    return [], content
 
 
 def _norm_oai_tool_calls(tool_calls) -> list[dict]:
