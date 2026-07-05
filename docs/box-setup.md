@@ -97,9 +97,30 @@ rsync -az $BOX:~/reusable-action-discovery/runs/ ./runs/
 
 ---
 
-## B. vLLM setup (Phase 3 — serving a fine-tuned checkpoint)
+## B. LoRA training + vLLM serving (Phase 3)
 
-For fine-tuning you need the HF checkpoint `Qwen/Qwen2.5-Coder-14B-Instruct` (GGUF isn't trainable).
+### B0. LoRA training (`train_lora.py`) — verified 2026-07-04 on the H100
+Stack (venv): `transformers peft accelerate datasets bitsandbytes` + torch (cu13 build works with the
+box's driver). `train_lora.py` is `--backend hf` (Trainer+PEFT) — **Unsloth was skipped: it pins older
+transformers and fights the 5.13 install.** Two transformers-5.13 quirks are already handled in the
+script (empty-`apply_chat_template([])`; `BatchEncoding` return from `tokenize=True`).
+```bash
+# gate first (free, tokenizer only): template round-trip + tokenized-length dist -> sets max_seq_len
+PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.train_lora --arm pistar --dry-run
+# real run BOTH arms (nohup; ~22 min/arm, ~44 min total on one H100):
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+for arm in pistar eager; do PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.train_lora \
+  --arm $arm --qlora --backend hf; done
+```
+> **VRAM (the OOM lesson):** plain **bf16 LoRA OOMs** at ~step 6 — a single long tool-bridge session
+> (up to ~21k tokens; the smoke test's short sessions miss it) blows past 80 GB on the backward pass
+> (14B bf16 base = 28 GB + 21k-token activations + a ~6-13 GB logits tensor over the 152k vocab).
+> **Fix = `--qlora` (4-bit base, frees ~20 GB) + `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.**
+> This is the spec's "VRAM-tight fallback" and is now the default for this model on an 80 GB card.
+> If it still OOMs, trim `--max-seq-len` to drop the 1-2 longest sessions (keeps most of the bridge).
+> Adapters (~550 MB/arm) land in `runs/phase3_ft/{pistar,eager}/`; **rsync them back before releasing.**
+
+### B1. vLLM serving (serve a fine-tuned checkpoint)
 After LoRA training, merge the adapter and serve the merged weights:
 ```bash
 ssh $BOX 'source .venv/bin/activate && pip install -q vllm && nohup vllm serve <merged-model-path-or-hf-id> \

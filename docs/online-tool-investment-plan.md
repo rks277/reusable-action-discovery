@@ -97,6 +97,8 @@ Lead with the amortization/investment mechanism + the abstraction-gap 2×2 (reco
 
 ## 7. Next steps — Phase 3 fine-tune transfer (the main open thread)
 
+**Full executable spec: `docs/qwen-finetune-transfer-plan.md`** (as-built corpus, LoRA/hyperparameter config, training-script design, loss-masking + chat-template mechanics, merge+serve, eval seeds, cost, stop-points). Summary below.
+
 **Question:** can we *install* the allocation policy Qwen-14b lacks (via SFT on π\*-optimal urn demonstrations) and have it **transfer to the tool framing**? 14b is the right subject because its urn failure is genuine absence, not framing-suppression (§3) — so a gain would be real learning, and a *negative* transfer result (learns the urn, still eager in the tool) is itself a strong finding: it would show the framing gap is a hard wall even for a model freshly taught to allocate.
 
 **All new runs are on the A2 (N-disclosed) protocol** — demonstrations must disclose N, matching the corrected same-information footing.

@@ -25,7 +25,7 @@ from scripts.creator.tool_disposition_benchmark.stream_builder import (
     StochasticStreamSpec, build_stochastic_stream)
 from scripts.creator.tool_disposition_benchmark.run_stream_session import CLAUDE
 from scripts.creator.tool_disposition_benchmark.skirental_scorer import exact_pistar_report
-from scripts.creator.tool_disposition_benchmark.pi_star import Costs
+from scripts.creator.tool_disposition_benchmark.pi_star import Costs, clairvoyant_builds
 from scripts.creator.tool_disposition_benchmark.exact_dp import ExactDP
 
 # same uniform-hard pool as the tool A1/capability runs -> only used to fix N and to draw streams.
@@ -40,6 +40,9 @@ _ap = argparse.ArgumentParser()
 _ap.add_argument("--model", default="haiku")
 _ap.add_argument("--conc", type=int, default=None, help="override concurrency (Ollama serializes; use 2-4)")
 _ap.add_argument("--seeds", type=int, nargs="+", default=None, help="override seed list")
+_ap.add_argument("--temp", type=float, default=None,
+                 help="decoding temperature (0 = greedy; default = provider default ~0.7). Use 0 to "
+                      "read a learned/fine-tuned policy cleanly without sampling noise.")
 _ap.add_argument("--announce-n", action="store_true",
                  help="A2 arm: tell the model the exact number of distinct colors N (matches pi*'s "
                       "own information -- pi*'s Dirichlet-multinomial predictive (alpha+k)/(N*alpha+t) "
@@ -159,7 +162,7 @@ async def run_one(client, model, seed):
                 f"You have {budget_left} keep(s) left. KEEP or PASS?")
         messages.append({"role": "user", "content": user})
         try:
-            reply = await client.chat(model, SYSTEM, messages, max_tokens=512)
+            reply = await client.chat(model, SYSTEM, messages, max_tokens=512, temperature=_ARGS.temp)
             u = dict(client.last_usage or {})
         except Exception as e:
             reply, u = f"DECISION: PASS   [error {type(e).__name__}]", {}
@@ -218,6 +221,18 @@ async def main():
     report()
 
 
+def _balls_collected(slots, builds):
+    """Total balls a policy collects -- the urn's LITERAL objective (what the model is told to
+    maximize): for each kept color, its occurrences from the keep position onward (current + all
+    future same-color); un-kept colors collect nothing. Balls-regret (pi* - model) equals the
+    reuse-deficit ΔM, i.e. the utility regret divided by (100*a_script + 78.7) = 178.7 here -- same
+    signal, more interpretable units (see docs/online-tool-investment discussion)."""
+    sizes = {}
+    for s in slots:
+        sizes[s["class_id"]] = sizes.get(s["class_id"], 0) + 1
+    return sum(sizes[cid] - b + 1 for cid, b in builds.items() if b is not None)
+
+
 def report():
     # costs: uniform-hand a_hand=0 (passing collects nothing); Haiku A0 token constants (same as pi_star)
     costs = Costs(a_hand={f: 0.0 for f in UNIFORM}, h=987, C=308, r=200, R=100.0, lam=0.1,
@@ -227,6 +242,7 @@ def report():
                  N, T, B, alpha=1.0, cap=3)
 
     lateness, first_sight, nb, match, nseed, regs, mtr, ptr, pos_reg, unp = [], 0, 0, 0, 0, [], [], [], 0, 0
+    mballs, pballs, cballs = [], [], []          # balls collected: model / pi* / clairvoyant, per seed
     for seed in SEEDS:
         d = BASE / f"seed_{seed}"
         if not (d / "session.json").exists():
@@ -249,6 +265,10 @@ def report():
         rep = exact_pistar_report(slots, costs, B, N, T, UNIFORM, model_builds, dp=dp)
         regs.append(rep["regret"]); mtr.append(rep["model_traps_built"]); ptr.append(rep["pistar_traps_built"])
         pos_reg += rep["regret"] > 0
+        # balls collected (urn's own objective) vs the SAME pi*; clairvoyant = hindsight best (for context)
+        mballs.append(_balls_collected(slots, model_builds))
+        pballs.append(_balls_collected(slots, dp.policy_builds(slots)))
+        cballs.append(_balls_collected(slots, clairvoyant_builds(slots, B)))
         unp += row.get("unparsed", 0)
         nseed += 1
 
@@ -263,6 +283,15 @@ def report():
         print(f"\n==== URN vs exact pi* (same DP as tool task) ====")
         print(f"  regret mean={st.mean(regs):.0f} +/- {se:.0f}  pos={pos_reg}/{len(regs)}  "
               f"model_traps/seed={st.mean(mtr):.2f}  pi*_traps/seed={st.mean(ptr):.2f}")
+    if pballs:
+        breg = [p - m for p, m in zip(pballs, mballs)]
+        bse = (st.stdev(breg) / len(breg) ** 0.5) if len(breg) > 1 else 0.0
+        mb, pb = st.mean(mballs), st.mean(pballs)
+        pct = 100 * mb / pb if pb else float("nan")
+        print(f"\n==== URN BALLS COLLECTED (urn's own objective; balls-regret = utility regret / 178.7) ====")
+        print(f"  balls/seed: model={mb:.1f}  pi*={pb:.1f}  clairvoyant(hindsight)={st.mean(cballs):.1f}")
+        print(f"  balls-regret vs pi* = {st.mean(breg):.1f} +/- {bse:.1f} /seed  "
+              f"(model collects {pct:.0f}% of pi*'s)")
     # ---- PAIRED A1 tool baseline: same seeds/streams/disclosure, only the coding framing differs.
     #      The A1 announce run is Haiku-only, so this pairing is skipped for other models. ----
     if not PAIR_TOOL:

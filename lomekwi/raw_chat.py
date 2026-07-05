@@ -122,7 +122,8 @@ class RawChat:
         except Exception:
             self.last_usage = None
 
-    async def chat(self, model: str, system: str, messages: list[dict], max_tokens: int = 1200) -> str:
+    async def chat(self, model: str, system: str, messages: list[dict], max_tokens: int = 1200,
+                   temperature: float | None = None) -> str:
         prov = _provider_for(model)
         self.last_usage = None  # reset; stays None if the call/extraction fails
         self.last_debug = None
@@ -174,6 +175,8 @@ class RawChat:
                       "vllm": self._vllm}[prov]()
             oai_msgs = [{"role": "system", "content": system}] + messages
             kwargs = dict(model=model, messages=oai_msgs)
+            if temperature is not None:      # e.g. 0 = greedy, for reading a learned policy cleanly
+                kwargs["temperature"] = temperature
             if prov == "ollama":
                 # Local thinking models (e.g. gemma4) emit a long hidden reasoning
                 # trace that overruns the token cap -> truncated mid-thought ->
