@@ -136,6 +136,44 @@ PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.arm_a1_announc
 > The `LOCAL_BACKEND=vllm` branch in `raw_chat.py` is **untested in this project** — smoke-test with a
 > single seed first. (Older `docs/old/creator-vllm-runbook.md` has more vLLM detail for the MCP harness.)
 
+> **⚠️ vLLM+hermes is a DEAD END for Qwen2.5-Coder TOOL eval (learned 2026-07-05).** The Coder model
+> spontaneously emits tool calls as **markdown ```json**, not the `<tool_call>` XML the `hermes` parser
+> requires — so `tool_choice="auto"` returns `tool_calls=None` (the BASE model fails this too; forced
+> `tool_choice` works, proving it's a parser mismatch not a capability gap). The Ollama path repairs this
+> (`raw_chat.py` `_repair_triple_quoted_strings` / `_coerce_tool_call_obj`), and the pre-FT baselines ran
+> on Ollama — so **eval fine-tuned checkpoints via Ollama too**, for apples-to-apples. vLLM is still fine
+> for TEXT eval (urn) and for training/merge.
+
+### B2. Fine-tuned checkpoint → Ollama (the working tool-eval path)
+Merged bf16 HF checkpoint → GGUF → Ollama model, reusing the stock qwen2.5-coder tool template:
+```bash
+# 1. merge (bf16) — merge_lora.py (NOT train_lora --merge-out for QLoRA runs)
+PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.merge_lora \
+  --adapter runs/phase3_ft/pistar --out runs/phase3_merged/pistar
+# 2. convert to GGUF (llama.cpp; pip install gguf sentencepiece protobuf)
+git clone --depth 1 https://github.com/ggerganov/llama.cpp
+python llama.cpp/convert_hf_to_gguf.py runs/phase3_merged/pistar --outfile ~/pistar-f16.gguf --outtype f16
+# 3. reuse the stock qwen2.5-coder template (has tools rendering + <tool_call> parsing)
+ollama pull qwen2.5-coder:14b
+ollama show --modelfile qwen2.5-coder:14b > ref.modelfile
+{ echo "FROM /home/ubuntu/pistar-f16.gguf"; grep -vE "^FROM |^# " ref.modelfile; } > ft.modelfile
+ollama create qwen-ft-pistar -f ft.modelfile
+# 4. eval via the normal Ollama path (model string has ':' -> raw_chat routes to Ollama)
+PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.arm_a1_announce \
+  --model qwen-ft-pistar:latest --announce-n --conc 4
+```
+> **Known noise (2026-07-05):** the f16 GGUF occasionally emits a malformed tool call (harness
+> `ERR:BadRequestError`/`TypeError`) + a minor `content: "assistant\n\""` template artifact → a few seeds
+> error out and builds/seed drops. Behavioral metrics (lateness/first-sight) still read clean; for a
+> publication-grade tool run, debug the template artifact and consider a Q8/Q4 quant matching the baseline.
+
+### B0b. cuDNN SDPA crash on long sequences (torch 2.12 / cu13)
+Real training (not the short smoke) crashes on the ~21k-token tool_bridge session with
+`RuntimeError: Expected mha_graph.execute(...).is_good()` in the attention BACKWARD. `train_lora.load_hf`
+disables the cuDNN SDPA backend (`torch.backends.cuda.enable_cudnn_sdp(False)`, keeps flash + mem-efficient;
+`attn_implementation="sdpa"`). Eager attention is NOT a fallback — it materializes a 21k×21k score matrix
+and OOMs. If a future stack regresses here, that toggle is the fix.
+
 Tunnel if the box port isn't public: `ssh -N -L 8000:localhost:8000 $BOX` then use `localhost:8000`.
 
 ---

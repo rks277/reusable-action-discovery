@@ -5,8 +5,11 @@ allocation policy. Two arms, identical config, only the labels differ:
   --arm pistar : treatment (exact-DP optimal decisions)
   --arm eager  : control   (build/keep on first sight) -- rules out "any SFT helps"
 
-Data = the two matching jsonl files for the arm (urn_<arm>.jsonl + tool_bridge_<arm>.jsonl), chat format
-{"messages":[...]}. SFT = next-token prediction with the loss masked to ASSISTANT tokens only (system /
+Data = the two matching jsonl files for the arm (urn_<arm>.jsonl + tool_bridge_<arm>.jsonl) PLUS the
+arm-independent tool-calling anchor (anchor_tool.jsonl, option (c) -- single-problem tool sessions that
+preserve tool-calling modality without teaching build timing; --anchor none reproduces the pre-anchor
+corpus), chat format {"messages":[...]}. SFT = next-token prediction with the loss masked to ASSISTANT
+tokens only (system /
 user / tool tokens -> -100); assistant tool_calls ARE trained (they are the decision), tool RESULT turns
 are masked. Masking is done here, backend-agnostically, by prefix-diffing the tokenizer's own chat
 template -- so it is correct for the multi-turn / multiple-assistant-turns-per-problem tool sessions and
@@ -55,7 +58,10 @@ LORA_ALPHA = 64
 LORA_DROPOUT = 0.05
 TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 LR = 1e-4
-EPOCHS = 2
+EPOCHS = 2     # REVERTED 4->2 (2026-07-06): 4 epochs overfit into verbatim phrase-memorization (the
+               # model got stuck repeating a fixed anchor rationale string regardless of prompt/reminder
+               # content -- not a format problem, a collapsed output distribution no prompt can fix).
+               # Back to 2 to test the driver.py FORMAT_REMINDER fix against a non-collapsed checkpoint.
 PER_DEVICE_BATCH = 1
 GRAD_ACCUM = 16
 WARMUP_RATIO = 0.03
@@ -71,13 +77,47 @@ SEQ_LEN_CAPS = [4096, 8192, 16384, 32768]
 
 
 # --------------------------------------------------------------------- data loading
-def load_sessions(arm: str, data_dir: Path) -> list[list[dict]]:
-    """Load + concatenate the arm's urn and tool_bridge slices; normalize tool_call arguments."""
+def load_sessions(arm: str, data_dir: Path, anchor: str = "tool", mechanics: str = "on",
+                  recovery: str = "on") -> list[list[dict]]:
+    """Load + concatenate the arm's urn and tool_bridge slices (+ the arm-independent tool-calling
+    anchor unless anchor='none', + the arm-independent mechanics bridge unless mechanics='off', + the
+    arm-independent error-recovery bridge unless recovery='off'); normalize tool_call arguments. The
+    anchor (option c), mechanics bridge (Design A fix, 2026-07-06), and error-recovery bridge
+    (error-recovery ablation, folded into mechanics bridge training, 2026-07-06 --
+    docs/qwen-finetune-transfer-plan.md) are all shared byte-identically across arms -- they preserve
+    tool-calling modality / long-context mechanics / bad-turn recovery without teaching build timing."""
     sessions: list[list[dict]] = []
     for slice_name in ("urn", "tool_bridge"):
         path = data_dir / f"{slice_name}_{arm}.jsonl"
         if not path.exists():
             raise FileNotFoundError(f"missing corpus file {path} -- run phase3_demos.py first")
+        with path.open() as f:
+            for line in f:
+                sessions.append(_normalize_tool_calls(json.loads(line)["messages"]))
+    if anchor == "tool":
+        path = data_dir / "anchor_tool.jsonl"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"missing {path} -- run phase3_demos.py to regenerate the corpus (it now includes the "
+                "tool-calling anchor), or pass --anchor none")
+        with path.open() as f:
+            for line in f:
+                sessions.append(_normalize_tool_calls(json.loads(line)["messages"]))
+    if mechanics == "on":
+        path = data_dir / "mechanics_bridge.jsonl"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"missing {path} -- run phase3_demos.py to regenerate the corpus (it now includes the "
+                "mechanics bridge), or pass --mechanics off")
+        with path.open() as f:
+            for line in f:
+                sessions.append(_normalize_tool_calls(json.loads(line)["messages"]))
+    if recovery == "on":
+        path = data_dir / "error_recovery.jsonl"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"missing {path} -- run phase3_demos.py to regenerate the corpus (it now includes the "
+                "error-recovery bridge), or pass --recovery off")
         with path.open() as f:
             for line in f:
                 sessions.append(_normalize_tool_calls(json.loads(line)["messages"]))
@@ -108,23 +148,55 @@ def _ids(out) -> list[int]:
     return list(ids)
 
 
-def build_example(messages: list[dict], tokenizer) -> dict:
+def _session_tools(session: list[dict]):
+    """A session is a TOOL session iff any assistant turn carries tool_calls (tool_bridge + anchor). At
+    EVAL the harness passes tools=TOOL_SCHEMAS(), so Qwen's template injects a ~685-token <tools> system
+    block; the urn demos are pure text and pass no tools. Rendering must MATCH eval per session-type, or
+    the FT model is out-of-distribution at eval (the <tools>-block train/eval mismatch that made the FT
+    model revert to CoT with tools= passed — 2026-07-05). Urn sessions -> None (no tools block)."""
+    from scripts.creator.tool_disposition_benchmark.session_state import TOOL_SCHEMAS
+    return TOOL_SCHEMAS() if any(m.get("tool_calls") for m in session) else None
+
+
+def build_example(messages: list[dict], tokenizer, tools=None) -> dict:
     """Tokenize the whole conversation via the tokenizer's chat template and build a label vector that is
     the input ids on ASSISTANT turns and -100 everywhere else. Uses prefix-diffing (Qwen's template is
     prefix-additive: each message renders to <|im_start|>role\\n...<|im_end|>\\n appended to the prefix),
     which is robust to multi-turn / multiple-assistant-turns-per-problem and needs no {% generation %}
-    template support. Returns unbounded ids (caller truncates/drops by measured max_seq_len)."""
+    template support. `tools` (when set) is passed to apply_chat_template so the rendered prompt carries
+    the same <tools> block the eval harness produces — it lands in the (masked) system prefix, so it does
+    not change which tokens are trained. Returns unbounded ids (caller truncates/drops by max_seq_len).
+
+    For ASSISTANT turns, the trained span EXCLUDES the '<|im_start|>assistant\\n' role-declaration
+    prefix -- only the actual content (+ '<|im_end|>\\n') is labeled, computed by diffing against
+    apply_chat_template(messages[:i], add_generation_prompt=True) (the exact prefix a real inference
+    call supplies BEFORE the model generates anything). Getting this wrong (labeling the whole
+    per-message increment, prefix included, as earlier versions of this function did) trains the model
+    to treat '<|im_start|>assistant\\n' as legitimate content it can emit mid-generation -- confirmed
+    2026-07-06 as the likely root cause of the Design A tool-eval collapse: 3 of 5 saved failing
+    checkpoints hallucinate the literal word "assistant" as content in 90%+ of their turns, and the one
+    training slice containing two back-to-back assistant messages with no separating turn
+    (mechanics_bridge's old 'reuse' branch, fixed in phase3_demos.py) is the only place that shape could
+    have been reinforced from an in-context example rather than merely a masking-label artifact."""
     input_ids: list[int] = []
     labels: list[int] = []
     prev: list[int] = []        # empty prefix (transformers refuses apply_chat_template([])); the first
                                 # message renders any template preamble and is masked as non-assistant
     for i, msg in enumerate(messages):
         cur = _ids(tokenizer.apply_chat_template(messages[: i + 1], tokenize=True,
-                                                 add_generation_prompt=False))
+                                                 add_generation_prompt=False, tools=tools))
         seg = cur[len(prev):]
-        prev = cur
+        if msg["role"] == "assistant":
+            gen = _ids(tokenizer.apply_chat_template(messages[:i], tokenize=True,
+                                                      add_generation_prompt=True, tools=tools))
+            assert gen[:len(prev)] == prev and cur[:len(gen)] == gen, \
+                "chat template not prefix-additive under add_generation_prompt -- masking assumption broken"
+            n_prefix = len(gen) - len(prev)     # '<|im_start|>assistant\n' -- NOT trained
+            labels.extend([-100] * n_prefix + seg[n_prefix:])
+        else:
+            labels.extend([-100] * len(seg))
         input_ids.extend(seg)
-        labels.extend(seg if msg["role"] == "assistant" else [-100] * len(seg))
+        prev = cur
     assert len(input_ids) == len(labels)
     return {"input_ids": input_ids, "labels": labels, "attention_mask": [1] * len(input_ids)}
 
@@ -139,23 +211,36 @@ def verify_template(tokenizer, sessions: list[dict]) -> None:
         for m in s for tc in m.get("tool_calls", []) or [])), None)
     assert tool_sess is not None, "no write_script call found in corpus -- cannot verify template"
 
-    rendered = tokenizer.apply_chat_template(tool_sess, tokenize=False, add_generation_prompt=False)
+    tools = _session_tools(tool_sess)
+    rendered = tokenizer.apply_chat_template(tool_sess, tokenize=False, add_generation_prompt=False,
+                                             tools=tools)
     assert "<tool_call>" in rendered, "chat template did not emit <tool_call> blocks for tool_calls"
+    assert "<tools>" in rendered, \
+        "tool session rendered WITHOUT a <tools> block -- will mismatch the eval harness (tools= passed)"
     assert '"name": "write_script"' in rendered or '"name":"write_script"' in rendered, \
         "write_script tool name missing/mangled in rendered template"
     assert '\\"code\\"' not in rendered and '{\\"' not in rendered, \
         "tool_call arguments look double-escaped -- _normalize_tool_calls should have parsed them to dicts"
 
-    ex = build_example(tool_sess, tokenizer)
+    ex = build_example(tool_sess, tokenizer, tools=tools)
     n_tok, n_lbl = len(ex["input_ids"]), sum(1 for x in ex["labels"] if x != -100)
-    print("=== template + masking check (one tool_bridge session) ===")
+    print("=== template + masking check (one tool_bridge session, tools= injected to match eval) ===")
     idx = rendered.find("<tool_call>")
     print("  rendered tool_call snippet:", repr(rendered[idx:idx + 160]))
     print(f"  tokens={n_tok}  trained(assistant) tokens={n_lbl} ({n_lbl / n_tok:.0%})  "
           f"masked={n_tok - n_lbl}")
     # decode a short unmasked span to confirm it is assistant content, not user/tool
     span = [t for t, l in zip(ex["input_ids"], ex["labels"]) if l != -100][:40]
-    print("  first trained tokens decode to:", repr(tokenizer.decode(span)))
+    decoded = tokenizer.decode(span)
+    print("  first trained tokens decode to:", repr(decoded))
+    # REGRESSION GUARD (2026-07-06): the trained span must never start with the chat template's own
+    # role-declaration text ('<|im_start|>assistant\n' renders 'assistant\n' as literal decoded text) --
+    # this is the exact masking bug diagnosed as the likely root cause of the Design A tool-eval collapse
+    # (the model hallucinating the literal word "assistant" as content). If this fires, build_example's
+    # prefix-exclusion logic has regressed.
+    assert not decoded.lstrip().startswith("assistant"), \
+        ("trained span starts with the literal role-declaration text 'assistant' -- build_example is "
+         "training the model to emit '<|im_start|>assistant\\n' as content again (the 2026-07-06 bug)")
     print("  template check OK\n")
 
 
@@ -163,7 +248,7 @@ def verify_template(tokenizer, sessions: list[dict]) -> None:
 def build_and_measure(sessions: list[dict], tokenizer, max_seq_len: int | None) -> tuple[list[dict], int]:
     """Build every example, report the length distribution, choose max_seq_len (unless pinned), and DROP
     sessions longer than it (never truncate)."""
-    examples = [build_example(s, tokenizer) for s in sessions]
+    examples = [build_example(s, tokenizer, tools=_session_tools(s)) for s in sessions]
     lens = sorted(len(e["input_ids"]) for e in examples)
     n = len(lens)
     p = lambda q: lens[min(n - 1, int(q * n))]
@@ -200,8 +285,16 @@ def load_hf(max_seq_len: int, qlora: bool):
     import torch
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
     from transformers import AutoModelForCausalLM, AutoTokenizer
+    # torch 2.12 + cu13: the cuDNN fused-attention backend crashes in the BACKWARD pass on long
+    # sequences ("mha_graph.execute ... got false") -- it survives the short smoke sessions but dies
+    # on the ~21k-token tool_bridge session. Disable ONLY the cuDNN SDPA backend; flash + mem-efficient
+    # stay on (both are memory-efficient, so no OOM -- eager would materialize a 21k x 21k score matrix
+    # and blow past 80 GB). Requires attn_implementation="sdpa" (set below).
+    torch.backends.cuda.enable_cudnn_sdp(False)
+    torch.backends.cuda.enable_flash_sdp(True)
+    torch.backends.cuda.enable_mem_efficient_sdp(True)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-    kw = dict(torch_dtype=torch.bfloat16, device_map="auto")
+    kw = dict(torch_dtype=torch.bfloat16, device_map="auto", attn_implementation="sdpa")
     if qlora:
         from transformers import BitsAndBytesConfig
         kw["quantization_config"] = BitsAndBytesConfig(
@@ -231,7 +324,7 @@ def train(args) -> None:
     else:
         model, tokenizer = load_hf(args.max_seq_len or SEQ_LEN_CAPS[-1], args.qlora)
 
-    sessions = load_sessions(args.arm, args.data_dir)
+    sessions = load_sessions(args.arm, args.data_dir, args.anchor, args.mechanics, args.recovery)
     verify_template(tokenizer, sessions)
     examples, max_seq_len = build_and_measure(sessions, tokenizer, args.max_seq_len)
 
@@ -256,7 +349,13 @@ def train(args) -> None:
         learning_rate=LR, lr_scheduler_type="cosine", warmup_ratio=WARMUP_RATIO,
         weight_decay=WEIGHT_DECAY, max_grad_norm=MAX_GRAD_NORM,
         bf16=True, logging_steps=1, save_strategy="no" if args.smoke else "epoch",
-        eval_strategy="epoch" if ds_val is not None else "no",
+        # eval_strategy left "no" even when ds_val exists (2026-07-06 OOM fix): Trainer's automatic
+        # eval never got its own per_device_eval_batch_size set, so it defaulted to 8 -- batching up to
+        # 8 long mechanics_bridge sessions (~19k tokens) together and casting the padded batch's logits
+        # to fp32 tried to allocate ~73GB. The val split is "sanity only" (see VAL_HOLDOUT above), not
+        # needed for the adapter's actual downstream behavior, so skip it rather than risk re-tuning
+        # eval batch size under a different OOM.
+        eval_strategy="no",
         report_to="none", seed=SEED,
     )
     trainer = Trainer(model=model, args=targs, train_dataset=ds_tr, eval_dataset=ds_val,
@@ -281,8 +380,8 @@ def train(args) -> None:
 def dry_run(args) -> None:
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-    sessions = load_sessions(args.arm, args.data_dir)
-    print(f"arm={args.arm}  sessions={len(sessions)}\n")
+    sessions = load_sessions(args.arm, args.data_dir, args.anchor, args.mechanics, args.recovery)
+    print(f"arm={args.arm}  anchor={args.anchor}  mechanics={args.mechanics}  sessions={len(sessions)}\n")
     verify_template(tokenizer, sessions)
     _, max_seq_len = build_and_measure(sessions, tokenizer, args.max_seq_len)
     print(f"\nDRY-RUN OK. Chosen max_seq_len={max_seq_len}. No model loaded, no GPU used.")
@@ -295,6 +394,19 @@ def main() -> None:
     ap.add_argument("--data-dir", type=Path, default=DATA_DIR)
     ap.add_argument("--out", type=Path, default=None, help="adapter output dir (default runs/phase3_ft/<arm>)")
     ap.add_argument("--merge-out", type=str, default=None, help="also merge adapter into base -> this dir")
+    ap.add_argument("--anchor", choices=["tool", "none"], default="tool",
+                    help="include the arm-independent tool-calling anchor (option c) to preserve "
+                         "tool-calling; 'none' reproduces the pre-anchor corpus")
+    ap.add_argument("--mechanics", choices=["on", "off"], default="on",
+                    help="include the arm-independent mechanics bridge (Design A fix, 2026-07-06) -- "
+                         "policy-neutral long-context tool sessions that re-teach correct tool-call "
+                         "syntax/naming under Design A (N_TOOL=0); 'off' reproduces the pre-fix corpus")
+    ap.add_argument("--recovery", choices=["on", "off"], default="on",
+                    help="include the arm-independent error-recovery bridge (error-recovery ablation, "
+                         "folded into mechanics bridge training, 2026-07-06) -- bad-turn -> "
+                         "harness-nudge -> recovery sessions, teaching the "
+                         "conversational shape driver.py's retry logic creates on a malformed turn; "
+                         "'off' reproduces the pre-ablation (Result 2) corpus")
     ap.add_argument("--backend", choices=["unsloth", "hf"], default="unsloth")
     ap.add_argument("--qlora", action="store_true", help="4-bit QLoRA (fallback if bf16 VRAM is tight)")
     ap.add_argument("--max-seq-len", type=int, default=None, help="pin; default = measured max rounded up")

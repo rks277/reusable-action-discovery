@@ -20,6 +20,25 @@ from scripts.creator.tool_disposition_benchmark.session_state import SessionStat
 MIN_CALL_BUDGET = 256
 DEFAULT_MAX_TOKENS = 2048
 
+# Format-recovery nudge (2026-07-06): fires whenever a turn produces zero parseable tool calls. The
+# system prompt's <tools> block states the <tool_call>{...}</tool_call> wrapper syntax exactly ONCE, at
+# the very start of what can be a 300k-token, 60-problem session -- by problem 5-10 it's far back in
+# context. Symptom observed across several fine-tuned checkpoints: the model knows WHICH tools exist
+# (it never invents a nonexistent tool once actually inside a tool_calls structure) but drifts into
+# base-model surface habits over a long session -- markdown ```json fences, invented pseudo-tags, a
+# near-miss tool name ("submit_answers"), or plain repeated text -- none of which raw_chat's parser can
+# read as a real tool call. The original nudge listed valid tool NAMES but never restated the wrapper
+# SYNTAX, so it couldn't correct a model that had lost the format, only one that forgot the vocabulary.
+# This reminder restates the exact <tool_call> XML the hermes/Ollama parser reads (same string
+# train_lora.verify_template asserts against), so it re-anchors the format at exactly the moment format
+# drift is detected, rather than relying on a single mention at turn 0 to survive the whole session.
+FORMAT_REMINDER = (
+    "Use the tools to proceed. Respond with a REAL tool call -- not plain text, not a markdown code "
+    "block, not an invented tag -- in exactly this form:\n"
+    "<tool_call>\n{\"name\": \"<tool_name>\", \"arguments\": {<json object>}}\n</tool_call>\n"
+    "Available tools: write_script / run_script / list_scripts / read_script / submit_answer."
+)
+
 
 def _est_tokens(system: str, messages: list, turn) -> int:
     n = len(system) + len(json.dumps(messages))
@@ -104,10 +123,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                                  "content": problem_prompt(state.current(), state.cur + 1, state.n)})
                 presented = state.cur
                 continue
-            messages.append({"role": "user", "content":
-                             "Use the tools to proceed (e.g. submit_answer for the current "
-                             "problem): write_script / run_script / list_scripts / read_script / "
-                             "submit_answer."})
+            messages.append({"role": "user", "content": FORMAT_REMINDER})
             continue
         consecutive_no_tool = 0
 

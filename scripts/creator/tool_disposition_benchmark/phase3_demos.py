@@ -7,6 +7,32 @@ transcripts for the bridge fine-tune. Two slices, each available under two label
   - policy="pistar" (treatment): labels = the exact same-info optimum (ExactDP.policy_builds).
   - policy="eager" (control): labels = build-the-first-B-distinct-types-on-sight (pi_star.eager_builds).
 
+Plus one ARM-INDEPENDENT slice (option (c), 2026-07-05 — see plan "resume path"):
+
+  - anchor (`anchor_tool.jsonl`): SINGLE-problem tool-calling sessions in the exact eval vocabulary
+    (write_script/run_script/submit_answer). Their ONLY job is to preserve the base model's
+    tool-calling modality, which the 97%-text urn corpus eroded (the FT model reverted to CoT hand-
+    solving in the tool framing, blocking the transfer eval). A single isolated problem has NO
+    recurrence, so there is no "when to build" decision to demonstrate -- the anchor is provably
+    policy-neutral on the reserve axis (it cannot teach eager-vs-reserve). It is generated ONCE and
+    shared byte-identically by both SFT arms, so it is a matched control that cannot manufacture a
+    pistar-vs-eager difference. Build-heavy by default (ANCHOR_HAND_FRAC=0.0): that biases both arms
+    toward building in the stream eval, which only makes a positive transfer result CONSERVATIVE.
+
+Plus one more ARM-INDEPENDENT slice (mechanics bridge, 2026-07-06 — Design A fix):
+
+  - mechanics_bridge (`mechanics_bridge.jsonl`): REALISTIC full-length tool sessions (real N=8, T=60
+    stream, like the old policy-bearing tool_bridge) but with build TIMING decoupled from recurrence via
+    `random_builds` -- neither always first-sighting (eager) nor always k>=2 (pistar). Needed because
+    Design A (N_TOOL=0, no policy-bearing tool_bridge) removed the model's ONLY training exposure to a
+    PERSISTENT 60-problem tool session; the single-problem anchor's very different framing ("PROBLEM 1
+    of 1") could not substitute, and the FT model hallucinated the tool name as "submit_answers" (never
+    registered) + stopped emitting `<tool_call>` wrappers under the real eval framing, confirmed NOT a
+    base-model issue. mechanics_bridge re-teaches correct long-context tool syntax/naming/persistence
+    while remaining policy-neutral: build timing is balanced between k=1 and k>=2 by construction (not
+    left to chance), so it cannot teach a reserve-vs-eager correlation either way. Arm-independent, like
+    the anchor.
+
 A2 PROTOCOL (2026-07-03 audit): both slices DISCLOSE the exact number of distinct types N in the
 system prompt (urn: "exactly N distinct <attr>s", where <attr> is the per-vocab attribute word --
 color/material/metal/symbol/kind/suit/shape; tool: prompts.n_types_note) -- matching pi*'s own
@@ -30,12 +56,14 @@ import random
 import uuid
 from pathlib import Path
 
+from scripts.creator.tool_disposition_benchmark.driver import FORMAT_REMINDER
 from scripts.creator.tool_disposition_benchmark.exact_dp import ExactDP
 from scripts.creator.tool_disposition_benchmark.family_kit import ALL_FAMILIES
 from scripts.creator.tool_disposition_benchmark.pi_star import eager_builds
 from scripts.creator.tool_disposition_benchmark.prompts import (
     RECURRENCE_NOTE, n_types_note, problem_prompt, system_prompt)
 from scripts.creator.tool_disposition_benchmark.run_stream_session import slots_to_problems
+from scripts.creator.tool_disposition_benchmark.session_state import TOOL_SCHEMAS
 from scripts.creator.tool_disposition_benchmark.stream_builder import (
     StochasticStreamSpec, build_stochastic_stream)
 
@@ -302,10 +330,296 @@ def render_tool_bridge_session(N: int, T: int, B: int, seed: int, policy: str) -
             messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
             messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
                 {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
-        else:  # reuse
+            tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
+            messages.append({"role": "assistant", "tool_calls": [tc]})
+        else:  # reuse -- rationale + run_script MUST be ONE assistant message, not two: two separate
+            # assistant-role dicts back-to-back with no intervening tool/user turn never occurs in real
+            # eval (driver.py always emits exactly one assistant dict per turn) and trains the model on
+            # a mid-conversation '<|im_start|>assistant\n' it should never see -- see
+            # docs/qwen-finetune-transfer-plan.md "Mechanics bridge training" diagnosis (2026-07-06).
             name = script_of[s["class_id"]]
-            messages.append({"role": "assistant", "content": rationale})
+            tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
+            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"],
+                         "content": json.dumps({"ok": True, "return_value": gold})})
+        tc = _tc("submit_answer", {"value": gold})
+        messages.append({"role": "assistant", "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+            {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+    return messages
 
+
+# --------------------------------------------------------------------- tool-calling anchor rendering
+# Option (c): single-problem, in-domain, policy-neutral sessions that keep the base model's tool-calling
+# alive under the text-heavy urn corpus. Diversity comes from all 8 families x fresh seeds. A single
+# problem has NO recurrence, so an anchor cannot demonstrate reserve-vs-eager TIMING either way -- but a
+# build-only anchor still teaches "problem -> build on sight" (an eager-flavored per-problem reflex).
+# ANCHOR_HAND_FRAC balances build vs hand-submit so the anchor stays neutral on the act-or-not axis too.
+#
+# DESIGN A (pure transfer test, 2026-07-06): ANCHOR_HAND_FRAC=0.5 (balanced -> modality only, no timing
+# signal) and N_TOOL=0 (see below): the tool vocabulary then carries ZERO reserve-timing signal, so any
+# reserve behavior in the tool eval can ONLY have transferred from the urn. (The 2026-07-05 framing-wall
+# run used ANCHOR_HAND_FRAC=0.0 + N_TOOL=6 -- flip both back to reproduce it.)
+N_ANCHOR = 150
+ANCHOR_HAND_FRAC = 0.5
+ANCHOR_SEED_START = 6000     # disjoint from urn (5000+), tool_bridge (4000+), and eval (2000-2023)
+
+
+def _anchor_problem(fam: str, seed: int) -> dict:
+    """One concrete problem instance of `fam` at MAG=100, in the same dict shape driver.py's
+    problem_prompt consumes (mirrors run_stream_session.slots_to_problems' fields)."""
+    m = ALL_FAMILIES[fam].make_member(random.Random(seed), 100)
+    g = int(m["gold"])
+    return {**m, "idx": 0, "gold": g, "sig_figs": max(1, len(str(abs(g)))), "exact_int": True}
+
+
+def render_anchor_session(fam: str, seed: int, mode: str) -> list[dict]:
+    """A single-problem tool session. mode='build' writes+runs+submits (teaches the full
+    write_script/run_script modality); mode='hand' just submits (lowers the build prior). NO
+    recurrence/N disclosure and no cross-problem state -> nothing about build TIMING is demonstrated.
+    Rationales stay strictly per-problem (never mention reuse/recurrence/budget) to keep it
+    policy-neutral even in the trained assistant text."""
+    prob = _anchor_problem(fam, seed)
+    gold = prob["gold"]
+    # match the tool_bridge convention: token_cap=None (no budget paragraph), n=1, budget=1
+    messages = [{"role": "system", "content": system_prompt(1, 1, None)},
+                {"role": "user", "content": problem_prompt(prob, 1, 1)}]
+    if mode == "hand":
+        tc = _tc("submit_answer", {"value": gold})
+        messages.append({"role": "assistant",
+                         "content": "I'll work this one out directly and answer.",
+                         "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+            {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+        return messages
+    name = f"{fam}_solver"
+    tc = _tc("write_script", {"name": name, "code": FAMILY_CODE[fam]})
+    messages.append({"role": "assistant",
+                     "content": "This needs an exact, large computation -- I'll write a script for "
+                                "it and run it on these inputs.",
+                     "tool_calls": [tc]})
+    messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+        {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
+    tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
+    messages.append({"role": "assistant", "tool_calls": [tc]})
+    messages.append({"role": "tool", "tool_call_id": tc["id"],
+                     "content": json.dumps({"ok": True, "return_value": gold})})
+    tc = _tc("submit_answer", {"value": gold})
+    messages.append({"role": "assistant", "tool_calls": [tc]})
+    messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+        {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+    return messages
+
+
+def generate_anchor(n: int = N_ANCHOR, hand_frac: float = ANCHOR_HAND_FRAC) -> list[list[dict]]:
+    """Arm-INDEPENDENT: fixed seed, no policy argument -> identical bytes for both SFT arms, so the
+    anchor is a matched control that cannot create a pistar-vs-eager difference."""
+    rng = random.Random(24680)
+    out = []
+    for i in range(n):
+        fam = UNIFORM[i % len(UNIFORM)]
+        mode = "hand" if rng.random() < hand_frac else "build"
+        out.append(render_anchor_session(fam, ANCHOR_SEED_START + i, mode))
+    return out
+
+
+# --------------------------------------------------------------------- mechanics bridge (Design A fix,
+# 2026-07-06): realistic full-length tool sessions, policy-neutral on build TIMING (see module docstring).
+MECH_SEED_START = 7000     # disjoint from urn(5000+)/tool_bridge(4000+)/anchor(6000+)/eval(2000-2023)
+N_MECH = 25     # bumped 10->25 (2026-07-06): 10 wasn't enough repetition -- FT model still hallucinated
+                # tool syntax (a "<script>...</script>" pseudo-tag) on later problems in the real 60-
+                # problem eval; testing whether more exposure to the correct write_script/run_script/
+                # submit_answer format in long sessions fixes it before considering a bigger redesign.
+
+
+def random_builds(slots: list[dict], B: int, rng: random.Random) -> dict:
+    """Policy-neutral labels: pick B distinct classes at random (independent of recurrence/arrival
+    order); commit HALF at first sighting (k=1) and HALF at a random later occurrence (k>=2, forced
+    when the class has enough occurrences) -- deterministically balanced, not left to chance, so build
+    timing carries no correlation with recurrence in either direction (not eager, not reserve)."""
+    by_class: dict[int, list[dict]] = {}
+    for s in slots:
+        by_class.setdefault(s["class_id"], []).append(s)
+    class_ids = list(by_class.keys())
+    rng.shuffle(class_ids)
+    builds = {}
+    for i, cid in enumerate(class_ids[:B]):
+        occs = sorted(by_class[cid], key=lambda z: z["slot_index"])
+        if i % 2 == 0 or len(occs) < 2:
+            k = 1                                            # first-sighting half
+        else:
+            k = occs[rng.randrange(1, len(occs))]["class_position"]   # forced k>=2 half
+        builds[cid] = k
+    return builds
+
+
+def _mech_rationale(action: str) -> str:
+    """Policy-neutral rationale text -- NEVER references recurrence, budget-reservation, or
+    first-sighting logic, even though the underlying decision is itself already policy-neutral; this
+    keeps the TRAINED TEXT from leaking a reserve/eager framing too."""
+    if action == "wait":
+        return "I'll work this one out directly."
+    if action == "commit":
+        return "I'll write a script for this one."
+    return "I already have a script for this -- I'll run it again."
+
+
+def render_mechanics_bridge_session(N: int, T: int, B: int, seed: int) -> list[dict]:
+    fams = UNIFORM[:N]
+    slots, _meta = build_stochastic_stream(StochasticStreamSpec(
+        families=fams, n_hot=B, T=T, budget=B, guarantee_trap_early=1.0, magnitude=100, seed=seed))
+    builds = random_builds(slots, B, random.Random(seed + 999983))   # separate rng stream
+    steps = _walk(slots, builds, B)
+    problems = {p["idx"]: p for p in slots_to_problems(slots)}
+
+    system = system_prompt(T, B, None) + RECURRENCE_NOTE + n_types_note(N)
+    messages = [{"role": "system", "content": system}]
+    script_of: dict[int, str] = {}
+    for i, s in enumerate(steps):
+        prob = problems[s["slot_index"]]
+        messages.append({"role": "user", "content": problem_prompt(prob, i + 1, T)})
+        fam, gold = s["family"], prob["gold"]
+        rationale = _mech_rationale(s["action"])
+
+        if s["action"] == "wait":
+            tc = _tc("submit_answer", {"value": gold})
+            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+            messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+                {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+            continue
+
+        if s["action"] == "commit":
+            name = f"{fam}_solver"
+            script_of[s["class_id"]] = name
+            tc = _tc("write_script", {"name": name, "code": FAMILY_CODE[fam]})
+            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+            messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+                {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
+            tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
+            messages.append({"role": "assistant", "tool_calls": [tc]})
+        else:  # reuse -- rationale + run_script MUST be ONE assistant message, not two: two separate
+            # assistant-role dicts back-to-back with no intervening tool/user turn never occurs in real
+            # eval (driver.py always emits exactly one assistant dict per turn) and trains the model on
+            # a mid-conversation '<|im_start|>assistant\n' it should never see -- see
+            # docs/qwen-finetune-transfer-plan.md "Mechanics bridge training" diagnosis (2026-07-06).
+            name = script_of[s["class_id"]]
+            tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
+            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"],
+                         "content": json.dumps({"ok": True, "return_value": gold})})
+        tc = _tc("submit_answer", {"value": gold})
+        messages.append({"role": "assistant", "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+            {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+    return messages
+
+
+def generate_mechanics_bridge(n: int = N_MECH) -> list[list[dict]]:
+    """Arm-INDEPENDENT (like the anchor): no policy argument -> identical bytes for both SFT arms."""
+    out = []
+    for i in range(n):
+        B = 2 if i % 2 == 0 else 3
+        out.append(render_mechanics_bridge_session(8, 60, B, MECH_SEED_START + i))
+    return out
+
+
+# --------------------------------------------------------------------- error-recovery bridge (Phase 3
+# ablation, 2026-07-06 — docs/qwen-finetune-transfer-plan.md "Error-recovery ablation"; folded into
+# mechanics bridge training's corpus): teaches the exact
+# "bad turn -> harness-injected correction -> valid recovery" shapes driver.run_session actually
+# produces, so the model has training exposure to the conversational state its own retry logic creates
+# instead of only ever seeing well-formed turns (every prior slice -- urn, tool_bridge, anchor,
+# mechanics -- is well-formed by construction). Reuses the harness's OWN text verbatim (FORMAT_REMINDER
+# imported from driver.py, error strings hand-matched to session_state.py's exact f-strings) rather than
+# a paraphrase -- the project's standing lesson (verify_template) is that a near-miss format is as bad
+# as no fix at all.
+#
+# Three recovery shapes, matching driver.run_session's three actual error branches:
+#   "reminder"        -- zero parseable tool calls (the 5 patterns Result 2 actually observed: an
+#                        unregistered plural tool name written as plain text, a pseudo-XML tag, empty-
+#                        object repetition, a verbatim anchor-phrase loop, an empty markdown fence) ->
+#                        the literal driver.FORMAT_REMINDER user turn -> a real <tool_call>.
+#   "wrong_name"      -- a well-formed tool_calls entry naming an unregistered tool ("submit_answers",
+#                        the plural hallucination from Result 2, this time as an actual tool call rather
+#                        than plain text) -> driver's own unknown-tool tool-role error -> retry with the
+#                        correct name.
+#   "unknown_script"  -- run_script on a name never write_script'd -> session_state's own "no script
+#                        named" tool-role error -> write_script then run_script then submit_answer.
+# All single-problem (like the anchor): no cross-problem state, so no build-TIMING signal is possible --
+# these sessions can only teach recovery, never reserve-vs-eager.
+RECOVERY_SEED_START = 8000     # disjoint from urn(5000+)/tool_bridge(4000+)/anchor(6000+)/mechanics(7000+)/eval(2000-2023)
+N_RECOVERY = 45
+_RECOVERY_PATTERNS = ["reminder", "wrong_name", "unknown_script"]
+_KNOWN_TOOL_NAMES = sorted(t["function"]["name"] for t in TOOL_SCHEMAS())
+
+# the 5 malformed-content patterns actually observed in Result 2 -- none of these produce a parseable
+# tool_calls structure, so driver.run_session's `if not turn.tool_calls` branch is what fires on all of
+# them (the FORMAT_REMINDER path), regardless of which surface pattern the collapse takes.
+_MALFORMED_CONTENT = [
+    lambda gold: f"I'll record the answer.\nsubmit_answers({{\"value\": {gold}}})",
+    lambda gold: f"<script>\ndef solve(inputs):\n    return {gold}\n</script>",
+    lambda gold: "{}\n{}\n{}",
+    lambda gold: ("This needs an exact, large computation -- I'll write a script for it and run it "
+                  "on these inputs."),
+    lambda gold: "```\n\n```",
+]
+
+
+def _unknown_tool_error(name: str) -> dict:
+    """Mirrors driver.run_session's exact unknown-tool-name branch (tc['name'] not in known_tools)."""
+    return {"ok": False, "error": f"no such tool '{name}'. Available tools: {_KNOWN_TOOL_NAMES}."}
+
+
+def _no_script_error(name: str, known: list[str] = ()) -> dict:
+    """Mirrors session_state.op_run_script's exact 'no script named' branch."""
+    return {"ok": False, "error": f"no script named '{name}'. Available: {sorted(known) or '(none)'}"}
+
+
+def render_error_recovery_session(fam: str, seed: int, pattern: str) -> list[dict]:
+    prob = _anchor_problem(fam, seed)
+    gold = prob["gold"]
+    # single-problem framing, identical convention to the anchor (option c): no N/recurrence
+    # disclosure -> policy-neutral, no recurrence -> no build-timing signal possible.
+    messages = [{"role": "system", "content": system_prompt(1, 1, None)},
+                {"role": "user", "content": problem_prompt(prob, 1, 1)}]
+
+    if pattern == "reminder":
+        bad = _MALFORMED_CONTENT[seed % len(_MALFORMED_CONTENT)](gold)
+        messages.append({"role": "assistant", "content": bad})            # NO tool_calls key -> hits
+        messages.append({"role": "user", "content": FORMAT_REMINDER})     # driver's "no tool call" branch
+        tc = _tc("submit_answer", {"value": gold})
+        messages.append({"role": "assistant",
+                         "content": "Using the tools as instructed.", "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+            {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+        return messages
+
+    if pattern == "wrong_name":
+        bad_tc = _tc("submit_answers", {"value": gold})                   # unregistered plural name,
+        messages.append({"role": "assistant",                             # well-formed args this time
+                         "content": "I'll record the answer.", "tool_calls": [bad_tc]})
+        messages.append({"role": "tool", "tool_call_id": bad_tc["id"],
+                         "content": json.dumps(_unknown_tool_error("submit_answers"))})
+        tc = _tc("submit_answer", {"value": gold})
+        messages.append({"role": "assistant",
+                         "content": "Correcting the tool name.", "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+            {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
+        return messages
+
+    if pattern == "unknown_script":
+        name = f"{fam}_solver"
+        bad_tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})   # never written yet
+        messages.append({"role": "assistant",
+                         "content": "I already have a script for this -- I'll run it.",
+                         "tool_calls": [bad_tc]})
+        messages.append({"role": "tool", "tool_call_id": bad_tc["id"],
+                         "content": json.dumps(_no_script_error(name, known=()))})
+        tc = _tc("write_script", {"name": name, "code": FAMILY_CODE[fam]})
+        messages.append({"role": "assistant",
+                         "content": "It doesn't exist yet -- I'll write it first.", "tool_calls": [tc]})
+        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
+            {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
         tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
         messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"],
@@ -314,7 +628,20 @@ def render_tool_bridge_session(N: int, T: int, B: int, seed: int, policy: str) -
         messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
             {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
-    return messages
+        return messages
+
+    raise ValueError(pattern)
+
+
+def generate_error_recovery(n: int = N_RECOVERY) -> list[list[dict]]:
+    """Arm-independent (like anchor/mechanics): fixed seed, no policy argument -> identical bytes for
+    both SFT arms."""
+    out = []
+    for i in range(n):
+        fam = UNIFORM[i % len(UNIFORM)]
+        pattern = _RECOVERY_PATTERNS[i % len(_RECOVERY_PATTERNS)]
+        out.append(render_error_recovery_session(fam, RECOVERY_SEED_START + i, pattern))
+    return out
 
 
 # --------------------------------------------------------------------- corpus generation
@@ -330,7 +657,8 @@ URN_SEED_START, TOOL_SEED_START = 5000, 4000     # disjoint from eval seeds 2000
 # small. Measured: at N_TOOL=6 the tool token share is ~17% (pistar) / ~12% (eager), ~15% averaged
 # across the two SFT arms; 6 also keeps the B=2/B=3 alternation balanced (3 each). The urn allocation
 # policy is the thing being taught; the tool slice is only a framing bridge.
-N_URN, N_TOOL = 170, 6
+N_URN, N_TOOL = 170, 0     # DESIGN A: N_TOOL=0 -> no tool_bridge reserve demos (those would be a DIRECT
+                           # in-tool install of reserve, not transfer). Was 6 in the framing-wall run.
 
 
 def _pick_B(N: int, rng: random.Random) -> int:
@@ -369,8 +697,39 @@ def write_corpus(out_dir: Path = Path("runs/phase3_sft_data")) -> None:
                 for msgs in sessions:
                     f.write(json.dumps({"messages": msgs}) + "\n")
             toks = [_est_tokens(m) for m in sessions]
-            print(f"  {path}: {len(sessions)} sessions, ~{sum(toks):,} est. tokens "
-                  f"(mean {sum(toks)/len(toks):.0f}/session)")
+            mean = sum(toks) / len(toks) if toks else 0     # tool_bridge is empty under DESIGN A (N_TOOL=0)
+            print(f"  {path}: {len(sessions)} sessions, ~{sum(toks):,} est. tokens (mean {mean:.0f}/session)"
+                  + ("  [empty — DESIGN A: no tool_bridge reserve demos]" if not sessions else ""))
+    # arm-independent tool-calling anchor (option (c)): written once, shared by both SFT arms
+    anchor = generate_anchor()
+    path = out_dir / "anchor_tool.jsonl"
+    with path.open("w") as f:
+        for msgs in anchor:
+            f.write(json.dumps({"messages": msgs}) + "\n")
+    n_build = sum(1 for a in anchor if any(tc["function"]["name"] == "write_script"
+                                           for m in a for tc in m.get("tool_calls", [])))
+    toks = [_est_tokens(m) for m in anchor]
+    print(f"  {path}: {len(anchor)} sessions ({n_build} build / {len(anchor)-n_build} hand), "
+          f"~{sum(toks):,} est. tokens (arm-independent; shared by both SFT arms)")
+    # arm-independent mechanics bridge (Design A fix): written once, shared by both SFT arms
+    mech = generate_mechanics_bridge()
+    path = out_dir / "mechanics_bridge.jsonl"
+    with path.open("w") as f:
+        for msgs in mech:
+            f.write(json.dumps({"messages": msgs}) + "\n")
+    toks = [_est_tokens(m) for m in mech]
+    print(f"  {path}: {len(mech)} sessions, ~{sum(toks):,} est. tokens "
+          f"(arm-independent; shared by both SFT arms; policy-neutral build timing)")
+    # arm-independent error-recovery bridge (error-recovery ablation, folded into mechanics bridge
+    # training's corpus): written once, shared by both SFT arms
+    recovery = generate_error_recovery()
+    path = out_dir / "error_recovery.jsonl"
+    with path.open("w") as f:
+        for msgs in recovery:
+            f.write(json.dumps({"messages": msgs}) + "\n")
+    toks = [_est_tokens(m) for m in recovery]
+    print(f"  {path}: {len(recovery)} sessions, ~{sum(toks):,} est. tokens "
+          f"(arm-independent; shared by both SFT arms; bad-turn -> harness-nudge -> recovery)")
 
 
 # --------------------------------------------------------------------- self-test
@@ -461,6 +820,205 @@ def _selftest_reserve_rate():
             assert frac <= 0.05, f"eager control should be ~all first-sight, got k>=2 {frac:.0%}"
 
 
+def _selftest_anchor():
+    """Option (c) anchor guards: deterministic + arm-independent, correct gold on every submit (and
+    run_script return), policy-neutral prompt (NO recurrence/N disclosure -> teaches no build-timing),
+    known tools only, and the build/hand split matches ANCHOR_HAND_FRAC."""
+    print("\n=== tool-calling anchor guard (option c: modality preservation, policy-neutral) ===")
+    anchor = generate_anchor()
+    assert len(anchor) == N_ANCHOR, (len(anchor), N_ANCHOR)
+
+    def _strip_ids(sessions):     # tool_call ids are random uuids (don't perturb the seeded rng);
+        import copy               # compare structure modulo ids to check determinism/arm-independence
+        s = copy.deepcopy(sessions)
+        for sess in s:
+            for m in sess:
+                for tc in m.get("tool_calls", []):
+                    tc["id"] = ""
+                m.pop("tool_call_id", None)
+        return s
+    assert _strip_ids(generate_anchor()) == _strip_ids(anchor), \
+        "anchor structure must be deterministic + arm-independent (no policy dependence)"
+    known = {"write_script", "run_script", "submit_answer"}
+    n_build = 0
+    for i, msgs in enumerate(anchor):
+        fam = UNIFORM[i % len(UNIFORM)]
+        gold = int(ALL_FAMILIES[fam].make_member(random.Random(ANCHOR_SEED_START + i), 100)["gold"])
+        sysp = msgs[0]["content"]
+        for leak in ("exactly", "distinct", "recur"):     # policy-neutral: no recurrence/N framing
+            assert leak not in sysp, f"anchor {i}: prompt leaks '{leak}' -- not policy-neutral"
+        names = [tc["function"]["name"] for m in msgs for tc in m.get("tool_calls", [])]
+        assert names and set(names) <= known, (i, names)
+        submits = [json.loads(tc["function"]["arguments"])["value"] for m in msgs
+                   for tc in m.get("tool_calls", []) if tc["function"]["name"] == "submit_answer"]
+        assert submits == [gold], (i, submits, gold)
+        if "write_script" in names:
+            n_build += 1
+            rv = [json.loads(m["content"])["return_value"] for m in msgs
+                  if m["role"] == "tool" and "return_value" in m["content"]]
+            assert rv == [gold], (i, "run_script return != gold", rv, gold)
+    hand = N_ANCHOR - n_build
+    assert abs(hand / N_ANCHOR - ANCHOR_HAND_FRAC) < 0.1, (hand, ANCHOR_HAND_FRAC)
+    print(f"  anchor: {N_ANCHOR} sessions, {n_build} build / {hand} hand (hand_frac="
+          f"{ANCHOR_HAND_FRAC}); all submits == gold; prompts policy-neutral; deterministic")
+
+
+def _selftest_mechanics_bridge():
+    """Mechanics-bridge guards: deterministic + arm-independent, correct gold on every submit/run_script
+    return, N disclosed + RECURRENCE_NOTE present (matches the real eval framing), known tools only, and
+    -- the key correctness property -- build timing is NOT degenerate (some commits at k=1 AND some at
+    k>=2), so it cannot be read as teaching either an eager or a reserve policy."""
+    print("\n=== mechanics-bridge guard (Design A fix: policy-neutral long-context tool sessions) ===")
+    mech = generate_mechanics_bridge()
+    assert len(mech) == N_MECH, (len(mech), N_MECH)
+
+    def _strip_ids(sessions):
+        import copy
+        s = copy.deepcopy(sessions)
+        for sess in s:
+            for m in sess:
+                for tc in m.get("tool_calls", []):
+                    tc["id"] = ""
+                m.pop("tool_call_id", None)
+        return s
+    assert _strip_ids(generate_mechanics_bridge()) == _strip_ids(mech), \
+        "mechanics bridge must be deterministic + arm-independent"
+
+    known = {"write_script", "run_script", "submit_answer"}
+    k1 = kge2 = 0
+    for i, msgs in enumerate(mech):
+        B = 2 if i % 2 == 0 else 3
+        N, T = 8, 60
+        slots, _ = build_stochastic_stream(StochasticStreamSpec(
+            families=UNIFORM[:N], n_hot=B, T=T, budget=B, guarantee_trap_early=1.0,
+            magnitude=100, seed=MECH_SEED_START + i))
+        gold_by_slot = {s["slot_index"]: int(s["gold"]) for s in slots}
+        builds = random_builds(slots, B, random.Random(MECH_SEED_START + i + 999983))
+        steps = _walk(slots, builds, B)
+        for s in steps:
+            if s["action"] == "commit":
+                k1 += (s["k"] == 1); kge2 += (s["k"] >= 2)
+
+        assert f"exactly {N} distinct" in msgs[0]["content"], "mechanics system prompt missing N"
+        assert "recurring TYPES" in msgs[0]["content"], "mechanics system prompt missing RECURRENCE_NOTE"
+        names = {tc["function"]["name"] for m in msgs for tc in m.get("tool_calls", [])}
+        assert names <= known, (i, names)
+        submits = [json.loads(tc["function"]["arguments"])["value"] for m in msgs
+                   for tc in m.get("tool_calls", []) if tc["function"]["name"] == "submit_answer"]
+        assert len(submits) == T, (i, len(submits), T)
+        golds_in_order = [gold_by_slot[s["slot_index"]] for s in sorted(slots, key=lambda z: z["slot_index"])]
+        assert submits == golds_in_order, (i, "submit != gold")
+        run_returns = [json.loads(m["content"])["return_value"] for m in msgs
+                       if m["role"] == "tool" and "return_value" in m["content"]]
+        # run_script fires on commit + reuse actions only (not wait) -- mirror _walk exactly rather than
+        # re-deriving from `builds`, since a class's occurrences BEFORE its own commit slot are "wait"
+        # turns with no run_script call.
+        run_gold = [gold_by_slot[s["slot_index"]] for s in sorted(steps, key=lambda z: z["slot_index"])
+                    if s["action"] in ("commit", "reuse")]
+        assert run_returns == run_gold, (i, "run_script return != gold")
+
+    tot = k1 + kge2
+    frac_k1 = k1 / tot if tot else 0
+    print(f"  mechanics: {N_MECH} sessions, {tot} commits (k=1: {k1}, k>=2: {kge2}, "
+          f"{frac_k1:.0%} first-sighting); all submits/run_script == gold; N + RECURRENCE_NOTE present")
+    assert k1 > 0 and kge2 > 0, "build timing is degenerate (all-k=1 or all-k>=2) -- not policy-neutral"
+
+
+def _selftest_error_recovery():
+    """Error-recovery guards: deterministic + arm-independent, correct gold on every submit/run_script
+    return, policy-neutral prompt (single-problem, no N/recurrence disclosure), known tools only ON THE
+    FINAL (recovered) call of each session, all three patterns present and non-degenerate, and -- the
+    key correctness property -- the harness-side text (FORMAT_REMINDER / unknown-tool / no-script
+    errors) matches the actual driver.py / session_state.py strings byte-for-byte, not a paraphrase."""
+    print("\n=== error-recovery guard (bad turn -> harness nudge -> recovery) ===")
+    recovery = generate_error_recovery()
+    assert len(recovery) == N_RECOVERY, (len(recovery), N_RECOVERY)
+
+    def _strip_ids(sessions):
+        import copy
+        s = copy.deepcopy(sessions)
+        for sess in s:
+            for m in sess:
+                for tc in m.get("tool_calls", []):
+                    tc["id"] = ""
+                m.pop("tool_call_id", None)
+        return s
+    assert _strip_ids(generate_error_recovery()) == _strip_ids(recovery), \
+        "error-recovery bridge must be deterministic + arm-independent"
+
+    known = set(_KNOWN_TOOL_NAMES)
+    counts = {p: 0 for p in _RECOVERY_PATTERNS}
+    for i, msgs in enumerate(recovery):
+        fam = UNIFORM[i % len(UNIFORM)]
+        pattern = _RECOVERY_PATTERNS[i % len(_RECOVERY_PATTERNS)]
+        counts[pattern] += 1
+        gold = int(ALL_FAMILIES[fam].make_member(random.Random(RECOVERY_SEED_START + i), 100)["gold"])
+        sysp = msgs[0]["content"]
+        for leak in ("exactly", "distinct", "recur"):     # policy-neutral: no recurrence/N framing
+            assert leak not in sysp, f"error-recovery {i}: prompt leaks '{leak}' -- not policy-neutral"
+
+        # the FINAL submit_answer must carry the gold value, and every submit in the session (there's
+        # exactly one) must be correct -- the point is a correct recovery, not just any recovery.
+        submits = [json.loads(tc["function"]["arguments"])["value"] for m in msgs
+                   for tc in m.get("tool_calls", []) if tc["function"]["name"] == "submit_answer"]
+        assert submits == [gold], (i, pattern, submits, gold)
+
+        names_used = [tc["function"]["name"] for m in msgs for tc in m.get("tool_calls", []) or []]
+        if pattern == "reminder":
+            # msgs[0]=system, msgs[1]=user problem prompt, msgs[2]=the bad assistant turn (NO
+            # tool_calls at all -- the actual collapse shape), msgs[3]=the injected FORMAT_REMINDER
+            assert "tool_calls" not in msgs[2], (i, "reminder pattern's bad turn must carry no tool_calls")
+            assert msgs[3] == {"role": "user", "content": FORMAT_REMINDER}, \
+                (i, "FORMAT_REMINDER text must match driver.py byte-for-byte")
+            assert names_used == ["submit_answer"], (i, names_used)
+        elif pattern == "wrong_name":
+            assert names_used == ["submit_answers", "submit_answer"], (i, names_used)
+            assert "submit_answers" not in known, "test fixture assumption broken: name now registered"
+            err = json.loads(msgs[3]["content"])
+            assert err == _unknown_tool_error("submit_answers"), (i, "unknown-tool error text mismatch")
+        elif pattern == "unknown_script":
+            assert names_used == ["run_script", "write_script", "run_script", "submit_answer"], \
+                (i, names_used)
+            err = json.loads(msgs[3]["content"])
+            assert err == _no_script_error(f"{fam}_solver", known=()), \
+                (i, "no-script error text mismatch")
+            run_returns = [json.loads(m["content"])["return_value"] for m in msgs
+                           if m["role"] == "tool" and "return_value" in m["content"]]
+            assert run_returns == [gold], (i, "run_script return != gold")
+        assert set(names_used) <= known | {"submit_answers"}, (i, "unexpected tool name", names_used)
+
+    for p in _RECOVERY_PATTERNS:
+        assert counts[p] > 0, f"pattern {p} never appears -- degenerate corpus"
+    print(f"  error-recovery: {N_RECOVERY} sessions, pattern counts={counts}; all final submits == gold; "
+          f"FORMAT_REMINDER / unknown-tool / no-script text byte-matched to driver.py/session_state.py")
+
+
+def _selftest_no_consecutive_assistant():
+    """Regression guard (2026-07-06 diagnosis): NO generated session may contain two consecutive
+    assistant-role messages with no intervening tool/user turn. Real eval (driver.run_session) always
+    emits exactly ONE assistant dict per turn; a session that splits one turn's content and tool_calls
+    across two separate assistant messages trains the model on a mid-conversation
+    '<|im_start|>assistant\\n' it will never actually see at inference -- confirmed as the likely root
+    cause of the Design A tool-eval collapse (the literal word "assistant" hallucinated as content in
+    the majority of turns in 3/5 saved failing transcripts; the only corpus slice with this shape was
+    the old `mechanics_bridge` 'reuse' branch, now fixed above)."""
+    print("\n=== no-consecutive-assistant-turns guard (2026-07-06 collapse diagnosis) ===")
+    urn_p, tool_p = generate_corpus("pistar")
+    urn_e, tool_e = generate_corpus("eager")
+    slices = {
+        "urn_pistar": urn_p, "tool_bridge_pistar": tool_p, "urn_eager": urn_e, "tool_bridge_eager": tool_e,
+        "anchor": generate_anchor(), "mechanics_bridge": generate_mechanics_bridge(),
+        "error_recovery": generate_error_recovery(),
+    }
+    for name, sessions in slices.items():
+        for i, msgs in enumerate(sessions):
+            roles = [m["role"] for m in msgs]
+            for j in range(len(roles) - 1):
+                assert not (roles[j] == "assistant" and roles[j + 1] == "assistant"), \
+                    f"{name}[{i}]: back-to-back assistant messages at index {j}/{j+1} -- merge into one"
+        print(f"  {name}: {len(sessions)} sessions, no back-to-back assistant turns")
+
+
 def _selftest_examples():
     print("\n=== example transcripts (A2, T=60 so pi* actually reserves) ===")
     urn_msgs = render_urn_session(URN_VOCAB[0], 8, 60, 3, URN_SEED_START, "pistar")
@@ -482,6 +1040,10 @@ def _selftest():
     _selftest_family_code()
     _selftest_decisions()
     _selftest_reserve_rate()
+    _selftest_anchor()
+    _selftest_mechanics_bridge()
+    _selftest_error_recovery()
+    _selftest_no_consecutive_assistant()
     _selftest_examples()
     print("\nphase3_demos self-test OK")
 

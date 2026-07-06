@@ -1,287 +1,360 @@
-# Qwen fine-tune-transfer experiment — Phase 3 plan (bridge SFT)
+# Qwen fine-tune-transfer experiment — Phase 3 (bridge SFT)
 
 Companion to `online-tool-investment-plan.md` (headline claim; **read its §0 Orientation for notation**)
 and `online-tool-investment-working-notes.md` (Phases 1-2 status). GPU box mechanics live in
-`docs/box-setup.md` (§B is the vLLM serving path). This doc is the **complete, concrete spec** for
-**Phase 3** (fine-tune Qwen2.5-Coder-14b to install the allocation policy) and **Phase 4** (the transfer
-eval). Corpus is built; everything below is meant to be executable once approved. **Stop-points marked
-🛑 need explicit go-ahead per [[no-auto-reps]] before any billable box time.**
+`docs/box-setup.md` (§B0 training, §B2 GGUF→Ollama serving — the only working serving path, see below).
+
+## Status (2026-07-06)
+
+Two SFT attempts, then a **root-cause diagnosis that found and fixed two concrete bugs** — a training
+masking bug and a `mechanics_bridge` corpus-construction bug — that together are a much
+better-supported explanation for Result 2's collapse than either of the two working hypotheses that
+came before it (data-coverage gap; urn/tool objective entanglement). The retrain that applies both
+fixes is called **mechanics bridge training** below (the bug lived in that slice) — this supersedes the
+original error-recovery ablation's rationale, though the error-recovery corpus built for that ablation
+is folded into the same retrain as a smaller, complementary piece.
+
+1. **Original run (2026-07-05) — "framing wall," now judged CONFOUNDED.** SFT installed the reserve
+   policy in the urn and the tool eval came back 100% eager. But the tool-vocabulary training data was
+   ~25:1 eager-flavored (150 build-only anchor sessions vs. 6 policy-bearing `tool_bridge` demos), so
+   "100% eager" may just reflect what the anchor taught, not a real inability to transfer. See **Result 1**.
+
+2. **Design A re-run (2026-07-06) — pure-transfer redesign, tool eval BLOCKED.** Rebuilt the corpus so
+   the tool vocabulary carries **zero** reserve-timing signal (`N_TOOL=0`, balanced anchor), so any
+   reserve behavior at tool eval could only have transferred from the urn. The urn side replicated clean
+   (reserve intact, even strengthened). But getting a *legible tool-call channel* out of the fine-tuned
+   model in a long (60-problem) session turned out to be its own unsolved problem: five different training
+   configs each produced a **different** malformed-output collapse from problem 2 onward, and an eval-time
+   format reminder didn't fix any of them. See **Result 2** — this is the open thread.
+
+3. **Mechanics bridge training (2026-07-06) — two concrete bugs found and fixed, not yet retrained.**
+   Diffing the saved failing transcripts against the training corpus found: (a) a `train_lora.py`
+   masking bug that trained the model to treat the chat template's own `<|im_start|>assistant\n`
+   role-declaration text as legitimate content, and (b) a `mechanics_bridge` corpus bug (its "reuse"
+   branch) that is the only place in the entire corpus with the exact shape needed to reinforce that bug
+   from an in-context example. Both are now fixed; see "**Mechanics bridge training — root-cause
+   diagnosis and fix**" below for the full evidence chain. This is a materially stronger candidate
+   explanation than the coverage-gap hypothesis that motivated the original error-recovery ablation.
+
+**Original working hypothesis for the collapse (superseded, kept for the record):** every training
+session (urn, anchor, mechanics bridge) is well-formed by construction — none of them contain a "turn
+goes wrong → correction → recovery" example. The eval harness's retry-nudge puts the model into exactly
+that never-seen conversational shape the instant one turn fails, and it has no learned behavior there.
+This hypothesis motivated the original error-recovery ablation (below), whose corpus is still included
+going forward, but it's no longer the leading explanation — see the mechanics bridge training section
+for why. This was tested directly: restating the
+exact `<tool_call>` syntax at the point of failure did not help, on two different checkpoints. That rules
+out "the model forgot the format" — it's a distributional gap in training, not missing information.
 
 ## The question
 
-Qwen-14b's tool failure is *genuine absence* of the allocation policy, not framing-suppression (plan §3:
-N-disclosure barely moves it — urn A2 737, tool A2 2934, eager on all 12 seeds). So it's the right
-subject: can we **install** the reserve-then-build policy by SFT on π\*-optimal demonstrations, and does
-it **transfer** from the urn framing into the tool framing? A positive transfer is real learning; a
-*negative* transfer (learns the urn, still eager in the tool) is itself a strong finding — the framing
-gap would be a hard wall even for a model freshly taught to allocate.
+Qwen-14b's tool failure is *genuine absence* of the allocation policy, not framing-suppression
+(N-disclosure barely moves it — urn A2 regret 737, tool A2 regret 2934, eager on all 12 seeds — see
+`online-tool-investment-plan.md` §3). So: can we **install** the reserve-then-build policy by SFT on
+π\*-optimal demonstrations, and does it **transfer** from the urn framing into the tool framing? Positive
+transfer is real learning; negative transfer (learns the urn, still eager in tool) is itself a strong
+finding — a framing gap that survives a model freshly taught to allocate.
 
-## Status coming in
+**Pre-FT baseline (Qwen2.5-Coder-14B-Instruct, the number every result below is measured against):**
+tool A2 lateness 0.125, first-sight 88%, regret 2934±324 (n=12, seeds 2000-2011); urn A2 regret 737
+(seeds 2000-2023).
 
-- **Phase 1 (done):** Qwen-Coder urn slope (0.5b→32b) is a noisy suboptimal plateau, not smooth scaling;
-  competence only appears as a frontier jump at Opus. a_script scales smoothly (0.21→0.96). **FT target =
-  Qwen2.5-Coder-14b** (a_script 0.83, a_hand 0.00 — codes fine, allocates badly).
-- **Phase 2 (done):** Qwen-14b tool baseline is eager (A2: 88% first-sight, lateness 0.125, regret 2934 ±
-  324, n=12 seeds 2000-2011; no-N: 96%/0.043/3268). This is the **pre-FT baseline** every Phase 3/4 result
-  is compared against. urn A2 baseline = 737 (seeds 2000-2023).
-- **Corpus (done 2026-07-04)** — see next section. Both pre-training tweaks applied + regenerated.
+## Corpus (current: Design A)
 
-## The transfer-design decision: bridge SFT, not zero-shot urn-only
+Generated deterministically by `scripts/creator/tool_disposition_benchmark/phase3_demos.py` — no LLM
+calls, no GPU, free, reproducible (`--selftest` guards every invariant below). Current composition for
+the `pistar` arm (345 sessions total):
 
-- **(a) Urn-only SFT → zero-shot tool eval.** Cleanest test of *pure* abstract transfer, but per this
-  project's own thesis (coding framing suppresses recognition even in models that have the skill),
-  plausibly returns a flat zero — informative but not constructive.
-- **(b) Bridge SFT — CHOSEN.** Train on a large, surface-diverse urn corpus (learn the *policy*, not a
-  lexical template) **plus a small tool-framed slice of the same policy**, so the abstraction has a
-  foothold in the target vocabulary (`write_script`/`run_script`/`submit_answer`) without the SFT signal
-  being dominated by tool-domain memorization.
-
-## Corpus — as built (`runs/phase3_sft_data/`)
-
-Generated deterministically by `scripts/creator/tool_disposition_benchmark/phase3_demos.py` from
-`exact_dp.ExactDP.policy_builds` (treatment) / `pi_star.eager_builds` (control) + `family_kit` reference
-code — **no LLM calls, no GPU, free, reproducible.** All four files are **A2** (disclose exact N),
-matching the eval arm.
-
-| file | sessions | est. tokens | notes |
+| slice | file | sessions | purpose |
 |---|---|---|---|
-| `urn_pistar.jsonl` | 170 | ~471k | treatment urn |
-| `tool_bridge_pistar.jsonl` | 6 | ~95k | treatment tool bridge |
-| `urn_eager.jsonl` | 170 | ~679k | control urn |
-| `tool_bridge_eager.jsonl` | 6 | ~93k | control tool bridge |
+| urn | `urn_pistar.jsonl` | 170 | teaches the reserve-then-build policy (text `DECISION: KEEP/PASS`, 7 vocabularies, A2 protocol — discloses N) |
+| tool_bridge | `tool_bridge_pistar.jsonl` | **0** | intentionally empty — see "why zero" below |
+| anchor | `anchor_tool.jsonl` | 150 | arm-independent, policy-neutral tool-calling modality (single-problem, `ANCHOR_HAND_FRAC=0.5` balanced build/hand so it can't teach an eager reflex either) |
+| mechanics bridge | `mechanics_bridge.jsonl` | 25 | arm-independent, policy-neutral long-context sessions (real N=8/T=60 streams, build timing forced half-k=1/half-k≥2 via `random_builds` so it can't teach reserve or eager) |
 
-- **Format:** chat JSONL, `{"messages": [...]}` per line; roles `system` / `user` / `assistant` / `tool`.
-  Assistant turns carry either `content` ending in `DECISION: KEEP|PASS` (urn) or a `tool_calls` array
-  (`write_script` / `run_script` / `submit_answer`). Tool results are `role:"tool"` messages. This is the
-  **exact** protocol `driver.py` / `urn_session.py` present at eval time — the FT model sees no format it
-  wasn't trained on.
-- **Two arms, identical except labels.** Same prompts, streams, seeds, formatting; only the assistant
-  *decisions* differ (π\* reserve-then-build vs eager first-sight). This is what makes the eager arm a
-  clean control for "any SFT helps."
-- **Urn diversity (tweak ii, done):** 7 vocabularies, each with its own attribute word — ball→color,
-  ticket→material, coin→metal, tile→symbol, gem→kind, card→suit, token→shape — threaded through the
-  system prompt + rationales (was hard-coded "color"). All 7 appear ~evenly across the 170 sessions.
-  N∈{6,8}, T∈{60,80,100}, B/N≈0.25-0.35 (empirically the band where π\* genuinely reserves; short-T /
-  generous-B collapses even the exact DP toward eager). urn seeds 5000+.
-- **Tool bridge (tweak i, done):** cut 30→6 sessions so the corpus is **~85/15 urn:tool by TOKEN**
-  (measured tool share 16.8% pistar / 12.0% eager, ≈15% averaged — tool sessions run ~6× longer than urn,
-  so the old 30 was ~50/50 by token). Real eval config (N=8, T=60, MAG=100), B alternating 2/3, **fresh
-  seeds 4000-4005** disjoint from all eval seeds.
-- **Validation guards** (`phase3_demos.py --selftest`, green): FAMILY_CODE == `family_kit` reference
-  (100 samples/family); every rendered decision == recomputed `policy_builds`; every `submit_answer` ==
-  true gold; N disclosed in both prompts; **π\* reserve rate 93% k≥2 / eager 0%** (arms genuinely
-  distinct). Re-run `--selftest` after any regeneration.
-- **Known design limit:** on "wait" turns the tool bridge submits gold with no shown work — fine for
-  teaching the build/wait *decision* (a_hand≈0 is already in the cost model) but it trains "emit the
-  number" on those turns. Acceptable; noted.
+**Why `N_TOOL=0` (no policy-bearing tool_bridge):** the original run's `tool_bridge` (6 sessions,
+π\*-labeled) put a real reserve-timing signal into tool vocabulary — a positive tool-eval result then
+wouldn't distinguish "transferred from the urn" from "directly taught in tool_bridge." Removing it makes
+transfer attribution airtight: nothing in the tool vocabulary demonstrates reserve-vs-eager timing, so
+reserve-in-tool (if it appeared) could only come from the urn.
 
-## Training — concrete spec
+**Why the anchor and mechanics bridge exist:** removing `tool_bridge` also removed the model's only
+exposure to tool-calling at all (anchor) and to a *persistent 60-problem* tool session (mechanics bridge)
+— both needed just to keep the model *capable* of emitting tool calls, without smuggling back a
+reserve-vs-eager signal. Both are **arm-independent** (generated once, shared by both SFT arms) and
+**policy-neutral by construction**: the anchor is single-problem (no recurrence exists to demonstrate
+timing); the mechanics bridge forces a fixed 50/50 split between committing at first sighting and
+committing after a random later sighting, so build timing carries no correlation with recurrence either
+way. `_selftest_anchor` / `_selftest_mechanics_bridge` assert this (gold-correctness, N disclosure,
+non-degenerate k=1/k≥2 split) on every regeneration.
 
-> **STATUS: both arms TRAINED (2026-07-04, H100 209.20.159.76).** `--backend hf` + **`--qlora`** (bf16
-> LoRA OOM'd at step 6 on the ~21k-token tool sessions → 4-bit + `expandable_segments`, see box-setup
-> §B0). r=32/α=64, 2 epochs, max_seq_len=32768 (0 dropped), ~22 min/arm. Converged, eval loss still
-> falling at epoch 2 (no overfit): **pistar** train 0.69→0.04, eval e1 0.122 → e2 0.062; **eager** train
-> 0.48→0.03, eval e1 0.049 → e2 0.031 (eager's simpler policy fits tighter — expected). Adapters saved
-> `runs/phase3_ft/{pistar,eager}/` (~550 MB each) + backed up locally. **NEXT = steps 5-6 (merge/serve/
-> eval), awaiting go-ahead.** Note: QLoRA means merge dequantizes to bf16 for serving; a_script recalib
-> (eval step 3) absorbs any 4-bit numeric drift.
+**Eager control:** not trained in Design A. The "any-SFT-helps" question was already answered by the
+original run's urn 3-way (pistar/eager arms moved in opposite directions), and since the tool vocabulary
+now contains zero reserve signal, transfer attribution doesn't need a control to stay clean — reserve-in-
+tool can only be urn-sourced regardless. Available as a belt-and-suspenders follow-up, not run.
 
-**Base checkpoint:** `Qwen/Qwen2.5-Coder-14B-Instruct` (HF, not the Ollama GGUF — GGUF isn't trainable).
-Download to the box (~28 GB).
+## Training
 
-**Method: LoRA** (not full FT — cheaper, one H100, fast iteration), **bf16** base (14B×2B ≈ 28 GB fits an
-80 GB H100 comfortably; QLoRA 4-bit is the fallback only if VRAM is tight). Gradient checkpointing ON.
+LoRA on `Qwen/Qwen2.5-Coder-14B-Instruct` (HF checkpoint, not the Ollama GGUF — GGUF isn't trainable).
+`r=32, α=64, dropout=0.05`, all linear target modules, `lr=1e-4` cosine, `EPOCHS=2` (see below), QLoRA
+4-bit (`--qlora`, required — bf16 OOMs on long sessions) + `expandable_segments` for the cuDNN allocator.
+Backend is `--backend hf` (Unsloth had transformers-5.13 friction). Exact config: `train_lora.py`.
 
-**Framework:** **Unsloth** primary (`FastLanguageModel`, fastest single-GPU path, has
-`train_on_responses_only`); **HF Transformers + TRL `SFTTrainer` + PEFT** fallback if Unsloth has friction
-with this checkpoint. Both consume the `{"messages":[...]}` files directly.
+**`load_hf` disables the cuDNN SDPA backend** (`torch.backends.cuda.enable_cudnn_sdp(False)`, keeps
+flash/mem-efficient) — torch 2.12/cu13's cuDNN attention backward crashes on long (~20k-token) sessions;
+this is now a standing fix, not a per-run workaround.
 
-**LoRA config (starting point — tune only if a run looks obviously wrong):**
+**`build_example` renders tool sessions WITH `tools=TOOL_SCHEMAS()`** (`_session_tools`), matching what
+the eval harness injects — training without this produced a `<tools>`-block train/eval mismatch that made
+an earlier model reverts to CoT at eval. Urn sessions stay tools-free (they're text, not tool-calling).
 
-| param | value |
-|---|---|
-| rank `r` | 32 |
-| `lora_alpha` | 64 |
-| `lora_dropout` | 0.05 |
-| target modules | `q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj` (all linear) |
-| bias | none |
+**EPOCHS=2, not 4:** 4 epochs was tried and made things worse — the model overfit into verbatim
+phrase-memorization (repeating a fixed anchor rationale string regardless of prompt content, ignoring
+even an explicit format correction). 2 epochs is the current default; see Result 2 for why more wasn't
+the fix.
 
-**Training hyperparameters:**
+## Serving
 
-| param | value | note |
-|---|---|---|
-| epochs | 2 | try 3 only if underfit on the val-loss curve |
-| learning rate | 1e-4 | cosine decay, warmup_ratio 0.03 |
-| per-device batch | 1 | sequences are long |
-| grad accumulation | 16 | → effective batch ~16 |
-| `max_seq_len` | **set from measured max** (see below); default 16384, bump to 32768 if any session exceeds | do NOT truncate tool sessions — that would cut the decision structure |
-| packing | **OFF** | each session is one example; preserves within-session context + masking boundaries |
-| optimizer | adamw_8bit (Unsloth) / adamw_torch | |
-| weight_decay / max_grad_norm | 0.0 / 1.0 | |
-| seed | fixed | |
+**vLLM+hermes is a dead end for Qwen-Coder tool-calling** (confirmed on both the FT model and the base
+model): Qwen2.5-Coder spontaneously emits tool calls as markdown-fenced JSON, not the `<tool_call>` XML
+`hermes` requires, so `tool_choice="auto"` silently returns no tool call. Forced `tool_choice` proves the
+capability is there — it's a parser mismatch, not incapacity.
 
-> **max_seq_len must be measured, not guessed.** The corpus token counts above are a crude
-> `len(json.dumps)//4`; the real Qwen tokenizer count differs. **Pre-train step:** tokenize every session
-> with `apply_chat_template` and report max / p95 / mean; set `max_seq_len` to cover the max (round up to
-> 16384 or 32768). If the true max blows past 32768, drop the longest tool sessions rather than truncate.
+**Working path: merge → GGUF → Ollama**, reusing the stock `qwen2.5-coder:14b` Modelfile template (which
+has the same `<tools>`/`<tool_call>` rendering the base model was trained on):
+```bash
+python -m scripts.creator.tool_disposition_benchmark.merge_lora --adapter <adapter_dir> --out <merged_dir>
+python llama.cpp/convert_hf_to_gguf.py <merged_dir> --outfile <name>.gguf --outtype f16
+ollama show --modelfile qwen2.5-coder:14b > ref.modelfile
+{ echo "FROM <name>.gguf"; grep -vE "^FROM |^# " ref.modelfile; } > ft.modelfile
+ollama create <model-name> -f ft.modelfile
+```
+Full recipe: `box-setup.md §B2`. vLLM remains fine for the text-only urn eval.
 
-**Loss masking (the core mechanic):** SFT is next-token prediction over the rendered transcript with the
-loss computed **only on assistant tokens** — system / user / tool tokens set to label `-100`. Use
-Unsloth's `train_on_responses_only(trainer, instruction_part="<|im_start|>user\n", response_part=
-"<|im_start|>assistant\n")` (TRL fallback: `DataCollatorForCompletionOnlyLM` or the chat template's
-assistant-mask). **Assistant `tool_calls` ARE trained** (they're the decision); `role:"tool"` result
-turns are masked. Net effect: the model is optimized to *produce the right decision given the context*,
-not to predict problems or tool outputs.
+## Result 1 — original run (2026-07-05), SUPERSEDED / CONFOUNDED
 
-**Chat template:** use the tokenizer's built-in Qwen2.5 template (`apply_chat_template`), which serializes
-`tool_calls` into Qwen's `<tool_call>{...}</tool_call>` form. This **must** match what vLLM's `hermes`
-parser reads back at eval (§ serving) — mismatch = the model learns a format the harness can't parse,
-exactly the bug class that silently zeroed builds in Phase 2. Add a round-trip assertion (below).
+| qwen-ft-pistar (build-heavy anchor) | n | first-sight | lateness | regret | balls |
+|---|---|---|---|---|---|
+| urn A2 | 24 | 7% | 1.51 | −92±379 (≈0) | 101% of π\* |
+| tool A2 | 10 (2 errored) | 100% | 0.000 | 5043±669 | — |
 
-**Two runs, identical config:** treatment = `{urn_pistar + tool_bridge_pistar}`; control =
-`{urn_eager + tool_bridge_eager}`. Hold out ~10 sessions per arm as a val split for a train/val-loss curve
-(sanity only — the real test is Phase 4, not val loss). Output: one LoRA adapter per arm (~tens of MB).
+Reserve installed near-optimally in the urn; tool eval came back fully eager. Read at the time as a
+"framing wall." **Retrospective problem:** the tool vocabulary in this corpus was ~25:1 eager-flavored
+(150-session build-only anchor + only 6 π\*-labeled `tool_bridge` sessions), so the eager tool result
+could have been *taught by the anchor* rather than reflecting a real transfer failure. Also had two
+training bugs (tools-block train/eval mismatch, a cuDNN crash on long sessions) that are now fixed
+standing defaults in `train_lora.py` (see Training above) — not re-litigated per run below.
 
-**Training script (`train_lora.py`, to be written in step 4, on the box):** CLI
-`--arm {pistar,eager} --data-dir runs/phase3_sft_data --out runs/phase3_ft/<arm> [--smoke]`. Loads the
-two matching jsonl files, concatenates + shuffles (fixed seed), tokenizes via chat template, applies
-response-only masking, trains LoRA with the config above, saves the adapter. `--smoke` = 20 steps on a
-handful of sessions to confirm the pipeline end-to-end before either real run.
+## Result 2 — Design A pure-transfer redesign (2026-07-06), tool eval BLOCKED
 
-**VRAM / time (H100 80GB):** bf16 LoRA + grad-checkpointing + seq-16k + batch-1 ≈ 40-55 GB. ~1M tokens ×
-2 epochs is tiny → **~30-60 min per arm**. Data gen is already done and free.
+**Urn dilution check (unaffected by the tool-vocabulary redesign) — clean, even stronger:**
 
-## Serving (Phase 4 prep) — merge + vLLM
+| urn A2, Design A | n | first-sight | lateness | regret | balls |
+|---|---|---|---|---|---|
+| qwen-ft-pistar-a | 24 | 7% | 1.51 | −92±379 (≈0) | 101% of π\* |
 
-> **STATUS (2026-07-04): merge DONE, vLLM serving in progress (step 5).** Both arms merged via the
-> dedicated **`merge_lora.py`** (loads base in **bf16**, applies adapter, `merge_and_unload`, saves) →
-> `runs/phase3_merged/{pistar,eager}` (28 GB each). vLLM 0.24.0 installed (it pinned torch 2.12→2.11,
-> CUDA still fine — training was already done). pistar being served; next = smoke-test the tool-call
-> round-trip before eval. **Do NOT use `train_lora.py --merge-out` for QLoRA runs** (merges onto the
-> 4-bit model); `merge_lora.py` is the correct path.
+Identical to Result 1's urn numbers — the balanced anchor didn't dilute the policy at all.
 
-1. Merge the adapter into the base — **use `merge_lora.py`** (`--adapter runs/phase3_ft/<arm> --out
-   runs/phase3_merged/<arm>`), which loads the base in bf16 (NOT the 4-bit QLoRA base) and merges there.
-   Gives clean bf16 weights for serving + `a0` recalib.
-2. Serve via vLLM (box-setup.md §B):
-   ```bash
-   vllm serve <merged-path> --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.92 \
-     --max-model-len 32768 --enable-auto-tool-choice --tool-call-parser hermes
-   ```
-   `hermes` = the Qwen2.5 tool-call template. Route the harness with
-   `LOCAL_BACKEND=vllm VLLM_BASE_URL=http://localhost:8000/v1 VLLM_API_KEY=EMPTY`.
-3. **🛑 vLLM path is UNTESTED in this project** — smoke-test the `LOCAL_BACKEND=vllm` branch of
-   `raw_chat.py` with a single seed and assert one real `write_script` tool call round-trips (template →
-   generation → hermes parse → harness sees the build) **before** any eval traffic. Budget debugging time
-   here, same as the Ollama tool-call bugs in Phase 2.
+**Tool eval: every configuration collapses into a malformed-output loop from problem 2 onward.** All
+five checkpoints solve problem 1 correctly (matches training: short context, matches the anchor's own
+framing), then degrade into a *different* unparseable pattern the harness can't read as a real tool call.
+`hit_cap=True` on every seed — the session burns its full token budget on retry loops before submitting
+more than 1-3 of 60 problems.
 
-## Eval plan (Phase 4)
+| checkpoint | corpus change | problem 1 | problem 2+ failure |
+|---|---|---|---|
+| `qwen-ft-pistar-a` | `N_MECH=0` (no mechanics bridge) | ✅ | hallucinates `submit_answers` (plural, unregistered tool name) as plain text |
+| `qwen-ft-pistar-a2` | `N_MECH=10` | ✅ | invents a `<script>...</script>` pseudo-tag wrapping real Python code |
+| `qwen-ft-pistar-a3` | `N_MECH=25` | ✅ | degenerates into `{}` / empty-object repetition |
+| `qwen-ft-pistar-a4` | `N_MECH=25`, `EPOCHS=4` | ✅ | **worse**: verbatim repetition of a fixed anchor rationale phrase, ignoring all subsequent turns including an explicit format correction |
+| `qwen-ft-pistar-mech25-e2` | `N_MECH=25`, `EPOCHS=2`, + `driver.py` format-reminder fix | ✅ (2/60 before stalling) | collapses into an empty markdown fence (`` 'assistant\n```\n\n```' ``), ignoring the reminder shown on the immediately preceding turn |
 
-> ### RESULTS IN PROGRESS (2026-07-04) — read this first
->
-> **Held-out urn A2, n=24 seeds 2000-2023, temp≈0.7 sampled (same as pre-FT). Both arms done + control:**
->
-> | urn A2 | first-sight | lateness | regret | traps/seed | balls |
-> |---|---|---|---|---|---|
-> | pre-FT Qwen-14b | 76% | 0.36 | 737 | ~0.96 | — |
-> | **eager-FT (control)** | 100% | 0.000 | 864±378 | 1.08 | 88% |
-> | **pistar-FT (treatment)** | 54% | 0.615 | 795±524 | 0.62 | 88% |
-> | π\* target (Haiku A2) | 28% | 1.19 | 0 | ≈0.67 | 100% |
->
-> **Clean BEHAVIORAL win, attributable to demo content (the lead metric):** the two arms moved in
-> *opposite* directions — π\*-demos → **reserves** (lateness 0.36→0.615, first-sight 76→54%, traps
-> 0.62 ≈ π\*'s 0.67), eager-demos → **fully eager** (100% / 0.000, traps 1.08). Opposite directions
-> **rules out "any-SFT-helps"**; the reserve policy (and better type-selection) is installable and the
-> demo content drives it. **BUT outcome (regret/balls) is ~equal across arms** (795 vs 864, overlapping
-> ±hundreds; both 88% of π\*): the treatment reserves + avoids traps, but *waiting* forfeits early
-> reuses that offset the trap-avoidance gain (the lateness⊥regret tradeoff, at this g=1/N=8/T=60). So:
-> **partial install** — behaviorally π\*-like (reserves, low traps) but short of π\*'s first-sight ~7-28%
-> and with no significant regret gain at n=24. **temp=0 (greedy) readout DONE — byte-identical to temp≈0.7
-> for BOTH arms** (pistar 54%/0.615/795, eager 100%/0/864). So the policies are **temperature-robust /
-> high-confidence**: the partial reserve is the model's genuine learned policy, not a sampling artifact,
-> and greedy does not sharpen it further. (`urn_session --temp 0` via a new `temperature` kwarg in
-> `raw_chat.chat`; default unchanged.)
->
-> **⚠️ TOOL-TRANSFER EVAL (step 6b) IS BLOCKED — training-design issue found.** The FT model **does not
-> emit tool calls** in the tool framing — it reverts to base CoT hand-solving (verified: no `<tool_call>`
-> with OR without a `tools=` block). Cause: **170 of 176 training sessions are the urn, which responds in
-> free *text* (`DECISION: KEEP/PASS`), not tool calls** — training ~97% on text suppressed the base
-> model's tool-calling; the 6 tool-bridge sessions couldn't preserve it. So the tool eval can't run on
-> this model as trained. Fix options (need a re-train, ~44 min; a design call for the user): (a) give the
-> urn demos a tool-call modality (e.g. a `decide(KEEP/PASS)` tool) so all sessions are tool-calling and
-> the modality is consistent; (b) raise the tool-bridge fraction (risks the "collapses into tool-domain
-> SFT" confound the design wanted to avoid); (c) mix in generic tool-calling data to preserve the skill.
-> **Note the urn eval is unaffected** (it's text) — so the primary "did it learn to allocate" question is
-> answerable now; only the transfer question waits on a re-train.
->
-> **DECISION (2026-07-04): transfer eval PAUSED, urn result BANKED (deliberate, not abandoned).** The urn
-> behavioral finding (policy installable + content-driven, clean vs control, temp-robust) stands on its
-> own. Box released. To RESUME the transfer eval later, pick a fix for the tool-calling suppression:
-> (a) unify everything to tool-calling (convert urn harness+demos to a keep/pass tool; re-baseline pre-FT
-> — cleanest, ~half-day); (b) bump tool-bridge share so tool-calling survives + add a bridge-only control
-> to isolate transfer (fast, ~1h, larger tool foothold); (c) mix in generic tool-calling data to preserve
-> the skill (cleanest for pure abstract-transfer; needs a generic tool-use data source). Adapters backed
-> up at `runs/phase3_ft/{pistar,eager}`; merged checkpoints regenerable via `merge_lora.py`.
+**The format-reminder fix (`driver.py: FORMAT_REMINDER`)** restates the exact `<tool_call>{...}</tool_call>`
+syntax on any turn with zero parsed tool calls (previously the retry nudge only listed tool *names*, not
+the wrapper syntax). It's a real, motivated fix — the syntax genuinely does drop out of a 300k-token
+context — but it was **tested against two checkpoints and didn't recover either one**, including one turn
+where the correct syntax appears verbatim in the message immediately before the model repeats its own
+broken pattern anyway. That rules out "missing information" as the cause. **The fix is left in place**
+(it's harmless and may help future checkpoints) but is not sufficient on its own.
 
-Run each fine-tune (treatment, control) + the pre-FT baseline — three-way. **Lead with lateness /
-first-sight, not the regret level** (standing convention; regret is noisier at n=12 and now has an extra
-moving part — the recalibrated a_script).
+**Working hypothesis:** all three training slices (urn, anchor, mechanics bridge) are synthesized to be
+well-formed on every turn — none of them ever show the model a turn that fails and needs correcting. The
+eval harness's own retry logic (inject a nudge after a bad turn) puts the model in a conversational state
+with **zero representation in training**, and its behavior there is undefined rather than "confused about
+format." A prompt-level reminder can't fix an undefined region of behavior; only training on it can.
 
-1. **Held-out urn A2** — `urn_session.py --model <served> --announce-n --seeds 2000..2023`. Seeds 2000-2023
-   are disjoint from the training urn (5000+) and tool (4000+) seeds, and match the pre-FT urn A2 baseline
-   (737). *Did the FT even move it off the plateau toward π\* in its own training domain?*
-2. **Tool A2 (the real test)** — `arm_a1_announce.py --model <served> --announce-n` on seeds 2000-2011.
-   Three-way vs pre-FT (lateness 0.125 / first-sight 88% / regret 2934). *Does urn competence transfer to
-   the tool framing?*
-3. **`a0_oracle_gap.py --model <served>`** post-FT — a_script may drift from training on correct
-   `write_script` calls; regret needs recalibrated costs (don't reuse 0.83 blindly for the FT model).
-4. **Catastrophic-forgetting sanity check** — a few held-out coding problems to confirm general ability
-   isn't wrecked, only the allocation policy changed.
+**Not yet attempted (until mechanics bridge training, below):** synthesizing training sessions that include a deliberate
+malformed turn followed by a correction and a correct recovery, so the model has *seen* how to recover
+once, in training, not just been told the syntax at eval time.
 
-Interpretation grid:
+## Mechanics bridge training — root-cause diagnosis and fix (2026-07-06), not yet retrained
 
-| urn A2 | tool A2 | reading |
-|---|---|---|
-| π\*-arm improves, eager-arm flat | π\*-arm improves | **transfer** — policy installed + crosses the framing gap |
-| π\*-arm improves | π\*-arm flat/eager | **framing wall** — learned to allocate, coding framing still suppresses it (strong finding) |
-| both arms improve equally | — | confound: "any SFT helps" → re-examine (masking? tool-JSON cleanup?) |
-| π\*-arm doesn't improve even on urn | — | training didn't take → revisit LR/epochs/rank before any tool claim |
+Prompted by a challenge to the original error-recovery ablation's premise (would 45 short,
+single-problem error-recovery sessions — ~3% of corpus tokens — actually change trained behavior at
+all?), diffed the
+saved failing eval transcripts (`runs/arm_a1_announce_qwen-ft-pistar-{a,a2,a3,a4,mech25-e2}_latest_n-announced/`)
+against the training corpus directly, instead of reasoning about the collapse from the outside. Found a
+concrete, well-evidenced mechanism — not the coverage gap, not (necessarily) urn/tool entanglement.
 
-## Implementation steps (order of work + stop-points)
+**Evidence, step by step:**
 
-1. ~~Urn + tool-bridge demo generators (local, free)~~ **DONE.**
-2. ~~Control-condition variant (eager labels)~~ **DONE.**
-3. ~~Chat-JSONL + validate (assertions + eyeball + size/token report + 85/15 confirmed)~~ **DONE**
-   (`--selftest`; token shares reported above).
-4. ~~Box setup + `train_lora.py` + measure `max_seq_len` (32768) + `--smoke`~~ **DONE (2026-07-04).**
-   HF backend (not Unsloth — transformers-5.13 friction); two 5.13 fixes in the script.
-5. ~~🛑 Real training runs (treatment + control)~~ **DONE (2026-07-04).** `--qlora` + `expandable_segments`
-   (bf16 OOM'd on the ~21k-token sessions). Both converged; adapters `runs/phase3_ft/{pistar,eager}` +
-   backed up locally. Curves in the Training STATUS block.
-6. **Merge + serve via vLLM (IN PROGRESS, step 5).** ~~Merge~~ **DONE** (`merge_lora.py` → `runs/phase3_merged/`).
-   Serving pistar; 🛑 smoke-test the `LOCAL_BACKEND=vllm` tool-call round-trip next, before eval.
-7. Eval (step 6): held-out urn A2 (2000-2023), tool A2 (2000-2011), `a0_oracle_gap` recalibration,
-   forgetting check — vs pre-FT (urn 737 / tool 2934). Per arm: serve, eval, swap.
-8. Write results into working-notes / plan / memory (same pattern as Phases 1-2).
+1. **The real transcripts show the model hallucinating the literal chat-template role marker as
+   content.** E.g. `qwen-ft-pistar-a`, one turn: `'{"name": "linear_congruence", ...}}\nassistant\n
+   {"name": "linear_congruence", "arguments": {"inputs": {"SE'` — the word **"assistant"** appears
+   mid-generation, as if the model is starting a second fake turn inside its own output. Checked across
+   all 5 saved checkpoints (seed 2000, counting assistant turns whose content contains the literal
+   string "assistant"):
 
-## Cost / logistics
+   | checkpoint | turns with literal "assistant" text |
+   |---|---|
+   | `qwen-ft-pistar-a` | 50/55 |
+   | `qwen-ft-pistar-a2` | 0/46 |
+   | `qwen-ft-pistar-a3` | 52/55 |
+   | `qwen-ft-pistar-a4` | 0/60 |
+   | `qwen-ft-pistar-mech25-e2` | 60/61 |
 
-- One 80 GB H100, ephemeral (box-setup.md — fresh IP, no persistent disk, full re-setup each time).
-- Rough time: setup+download ~30-45 min; 2 LoRA runs ~1-2 h; merge+serve+smoke ~30 min (+ vLLM debugging
-  buffer); eval ~30 min. **~4-6 box-hours → ~$15-30** at typical H100 rates, most of the variance in the
-  untested vLLM path. Data gen already done + free.
-- **Always `rsync runs/` back before releasing the box** (box-setup.md §A.6 — the Qwen A2 raw dirs were
-  lost this way once). Includes adapters, merged checkpoints (large — decide whether to keep), and eval
-  run dirs.
+   3 of 5 checkpoints show this on 90%+ of turns. `box-setup.md` had already logged this exact string
+   (`content: "assistant\n\""`) as "known noise" from the GGUF serving path (§B2) — it isn't serving
+   noise, it's trained behavior.
 
-## Open risks
+2. **The training masking labels the chat template's own role-declaration text as content to predict.**
+   `train_lora.py`'s saved `verify_template` output (`runs/phase3_ft_logs_mech25/train_pistar_designA.log`):
+   `first trained tokens decode to: '<|im_start|>assistant\nThis needs an exact, large computation...'`
+   — the literal `<|im_start|>assistant\n` prefix (in a Qwen-style template the role name is plain text
+   right after the special start token, not a single special token) was part of the LABELED span for
+   every assistant turn in the corpus, because `build_example` masked at whole-message granularity. At
+   real inference, the model is never asked to generate that prefix — the serving harness's prompt
+   construction (`add_generation_prompt=True`) already supplies it before generation starts. Normally
+   this is harmless (the model can't "re-emit" a prefix it's never asked to predict from scratch), but:
 
-- **Bridge ratio (15%)** is a knob, not a constant — revisit only if the first result is ambiguous (too
-  little tool anchoring, or so much it collapses into plain tool-domain SFT).
-- **a_script drift post-FT** — the recalibration step exists to keep this out of the regret comparison.
-- **vLLM path untested** — budget debugging (step 6 smoke test gates it).
-- **max_seq_len vs long tool sessions** — measure first; truncation would silently corrupt the decision
-  structure. Drop over-long sessions rather than truncate.
-- **Catastrophic forgetting** — step 7 sanity check.
-- **Merged-checkpoint size** — two ~28 GB bf16 checkpoints; decide up front whether to rsync them back or
-  regenerate from adapters (adapters are tiny; keeping only adapters + base is the cheap option).
+3. **One corpus slice contains the exact shape needed to reinforce it from an in-context example.**
+   `mechanics_bridge`'s "reuse" branch appended a content-only rationale message immediately followed by
+   a *separate* tool_calls-only assistant message — two consecutive assistant-role dicts with no
+   intervening tool/user turn. Checked every slice for this shape:
+
+   | slice | sessions with back-to-back assistant turns | total occurrences |
+   |---|---|---|
+   | `urn_pistar` | 0 | 0 |
+   | `anchor_tool` | 0 | 0 |
+   | `mechanics_bridge` | 23/25 | 390 |
+   | `error_recovery` | 0 | 0 |
+
+   Real eval (`driver.run_session`) never produces this shape — every turn is exactly one assistant
+   dict, whether or not it carries tool_calls. On those 390 occurrences, the tokenized training sequence
+   contains, mid-turn, a *second* `<|im_start|>assistant\n` directly following the first assistant
+   message's own trained content — and per bug (2), that second role-prefix was *also* labeled as
+   something to predict. The model was trained, hundreds of times, that "after finishing a response,
+   emitting `<|im_start|>assistant\n` and continuing" is sometimes the correct next-token continuation.
+   That is exactly the collapse pattern in the real transcripts.
+
+**This is a better-supported explanation than either prior hypothesis:** it isn't "needs more
+error-recovery examples" (that data wouldn't touch this mechanism at all — the model isn't messing up
+for lack of a rescue path, it's being taught a specific bad continuation habit), and it doesn't require
+positing entanglement between the urn and tool objectives (though that question remains separately
+interesting for `docs/adapter-merge-transfer-plan.md` if this fix turns out insufficient).
+
+**Fixes applied (both in this repo now, not yet retrained):**
+1. `phase3_demos.py` — `render_tool_bridge_session` / `render_mechanics_bridge_session`'s "reuse"
+   branch now emits ONE assistant message (rationale + `run_script` tool_calls together), matching
+   every other branch and matching eval's actual per-turn shape. New regression guard
+   `_selftest_no_consecutive_assistant` asserts no generated session, in any slice, ever contains two
+   back-to-back assistant-role messages.
+2. `train_lora.py` — `build_example` now excludes the `<|im_start|>assistant\n` role-declaration prefix
+   from the trained span on every assistant turn (computed by diffing against
+   `apply_chat_template(messages[:i], add_generation_prompt=True)`, the exact prefix a real inference
+   call supplies before generating). `verify_template` now asserts the first trained span never starts
+   with the literal role-declaration text, as a standing regression guard.
+
+Both changes are corpus/training-pipeline fixes, independent of the original error-recovery ablation
+below — the `error_recovery` slice built for that ablation is unaffected by (and doesn't overlap with)
+either bug, and is still included in mechanics bridge training's corpus as a smaller, complementary
+addition.
+
+**Next step (not yet run):** run mechanics bridge training — retrain the `pistar` arm with both fixes
+applied (plus `error_recovery`, already merged in) and rerun the tool A2 eval. This is now the
+highest-confidence next experiment, ahead of any further corpus tuning or the adapter-merge plan.
+**Attribution caveat:** because this retrain bundles the bug fixes with the already-built
+`error_recovery` addition, a clean result won't by itself say which one mattered — if that distinction
+matters later, an optional follow-up (`--recovery off`, same bug fixes) would isolate whether the bug
+fixes alone were sufficient.
+
+## Error-recovery ablation — data folded into mechanics bridge training (2026-07-06)
+
+**Superseded as the leading hypothesis by mechanics bridge training's root-cause diagnosis above** —
+kept as-is below since the corpus it produced (`error_recovery.jsonl`) is still a reasonable
+complementary addition (general
+resilience to occasional stochastic formatting slips is still worth having, even once the systematic
+collapse bug is fixed), just no longer the explanation for Result 2's *systematic* collapse.
+
+Before reaching for anything architectural (e.g. splitting the corpus into separately-trained adapters
+so the policy and format objectives never share a gradient step — scoped in
+`docs/adapter-merge-transfer-plan.md`), the direct, minimal test of the "missing coverage" hypothesis is
+just to add the missing coverage to the **existing joint corpus** and retrain once. If that alone fixes
+legibility, the adapter-merge complexity is unnecessary; if it doesn't, that's evidence the fix needs
+isolation from the urn objective to survive training, and the adapter split becomes warranted instead of
+speculative.
+
+**What's built:** a new arm-independent slice, `error_recovery.jsonl` (`phase3_demos.py`,
+`render_error_recovery_session` / `generate_error_recovery`, `N_RECOVERY=45`), covering the three actual
+error branches in `driver.run_session` — not paraphrased, byte-matched to the harness's own strings:
+
+| pattern | bad turn | harness response (verbatim-matched) | recovery |
+|---|---|---|---|
+| `reminder` (15 sessions) | one of the 5 malformed-content patterns actually observed in Result 2 (unregistered plural tool name as plain text, pseudo-`<script>` tag, empty-`{}` repetition, verbatim anchor-phrase loop, empty markdown fence) — no `tool_calls` key at all | `driver.FORMAT_REMINDER`, imported directly (not retyped) so it can never drift from what eval injects | a real `<tool_call>` submitting the correct answer |
+| `wrong_name` (15 sessions) | a well-formed `tool_calls` entry naming an unregistered tool (`submit_answers`, plural) | the exact unknown-tool tool-role error `driver.py` constructs (`"no such tool '{name}'. Available tools: {sorted(known_tools)}."`) | retry with the correct tool name |
+| `unknown_script` (15 sessions) | `run_script` on a name never `write_script`'d | the exact `session_state.op_run_script` "no script named" error | `write_script` → `run_script` → `submit_answer` |
+
+All sessions are single-problem (like the anchor): no cross-problem state exists, so none of them can
+carry a build-timing signal — they can only teach recovery, never reserve-vs-eager. Guarded by
+`_selftest_error_recovery` (determinism/arm-independence, policy-neutral prompts, every final submit
+correct, and every harness-side string byte-matched against `driver.py`/`session_state.py` — not
+hand-retyped, to avoid exactly the near-miss-format bug class this project keeps hitting).
+
+**Wiring:** `train_lora.py --recovery {on,off}` (default `on`), same pattern as `--anchor`/`--mechanics`.
+Corpus regenerated locally (`phase3_demos.py`, no LLM calls, no GPU, free) — `runs/phase3_sft_data/`
+now includes `error_recovery.jsonl` (45 sessions, ~29k est. tokens) alongside the existing slices, ready
+to sync to a fresh box.
+
+**Next step:** superseded by the root-cause section above — the retrain now happens with the two bugs
+fixed AND `error_recovery` included, in one pass (see that section's "Next step" and attribution
+caveat), rather than as a standalone test of the coverage-gap hypothesis.
+
+## What's preserved locally (2026-07-06)
+
+- **Adapters** (LoRA weights only — Trainer's per-epoch `checkpoint-N` subdirs, which duplicate the
+  weights plus optimizer state, were deleted; keep this pattern for any future pull):
+  `runs/phase3_ft/pistar_mech25-e2` (539 MB, the `EPOCHS=2` checkpoint used in Result 2's last row),
+  `runs/phase3_ft/pistar_mech25-e4` (539 MB, the memorization-collapsed `EPOCHS=4` checkpoint).
+  `runs/phase3_ft/{pistar,eager}` are the **original** (2026-07-05) Result-1 adapters, pre-Design-A.
+- **Eval run dirs** (full transcripts): `runs/urn_qwen-ft-pistar-a_latest_n-announced` and
+  `runs/arm_a1_announce_qwen-ft-pistar-{a,a2,a3,a4,mech25-e2}_latest_n-announced` — the source for every
+  row in the Result 2 table above.
+- **Logs**: `runs/phase3_ft_logs_mech25/` (training curves, merge/GGUF-convert logs, smoke-gate outputs
+  for every Design A attempt); `runs/phase3_ft_logs/` (Result 1's logs).
+- **Not kept** (regenerable, not pulled): merged bf16 checkpoints and GGUF files for every Design A
+  attempt (28 GB / 29.5 GB each) — regenerate from an adapter via `merge_lora.py` + `convert_hf_to_gguf.py`
+  in ~5 min if a specific checkpoint needs to be served again.
+- **Corpus** is not stored as an artifact — it's deterministic from `phase3_demos.py`, always regenerate
+  fresh on a new box rather than syncing the jsonl files.
+
+## Open follow-ups
+
+1. **Run mechanics bridge training** (both bug fixes + error_recovery, rerun the tool A2 eval) — corpus
+   is built and regenerated locally, code fixes are in `phase3_demos.py`/`train_lora.py`, all selftests
+   pass. This is now the highest-confidence next experiment. Not yet launched (per [[no-auto-reps]], needs go-ahead
+   before spending box time).
+2. **Attribution follow-up, only if (1) is clean and the distinction matters:** rerun with `--recovery
+   off` (bug fixes only, no error_recovery data) to isolate whether the bug fixes alone were sufficient,
+   separate from the error-recovery data's contribution.
+3. **If (1) still collapses: adapter-merge split** — train the policy (urn-only) and format
+   (anchor+mechanics+error_recovery-only) objectives as separate LoRA adapters with no shared gradient
+   step, combine via PEFT's weighted-adapter merge. Fully scoped in `docs/adapter-merge-transfer-plan.md`,
+   not started. A collapse surviving both bug fixes would be much stronger evidence for entanglement
+   than anything available before this diagnosis.
+4. **Publication-grade tool eval** — once tool-calling reliability is solved, rerun with more seeds and
+   a clean regret-level comparison (a_script recalibration, `a0_oracle_gap.py`, not yet run against any
+   Design A checkpoint) and a catastrophic-forgetting sanity check.
+5. **Alternative fix, if neither (1) nor (3) works: unify modality.** Give the urn a `decide(KEEP/PASS)`
+   tool call so training is 100% tool-calling from the start — the urn's own 170 long sessions would then
+   double as long-context tool-calling practice, sidestepping the need for a separate mechanics bridge
+   entirely. Bigger lift (urn harness rewrite + pre-FT re-baseline), not started.
