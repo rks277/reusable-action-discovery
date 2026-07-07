@@ -4,15 +4,26 @@ Companion to `online-tool-investment-plan.md` (headline claim; **read its §0 Or
 and `online-tool-investment-working-notes.md` (Phases 1-2 status). GPU box mechanics live in
 `docs/box-setup.md` (§B0 training, §B2 GGUF→Ollama serving — the only working serving path, see below).
 
-## Status (2026-07-06)
+## Status (2026-07-07)
 
-Two SFT attempts, then a **root-cause diagnosis that found and fixed two concrete bugs** — a training
-masking bug and a `mechanics_bridge` corpus-construction bug — that together are a much
-better-supported explanation for Result 2's collapse than either of the two working hypotheses that
-came before it (data-coverage gap; urn/tool objective entanglement). The retrain that applies both
-fixes is called **mechanics bridge training** below (the bug lived in that slice) — this supersedes the
-original error-recovery ablation's rationale, though the error-recovery corpus built for that ablation
-is folded into the same retrain as a smaller, complementary piece.
+**Result 3's "clean" verdict RETRACTED — a third, previously undetected bug found, diagnosed, and
+fixed; retrain pending.** Investigating Result 3's two flagged secondary findings (low build-rate,
+higher regret than pre-FT baseline) surfaced something bigger than either: the tool-eval transcripts
+show the model spending 5%-88% of its turns (mean ~40%) repeating one canned filler phrase verbatim,
+submitting an answer on only 1-2 of ~28 problems seen per seed, and getting 0% of hand-solved problems
+correct (`eff_solve_by_hand=0.0` on every seed). "Zero malformed/unknown tool calls" only proved the
+model could *syntactically* form a call when it acted — it didn't prove general competence was
+preserved, and it wasn't. Root cause traced to the corpus generator, not the training pipeline: see
+**"Corpus regeneration"** below for the full diagnosis and fix (7 concrete changes, all implemented,
+selftest-verified, corpus regenerated). **The upshot: Result 3's "100% first-sight, lateness 0.000"
+framing-wall reading is not yet trustworthy** — it was measured on a model that was mostly not
+functioning during tool sessions, so it can't be cleanly attributed to policy-transfer failure (vs. a
+residual capability breakdown that happens to look eager). A retrain on the regenerated corpus is the
+next step, not yet run (needs go-ahead per [[no-auto-reps]]).
+
+**Prior status (2026-07-06, now superseded by the above):** Result 3 was read as a clean transfer-fails
+result — legibility fully fixed (zero malformed output across 12 seeds), reserve-then-build still not
+transferring to the tool framing. That legibility claim is now known to be incomplete (see above).
 
 1. **Original run (2026-07-05) — "framing wall," now judged CONFOUNDED.** SFT installed the reserve
    policy in the urn and the tool eval came back 100% eager. But the tool-vocabulary training data was
@@ -27,14 +38,14 @@ is folded into the same retrain as a smaller, complementary piece.
    configs each produced a **different** malformed-output collapse from problem 2 onward, and an eval-time
    format reminder didn't fix any of them. See **Result 2** — this is the open thread.
 
-3. **Mechanics bridge training (2026-07-06) — two concrete bugs found and fixed, not yet retrained.**
+3. **Mechanics bridge training (2026-07-06) — two concrete bugs found and fixed, retrain CLEAN.**
    Diffing the saved failing transcripts against the training corpus found: (a) a `train_lora.py`
    masking bug that trained the model to treat the chat template's own `<|im_start|>assistant\n`
    role-declaration text as legitimate content, and (b) a `mechanics_bridge` corpus bug (its "reuse"
    branch) that is the only place in the entire corpus with the exact shape needed to reinforce that bug
-   from an in-context example. Both are now fixed; see "**Mechanics bridge training — root-cause
-   diagnosis and fix**" below for the full evidence chain. This is a materially stronger candidate
-   explanation than the coverage-gap hypothesis that motivated the original error-recovery ablation.
+   from an in-context example. Both fixed; the retrain (plus two more infra bugs found and fixed
+   mid-launch — Ollama/VRAM contention, a Trainer eval-time OOM) ran clean end-to-end. See "**Mechanics
+   bridge training — root-cause diagnosis and fix**" and **Result 3** below.
 
 **Original working hypothesis for the collapse (superseded, kept for the record):** every training
 session (urn, anchor, mechanics bridge) is well-formed by construction — none of them contain a "turn
@@ -59,11 +70,11 @@ finding — a framing gap that survives a model freshly taught to allocate.
 tool A2 lateness 0.125, first-sight 88%, regret 2934±324 (n=12, seeds 2000-2011); urn A2 regret 737
 (seeds 2000-2023).
 
-## Corpus (current: Design A)
+## Corpus (current: Design A + mechanics bridge training's error-recovery slice)
 
 Generated deterministically by `scripts/creator/tool_disposition_benchmark/phase3_demos.py` — no LLM
 calls, no GPU, free, reproducible (`--selftest` guards every invariant below). Current composition for
-the `pistar` arm (345 sessions total):
+the `pistar` arm (390 sessions total — Design A's original 345 plus `error_recovery`, added 2026-07-06):
 
 | slice | file | sessions | purpose |
 |---|---|---|---|
@@ -71,6 +82,7 @@ the `pistar` arm (345 sessions total):
 | tool_bridge | `tool_bridge_pistar.jsonl` | **0** | intentionally empty — see "why zero" below |
 | anchor | `anchor_tool.jsonl` | 150 | arm-independent, policy-neutral tool-calling modality (single-problem, `ANCHOR_HAND_FRAC=0.5` balanced build/hand so it can't teach an eager reflex either) |
 | mechanics bridge | `mechanics_bridge.jsonl` | 25 | arm-independent, policy-neutral long-context sessions (real N=8/T=60 streams, build timing forced half-k=1/half-k≥2 via `random_builds` so it can't teach reserve or eager) |
+| error recovery | `error_recovery.jsonl` | 45 | arm-independent, policy-neutral bad-turn → harness-nudge → recovery sessions (see "Error-recovery ablation" below) |
 
 **Why `N_TOOL=0` (no policy-bearing tool_bridge):** the original run's `tool_bridge` (6 sessions,
 π\*-labeled) put a real reserve-timing signal into tool vocabulary — a positive tool-eval result then
@@ -187,7 +199,7 @@ format." A prompt-level reminder can't fix an undefined region of behavior; only
 malformed turn followed by a correction and a correct recovery, so the model has *seen* how to recover
 once, in training, not just been told the syntax at eval time.
 
-## Mechanics bridge training — root-cause diagnosis and fix (2026-07-06), not yet retrained
+## Mechanics bridge training — root-cause diagnosis and fix (2026-07-06)
 
 Prompted by a challenge to the original error-recovery ablation's premise (would 45 short,
 single-problem error-recovery sessions — ~3% of corpus tokens — actually change trained behavior at
@@ -270,13 +282,162 @@ below — the `error_recovery` slice built for that ablation is unaffected by (a
 either bug, and is still included in mechanics bridge training's corpus as a smaller, complementary
 addition.
 
-**Next step (not yet run):** run mechanics bridge training — retrain the `pistar` arm with both fixes
-applied (plus `error_recovery`, already merged in) and rerun the tool A2 eval. This is now the
-highest-confidence next experiment, ahead of any further corpus tuning or the adapter-merge plan.
-**Attribution caveat:** because this retrain bundles the bug fixes with the already-built
-`error_recovery` addition, a clean result won't by itself say which one mattered — if that distinction
+**Retrain done (2026-07-06) — see Result 3 below.** Bundles both bug fixes plus the already-built
+`error_recovery` addition. **Attribution caveat still open:** a clean legibility result doesn't by
+itself say which fix mattered (or whether `error_recovery` contributed at all) — if that distinction
 matters later, an optional follow-up (`--recovery off`, same bug fixes) would isolate whether the bug
 fixes alone were sufficient.
+
+## Result 3 — Mechanics bridge training (2026-07-06), CLEAN — legibility fixed, transfer confirmed FAILS
+
+Ran on a fresh H100 (`ubuntu@68.209.75.15`), full pipeline (`scripts/box/run_mechanics_bridge_training.sh`)
+end-to-end in 37 minutes, after two additional bugs surfaced and were fixed **during the same launch**
+(not part of the original diagnosis, both are box/infra bugs unrelated to the model or corpus):
+
+- **Ollama/training VRAM contention.** A pre-launch smoke-test inference call left Ollama holding the
+  14B model resident (`OLLAMA_NUM_PARALLEL=8` reserves KV-cache for 8 parallel slots — tens of GB even
+  for a 14B model), leaving <500MB free and OOMing the QLoRA smoke train. Fixed by explicitly stopping
+  the Ollama service before GPU-heavy stages and restarting it before the eval stages (now in the
+  pipeline script itself, not a one-off manual step).
+- **Trainer eval-time OOM.** `TrainingArguments` never set `per_device_eval_batch_size`, so it defaulted
+  to transformers' default of 8 — Trainer's automatic end-of-epoch eval batched up to 8 long
+  `mechanics_bridge` sessions (~19k tokens) together, and casting the padded batch's logits to fp32 for
+  the loss tried to allocate ~73GB. Fixed by disabling the periodic eval (`eval_strategy="no"` always,
+  `train_lora.py`) — it was already documented as "sanity only," not needed for the actual experiment.
+
+**Legibility: fully fixed, zero exceptions.** All 12 tool A2 seeds (2000–2011):
+
+| | value |
+|---|---|
+| `hit_cap` | 12/12 (all seeds ran out of the 200k token budget before finishing all 60 problems) |
+| `n_malformed_tool_calls` | 0 (every seed) |
+| `n_unknown_tool_calls` | 0 (every seed) |
+| literal "assistant" hallucinated as content | 0 (every seed, every turn — the exact bug signature from Result 2, now gone) |
+| `problems_seen` per seed | 30, 27, 29, 27, 27, 22, 28, 33, 28, 28, 31, 22 (mean ≈27.7/60) |
+
+No malformed output, no unknown-tool errors, no trace of the role-marker hallucination anywhere in any
+transcript. The two root-cause bugs are confirmed fixed, not just plausible.
+
+**The transfer question, now readable cleanly for the first time:**
+
+| | urn A2 (sanity check, n=24) | tool A2 (n=12) | pre-FT Qwen-14b baseline, tool A2 (n=12, for reference) |
+|---|---|---|---|
+| first-sight | — | **100%** (7/7 builds) | 88% |
+| lateness | 1.648 (max 7) | **0.000** | 0.125 |
+| regret vs π\* | −344±299 (≈π\* or better) | **6061±559** | 2934±324 |
+| traps/seed | 0.29 (π\* 0.67) | 0.33 (π\* 0.75) | — |
+| balls/traps detail | balls-regret −1.9±1.7/seed (model collects 105% of π\*'s) | builds/seed = 0.58 | — |
+
+**Reading:** the urn side replicates the clean install once again (reserves properly, at/above π\*,
+consistent with every prior pistar run back to Result 2). The tool side is **still 100% first-sight,
+lateness 0.000** — fully eager, statistically indistinguishable in kind from every prior (confounded)
+tool-eval reading in this whole experiment. This is the "framing wall" finding, now on a **genuinely
+clean, non-confounded tool eval** — the collapse that blocked Result 2 from being trustworthy is gone,
+and the answer underneath it is the same: **the reserve-then-build policy does not transfer from the
+urn framing to the tool framing**, even in a model that was freshly, successfully taught the policy and
+can now execute tool calls without error.
+
+**Two secondary findings, flagged rather than smoothed over:**
+1. **`builds/seed` = 0.58**, low relative to what you'd expect if the model spent its write budget
+   (B=2–3) across a session. Plausibly a `hit_cap`-truncation artifact (sessions stop at ~28/60 problems
+   on average, before all budget gets used) rather than a behavioral change — not yet disentangled.
+2. **Regret (6061±559) is nearly double the pre-FT baseline's (2934±324)** — the fine-tune made the
+   tool-framing regret *worse*, not better, despite the qualitative behavior (100% eager) being the same
+   direction as baseline (88% first-sight — already mostly eager pre-FT). Per this project's own
+   convention regret is "secondary/noisy," and the truncation-extrapolation methodology
+   (`value_of_builds` pricing the untouched tail) could plausibly explain this without implying a real
+   regression — not yet checked against `a0_oracle_gap.py` recalibration.
+
+**On the `hit_cap` truncation itself:** deliberately left `token_cap=200_000` unchanged rather than
+raising it, to preserve comparability with every prior eval in this project (baseline, all Design A
+checkpoints, the cross-model ladder) run at the same cap — see conversation record for the full
+reasoning. The lead metrics (first-sight/lateness) are readable despite the truncation since each of
+the 8 problem types has likely recurred several times within ~28 problems; the regret number is the one
+plausibly affected, and was already the "secondary/noisy" metric by this project's own standing
+convention.
+
+## Corpus regeneration — verbatim-repetition collapse diagnosis and fix (2026-07-07)
+
+Investigating Result 3's two flagged secondary findings (low `builds/seed`, higher regret than pre-FT
+baseline) surfaced a third bug, bigger than either: a verbatim-repetition collapse in the trained
+model's tool-eval behavior that the legibility check (`n_malformed_tool_calls`/`n_unknown_tool_calls`)
+never caught, because it isn't malformed *tool-call syntax* — it's degenerate plain-text content on
+turns where the model doesn't call a tool at all.
+
+**Diagnosis, from the raw eval transcripts (`runs/arm_a1_announce_qwen-ft-pistar-mechbridge_latest_n-announced/`):**
+- `n_correct` is 0 or 1 per seed; `n_submitted` is only 1-2 out of 22-33 problems seen; `eff_solve_by_hand
+  = 0.0` on every single seed — the model essentially never submits an answer, let alone a correct one.
+- 11 of 12 seeds show the model repeating one exact string, `"I'll work this one out directly and
+  answer."` (sometimes trailing into stray garbage tokens once stuck), on 5%-88% of all assistant turns
+  (mean ~40%) — a real generation, not a rendering artifact.
+- Root cause in the corpus generator (`phase3_demos.py`), not the training pipeline: `_mech_rationale()`
+  and `render_anchor_session`'s hand/build branches used a small set of **fixed literal strings** for
+  every wait/commit/reuse or hand/build decision — measured diversity: `mechanics_bridge` 3 distinct
+  strings across 1500 content-bearing turns (0.2% unique), `anchor_tool` 2 distinct across 150 (1.3%
+  unique), vs. `urn_pistar`'s 434 distinct across 3587 (12.1% unique, legitimately parameterized by
+  `k`/budget/vocab). No existing selftest checked text diversity — every guard checked
+  correctness/determinism/structure only.
+- A second, independent bug in the same branches: every wait/hand turn's `submit_answer` carried the
+  **true gold value with zero shown derivation**, teaching "hand-solving this pool works" — directly
+  contradicting the pool's own `a_hand=0.0` premise (hand-solving these families essentially never
+  works; that's the whole point of the "hand-hard" pool). Training said hand-solving succeeds 100% of
+  the time; eval reality is 0%.
+- A third, smaller contributing factor: `mechanics_bridge`'s `random_builds()` forced half of all
+  commits to be class-level first-sightings (k=1), which — since first-sighting of any of only ~8
+  classes necessarily happens early in a 60-slot stream — clustered k=1 builds' *absolute* positions
+  near session-start. All 7 of the model's real eval builds landed at problem #2 or #3, never later,
+  which is more extreme than even the (already skewed) training distribution — consistent with this
+  being a compounding factor on top of the repetition bug, not the primary driver.
+
+**Sanity-checked against public literature (deep-research pass, 2026-07-06) before implementing a fix.**
+Key findings: a training-data-repetition paper found training-set repetition is causally linked to
+inference-time repetition with the effect **amplified >10x**, holding for instruction-tuning data
+specifically — a strong match for our diagnosis. Multiple independent framework/community reports
+(TRL, Alpaca-LoRA, Unsloth, open-r1) separately document SFT runs degenerating into repetition loops,
+though several of those trace to a *different* bug (`pad_token == eos_token`, masking real EOS tokens
+out of the loss) — checked and ruled out here (`train_lora.py` never touches `pad_token`, and
+`PER_DEVICE_BATCH=1` means the padding collator that bug depends on barely engages). Chat-template
+loss-masking pitfalls (the general class behind the earlier `<|im_start|>assistant\n` fix) are a
+well-documented, recurring problem across the ecosystem (TRL needed to patch multiple model families'
+default templates for exactly this), which is retroactive validation that that fix targeted a real,
+known bug category rather than a one-off.
+
+**Fixes implemented (`phase3_demos.py`, all selftest-verified, corpus regenerated under
+`runs/phase3_sft_data/`):**
+1. `_mech_rationale()` removed entirely; `render_mechanics_bridge_session`'s wait/commit/reuse turns
+   are now bare tool calls (no content) — the decision is already fully expressed by which tool gets
+   called, matching the convention the corpus already used for every follow-up call in a commit/reuse
+   sequence.
+2. `render_anchor_session`'s hand/build branches: same fix, bare tool calls.
+3. `_tool_rationale`'s "wait" case (dormant, `N_TOOL=0`, but same bug): removed, so it can't resurface
+   if `tool_bridge` is reactivated.
+4. `error_recovery`'s recovery-turn rationale stripped too, **except** the `_MALFORMED_CONTENT`
+   bad-turn text, which must stay literal — it's reproducing the actual observed collapse shapes from
+   Result 2, not filler.
+5. `random_builds()`: k=1 commits are now explicitly assigned to the LATEST-debuting classes across the
+   whole N-class pool (not a random B-subset), de-clustering their absolute session position. Measured:
+   k=1 commits landing in the first 10 slots dropped to 19% (was effectively the default outcome
+   before).
+6. Every wait/hand-turn `submit_answer` decoupled from gold — submits `gold + 1` instead (deterministic,
+   always wrong, varies with gold, no new low-diversity target) — instead of asserting a correct
+   hand-derivation that never happened. Commit/reuse turns are unaffected (genuinely correct, since the
+   script actually computes the value).
+7. New `_selftest_content_diversity()` guard: asserts no single literal content string exceeds 25% of
+   any slice's content-bearing turns (threshold sits above urn's ~2.4% worst coincidental repeat and
+   error_recovery's deliberate ~20%, far below the old bugs' 48-70%). This is the actual coverage gap
+   that let the bug ship through two retrains undetected.
+
+**Verified locally (no GPU needed — pure corpus generation):** full `--selftest` suite passes,
+including the new diversity guard. Post-fix: `anchor_tool`/`mechanics_bridge`/`tool_bridge` all have
+**0 content-bearing assistant turns** (bare tool calls only — nothing left to memorize into a
+repetition loop); `error_recovery` at 20% (below the 25% guard); `urn_pistar`/`urn_eager` unaffected
+(~2-5%, no regression). `mechanics_bridge` k=1 first-10-slot clustering: 19% (was ~100% in the real
+eval's realized builds).
+
+**Not yet done:** retrain on the regenerated corpus and re-run the tool eval. Until that happens,
+Result 3's transfer-fails numbers should be treated as unconfirmed, not retracted outright — the
+*direction* (still eager) may well replicate, but the magnitude and the "clean, non-confounded" framing
+cannot be trusted until the model is actually functioning normally during the eval session.
 
 ## Error-recovery ablation — data folded into mechanics bridge training (2026-07-06)
 
@@ -323,38 +484,57 @@ caveat), rather than as a standalone test of the coverage-gap hypothesis.
 
 - **Adapters** (LoRA weights only — Trainer's per-epoch `checkpoint-N` subdirs, which duplicate the
   weights plus optimizer state, were deleted; keep this pattern for any future pull):
-  `runs/phase3_ft/pistar_mech25-e2` (539 MB, the `EPOCHS=2` checkpoint used in Result 2's last row),
-  `runs/phase3_ft/pistar_mech25-e4` (539 MB, the memorization-collapsed `EPOCHS=4` checkpoint).
-  `runs/phase3_ft/{pistar,eager}` are the **original** (2026-07-05) Result-1 adapters, pre-Design-A.
+  `runs/phase3_ft/pistar` **now holds the mechanics-bridge-trained adapter (Result 3), NOT the original
+  Result-1 adapter** — `train_lora.py`'s default output path is reused across runs, so this directory
+  got overwritten in place. If the original 2026-07-05 Result-1 `pistar` adapter is ever needed again,
+  it is NOT preserved separately and would need to be retrained.
+  `runs/phase3_ft/pistar_mech25-e2` (539 MB, the `EPOCHS=2` checkpoint used in Result 2's last row) and
+  `runs/phase3_ft/pistar_mech25-e4` (539 MB, the memorization-collapsed `EPOCHS=4` checkpoint) are
+  unaffected (different output paths). `runs/phase3_ft/eager` is still the original Result-1 adapter
+  (untouched this round — only `pistar` was retrained for mechanics bridge training).
 - **Eval run dirs** (full transcripts): `runs/urn_qwen-ft-pistar-a_latest_n-announced` and
   `runs/arm_a1_announce_qwen-ft-pistar-{a,a2,a3,a4,mech25-e2}_latest_n-announced` — the source for every
-  row in the Result 2 table above.
+  row in the Result 2 table above. `runs/urn_qwen-ft-pistar-mechbridge_latest_n-announced/` (24 seeds)
+  and `runs/arm_a1_announce_qwen-ft-pistar-mechbridge_latest_n-announced/` (12 seeds) — the source for
+  Result 3.
 - **Logs**: `runs/phase3_ft_logs_mech25/` (training curves, merge/GGUF-convert logs, smoke-gate outputs
-  for every Design A attempt); `runs/phase3_ft_logs/` (Result 1's logs).
+  for every Design A attempt); `runs/phase3_ft_logs/` (Result 1's logs); `runs/phase3_ft_logs_mechbridge/
+  PIPELINE_PROGRESS.log` + `PIPELINE_STATUS` (the full mechanics bridge training pipeline run, including
+  training curves and both eval FIDELITY blocks — pulled from the box's repo root, not under `runs/`,
+  after the fact; remember this path next time, `rsync runs/` alone won't catch it).
 - **Not kept** (regenerable, not pulled): merged bf16 checkpoints and GGUF files for every Design A
-  attempt (28 GB / 29.5 GB each) — regenerate from an adapter via `merge_lora.py` + `convert_hf_to_gguf.py`
-  in ~5 min if a specific checkpoint needs to be served again.
+  attempt, and for mechanics bridge training (`~/pistar-mechbridge-f16.gguf`, 29.5 GB) — regenerate from
+  an adapter via `merge_lora.py` + `convert_hf_to_gguf.py` in ~5 min if a specific checkpoint needs to be
+  served again.
 - **Corpus** is not stored as an artifact — it's deterministic from `phase3_demos.py`, always regenerate
   fresh on a new box rather than syncing the jsonl files.
 
 ## Open follow-ups
 
-1. **Run mechanics bridge training** (both bug fixes + error_recovery, rerun the tool A2 eval) — corpus
-   is built and regenerated locally, code fixes are in `phase3_demos.py`/`train_lora.py`, all selftests
-   pass. This is now the highest-confidence next experiment. Not yet launched (per [[no-auto-reps]], needs go-ahead
-   before spending box time).
-2. **Attribution follow-up, only if (1) is clean and the distinction matters:** rerun with `--recovery
-   off` (bug fixes only, no error_recovery data) to isolate whether the bug fixes alone were sufficient,
-   separate from the error-recovery data's contribution.
-3. **If (1) still collapses: adapter-merge split** — train the policy (urn-only) and format
-   (anchor+mechanics+error_recovery-only) objectives as separate LoRA adapters with no shared gradient
-   step, combine via PEFT's weighted-adapter merge. Fully scoped in `docs/adapter-merge-transfer-plan.md`,
-   not started. A collapse surviving both bug fixes would be much stronger evidence for entanglement
-   than anything available before this diagnosis.
-4. **Publication-grade tool eval** — once tool-calling reliability is solved, rerun with more seeds and
-   a clean regret-level comparison (a_script recalibration, `a0_oracle_gap.py`, not yet run against any
-   Design A checkpoint) and a catastrophic-forgetting sanity check.
-5. **Alternative fix, if neither (1) nor (3) works: unify modality.** Give the urn a `decide(KEEP/PASS)`
-   tool call so training is 100% tool-calling from the start — the urn's own 170 long sessions would then
-   double as long-context tool-calling practice, sidestepping the need for a separate mechanics bridge
-   entirely. Bigger lift (urn harness rewrite + pre-FT re-baseline), not started.
+1. ~~Run mechanics bridge training~~ **DONE (2026-07-06) — see Result 3.** Read as clean at the time;
+   **retracted 2026-07-07** — see "Corpus regeneration".
+2. **Retrain on the regenerated corpus and re-run the tool eval — NEW TOP PRIORITY (2026-07-07), not yet
+   run.** Corpus fixes are implemented, selftest-verified, and regenerated locally (`phase3_demos.py`
+   `--selftest` passes, including the new content-diversity guard). Needs a fresh box + go-ahead per
+   [[no-auto-reps]]. Until this runs, Result 3's numbers are unconfirmed, not trustworthy as the
+   framing-wall answer.
+3. **Adapter-merge split — still not triggered by the *legibility* question** (that gating condition —
+   a retrain surviving the 2026-07-06 masking bug fixes still collapsing — didn't happen), but the
+   *content-diversity* bug is a distinct question `docs/adapter-merge-transfer-plan.md` doesn't bear on
+   either way. Revisit only if #2's retrain reveals a new collapse mode.
+4. **Attribution follow-up (still open, low priority):** rerun with `--recovery off` (bug fixes only, no
+   error_recovery data) to check whether `error_recovery` contributed anything. Lower priority than #2.
+5. **Result 3 secondary findings — ANSWERED, not by truncation/pricing artifacts as originally
+   hypothesized, but by the corpus bug in "Corpus regeneration":**
+   - `builds/seed` = 0.58 (low): NOT a `hit_cap`-truncation artifact — the raw per-seed records show the
+     model rarely acting at all (near-zero submissions, most turns spent in the repetition loop), not a
+     model that was working steadily and got cut short.
+   - regret (6061±559) nearly double the pre-FT baseline (2934±324): NOT an `a_script`/pricing artifact
+     — `eff_solve_by_hand=0.0` on every seed means the model's actual task performance collapsed, which
+     directly inflates regret regardless of how `value_of_builds` prices the untouched tail.
+6. **Publication-grade tool eval — blocked on #2.** More seeds for a tighter regret CI and a
+   catastrophic-forgetting sanity check (ordinary coding tasks) both still pending, and neither is
+   meaningful until the eval is run on a model that isn't stuck in a repetition loop.
+7. **Unify modality (urn `decide()` as a tool call)** — not started, still lower priority; revisit only
+   if #2's retrain still shows a clean transfer-fails result and a genuinely different mechanism (not a
+   corpus bug) is wanted for the next attempt.

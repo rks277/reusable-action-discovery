@@ -44,6 +44,16 @@ treatment demos indistinguishable from the eager control (see corpus-generation 
 No LLM calls, no GPU -- everything is generated deterministically from exact_dp / family_kit /
 stream_builder, so this step is free. Output: chat-format JSONL under runs/phase3_sft_data/.
 
+CORPUS REGENERATION (2026-07-06 -- see docs/qwen-finetune-transfer-plan.md "corpus regeneration" for
+the full diagnosis): anchor/mechanics_bridge/tool_bridge's wait-branch rationale text was a small set
+of fixed literal strings (as low as 0.2% unique across 1500 turns), which collapsed the fine-tuned
+model into verbatim repetition at eval; and wait/hand turns asserted a correct submit_answer with no
+script behind it, contradicting this pool's a_hand=0.0 premise. Both fixed: rationale text dropped
+entirely on wait/commit/reuse turns (the decision is already fully expressed by which tool gets
+called), wait-turn submissions decoupled from gold (now gold+1, not gold), and mechanics_bridge's
+k=1 commits de-clustered from the first few absolute slots. `_selftest_content_diversity` guards
+against a repeat of the first bug class.
+
   PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.phase3_demos          # generate
   PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.phase3_demos --selftest
 """
@@ -54,6 +64,7 @@ import argparse
 import json
 import random
 import uuid
+from collections import Counter
 from pathlib import Path
 
 from scripts.creator.tool_disposition_benchmark.driver import FORMAT_REMINDER
@@ -282,8 +293,11 @@ def _tc(name: str, args: dict) -> dict:
 
 
 def _tool_rationale(action: str, fam: str, k: int, t: int, budget_before: int, policy: str) -> str:
-    if action == "wait":
-        return "This looks like a new problem type -- I'll just work it out directly for now."
+    """No 'wait' case (2026-07-06 corpus regeneration, item 3): a wait/hand turn's decision is already
+    fully expressed by which tool gets called (none, here) -- rationale text added nothing on top of
+    that, and a fixed string there is exactly the bug class that collapsed anchor_tool/mechanics_bridge
+    (see docs/qwen-finetune-transfer-plan.md 'corpus regeneration'). Currently dormant (N_TOOL=0) but
+    fixed now so it can't resurface if tool_bridge is reactivated."""
     if action == "commit":
         if policy != "pistar":
             return (f"This is a new type of problem -- I'll write a script for it now in case it "
@@ -314,15 +328,20 @@ def render_tool_bridge_session(N: int, T: int, B: int, seed: int, policy: str) -
         messages.append({"role": "user", "content": problem_prompt(prob, i + 1, T)})
         fam, gold = s["family"], prob["gold"]
         budget_before = s["budget_left"] + (1 if s["action"] == "commit" else 0)
-        rationale = _tool_rationale(s["action"], fam, s["k"], s["t"], budget_before, policy)
 
         if s["action"] == "wait":
-            tc = _tc("submit_answer", {"value": gold})
-            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+            # decoupled from gold (2026-07-06 corpus regeneration, item 6): a wait/hand turn has no
+            # write_script/run_script behind it, so asserting the submitted value is CORRECT taught the
+            # model "hand-solving this pool works", contradicting the pool's own a_hand=0.0 premise (see
+            # docs/qwen-finetune-transfer-plan.md 'corpus regeneration'). gold+1 is deterministic, always
+            # wrong, and varies with gold (no new low-diversity target).
+            tc = _tc("submit_answer", {"value": gold + 1})
+            messages.append({"role": "assistant", "tool_calls": [tc]})
             messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
                 {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
             continue
 
+        rationale = _tool_rationale(s["action"], fam, s["k"], s["t"], budget_before, policy)
         if s["action"] == "commit":
             name = f"{fam}_solver"
             script_of[s["class_id"]] = name
@@ -377,27 +396,29 @@ def render_anchor_session(fam: str, seed: int, mode: str) -> list[dict]:
     """A single-problem tool session. mode='build' writes+runs+submits (teaches the full
     write_script/run_script modality); mode='hand' just submits (lowers the build prior). NO
     recurrence/N disclosure and no cross-problem state -> nothing about build TIMING is demonstrated.
-    Rationales stay strictly per-problem (never mention reuse/recurrence/budget) to keep it
-    policy-neutral even in the trained assistant text."""
+
+    No rationale text (2026-07-06 corpus regeneration, item 2): the decision is already fully
+    expressed by which tool gets called, and a fixed rationale string here is the exact bug that
+    collapsed this slice into verbatim repetition at eval (see
+    docs/qwen-finetune-transfer-plan.md 'corpus regeneration') -- bare tool calls only, matching the
+    convention already used for every follow-up call in a build sequence."""
     prob = _anchor_problem(fam, seed)
     gold = prob["gold"]
     # match the tool_bridge convention: token_cap=None (no budget paragraph), n=1, budget=1
     messages = [{"role": "system", "content": system_prompt(1, 1, None)},
                 {"role": "user", "content": problem_prompt(prob, 1, 1)}]
     if mode == "hand":
-        tc = _tc("submit_answer", {"value": gold})
-        messages.append({"role": "assistant",
-                         "content": "I'll work this one out directly and answer.",
-                         "tool_calls": [tc]})
+        # decoupled from gold (item 6, same rationale as render_tool_bridge_session's wait branch):
+        # no script backs this submission, so asserting it's correct taught "hand-solving works",
+        # contradicting a_hand=0.0. gold+1 is deterministic, always wrong, varies with gold.
+        tc = _tc("submit_answer", {"value": gold + 1})
+        messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
             {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
         return messages
     name = f"{fam}_solver"
     tc = _tc("write_script", {"name": name, "code": FAMILY_CODE[fam]})
-    messages.append({"role": "assistant",
-                     "content": "This needs an exact, large computation -- I'll write a script for "
-                                "it and run it on these inputs.",
-                     "tool_calls": [tc]})
+    messages.append({"role": "assistant", "tool_calls": [tc]})
     messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
         {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
     tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
@@ -436,35 +457,50 @@ def random_builds(slots: list[dict], B: int, rng: random.Random) -> dict:
     """Policy-neutral labels: pick B distinct classes at random (independent of recurrence/arrival
     order); commit HALF at first sighting (k=1) and HALF at a random later occurrence (k>=2, forced
     when the class has enough occurrences) -- deterministically balanced, not left to chance, so build
-    timing carries no correlation with recurrence in either direction (not eager, not reserve)."""
+    timing carries no correlation with recurrence in either direction (not eager, not reserve).
+
+    De-clustered (2026-07-06 corpus regeneration, item 5): a class's own first sighting (k=1) is,
+    definitionally, wherever that class first debuts in the realized stream -- and with only N~8
+    classes, the naturally-early-debuting ones (hot classes reliably debut in the first few slots by
+    construction) used to ALWAYS get picked for the k=1 half by pure chance, which taught the FT model
+    an absolute-position prior ('building happens near session-start') on top of the intended
+    recurrence-neutral signal -- and matches the real eval collapse (all 7 real builds landed at
+    problem #2 or #3, never later). Fix: explicitly assign k=1 to the LATEST-debuting classes across
+    the WHOLE N-class pool (not a random B-subset -- picking within a random subset wasn't enough,
+    since a subset dominated by hot classes is still early no matter which of its members "wins"),
+    so first-sighting commits spread across the whole session instead of concentrating wherever the
+    fastest-debuting classes happen to be. Selection is by debut SLOT only, unrelated to hot/trap role
+    or future recurrence rate, so it stays policy-neutral."""
     by_class: dict[int, list[dict]] = {}
     for s in slots:
         by_class.setdefault(s["class_id"], []).append(s)
     class_ids = list(by_class.keys())
-    rng.shuffle(class_ids)
-    builds = {}
-    for i, cid in enumerate(class_ids[:B]):
+    debut = {cid: min(s["slot_index"] for s in occs) for cid, occs in by_class.items()}
+    n_k1 = (B + 1) // 2
+    n_kge2 = B - n_k1
+    k1_classes = sorted(class_ids, key=lambda cid: -debut[cid])[:n_k1]   # latest debut in the pool
+    remaining = [cid for cid in class_ids if cid not in k1_classes]
+    rng.shuffle(remaining)
+    kge2_classes = [cid for cid in remaining if len(by_class[cid]) >= 2][:n_kge2]
+    for cid in remaining:                                # fallback if too few classes recur >=2 times
+        if len(kge2_classes) >= n_kge2:
+            break
+        if cid not in kge2_classes:
+            kge2_classes.append(cid)
+    builds = {cid: 1 for cid in k1_classes}
+    for cid in kge2_classes:
         occs = sorted(by_class[cid], key=lambda z: z["slot_index"])
-        if i % 2 == 0 or len(occs) < 2:
-            k = 1                                            # first-sighting half
-        else:
-            k = occs[rng.randrange(1, len(occs))]["class_position"]   # forced k>=2 half
-        builds[cid] = k
+        builds[cid] = 1 if len(occs) < 2 else occs[rng.randrange(1, len(occs))]["class_position"]
     return builds
 
 
-def _mech_rationale(action: str) -> str:
-    """Policy-neutral rationale text -- NEVER references recurrence, budget-reservation, or
-    first-sighting logic, even though the underlying decision is itself already policy-neutral; this
-    keeps the TRAINED TEXT from leaking a reserve/eager framing too."""
-    if action == "wait":
-        return "I'll work this one out directly."
-    if action == "commit":
-        return "I'll write a script for this one."
-    return "I already have a script for this -- I'll run it again."
-
-
 def render_mechanics_bridge_session(N: int, T: int, B: int, seed: int) -> list[dict]:
+    """No rationale text (2026-07-06 corpus regeneration, item 1): the decision is already fully
+    expressed by which tool gets called, and a fixed rationale string here (there were only 3 across
+    all 1500 content-bearing turns) is exactly the bug that collapsed this slice into verbatim
+    repetition at eval -- see docs/qwen-finetune-transfer-plan.md 'corpus regeneration'. Bare tool
+    calls only, matching the convention already used for every follow-up call in a commit/reuse
+    sequence."""
     fams = UNIFORM[:N]
     slots, _meta = build_stochastic_stream(StochasticStreamSpec(
         families=fams, n_hot=B, T=T, budget=B, guarantee_trap_early=1.0, magnitude=100, seed=seed))
@@ -479,11 +515,13 @@ def render_mechanics_bridge_session(N: int, T: int, B: int, seed: int) -> list[d
         prob = problems[s["slot_index"]]
         messages.append({"role": "user", "content": problem_prompt(prob, i + 1, T)})
         fam, gold = s["family"], prob["gold"]
-        rationale = _mech_rationale(s["action"])
 
         if s["action"] == "wait":
-            tc = _tc("submit_answer", {"value": gold})
-            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+            # decoupled from gold (item 6): no script backs this submission, so asserting it's
+            # correct taught "hand-solving works", contradicting a_hand=0.0. gold+1 is deterministic,
+            # always wrong, and varies with gold (no new low-diversity target).
+            tc = _tc("submit_answer", {"value": gold + 1})
+            messages.append({"role": "assistant", "tool_calls": [tc]})
             messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
                 {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
             continue
@@ -492,19 +530,19 @@ def render_mechanics_bridge_session(N: int, T: int, B: int, seed: int) -> list[d
             name = f"{fam}_solver"
             script_of[s["class_id"]] = name
             tc = _tc("write_script", {"name": name, "code": FAMILY_CODE[fam]})
-            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+            messages.append({"role": "assistant", "tool_calls": [tc]})
             messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
                 {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
             tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
             messages.append({"role": "assistant", "tool_calls": [tc]})
-        else:  # reuse -- rationale + run_script MUST be ONE assistant message, not two: two separate
-            # assistant-role dicts back-to-back with no intervening tool/user turn never occurs in real
-            # eval (driver.py always emits exactly one assistant dict per turn) and trains the model on
-            # a mid-conversation '<|im_start|>assistant\n' it should never see -- see
-            # docs/qwen-finetune-transfer-plan.md "Mechanics bridge training" diagnosis (2026-07-06).
+        else:  # reuse -- run_script MUST be its own single assistant message, not split across two:
+            # two separate assistant-role dicts back-to-back with no intervening tool/user turn never
+            # occurs in real eval (driver.py always emits exactly one assistant dict per turn) and
+            # trains the model on a mid-conversation '<|im_start|>assistant\n' it should never see --
+            # see docs/qwen-finetune-transfer-plan.md "Mechanics bridge training" diagnosis (2026-07-06).
             name = script_of[s["class_id"]]
             tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
-            messages.append({"role": "assistant", "content": rationale, "tool_calls": [tc]})
+            messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"],
                          "content": json.dumps({"ok": True, "return_value": gold})})
         tc = _tc("submit_answer", {"value": gold})
@@ -576,6 +614,11 @@ def _no_script_error(name: str, known: list[str] = ()) -> dict:
 
 
 def render_error_recovery_session(fam: str, seed: int, pattern: str) -> list[dict]:
+    """No rationale text on any turn except the deliberate malformed-content demo (2026-07-06 corpus
+    regeneration, item 4): the corrective/well-formed turns' rationale strings (e.g. "Using the tools
+    as instructed.") are the same fixed-literal bug class as anchor/mechanics_bridge and get dropped
+    (bare tool calls). The `_MALFORMED_CONTENT` bad-turn text in the 'reminder' pattern MUST stay --
+    it's reproducing the actual observed collapse shapes from Result 2, not filler."""
     prob = _anchor_problem(fam, seed)
     gold = prob["gold"]
     # single-problem framing, identical convention to the anchor (option c): no N/recurrence
@@ -588,21 +631,18 @@ def render_error_recovery_session(fam: str, seed: int, pattern: str) -> list[dic
         messages.append({"role": "assistant", "content": bad})            # NO tool_calls key -> hits
         messages.append({"role": "user", "content": FORMAT_REMINDER})     # driver's "no tool call" branch
         tc = _tc("submit_answer", {"value": gold})
-        messages.append({"role": "assistant",
-                         "content": "Using the tools as instructed.", "tool_calls": [tc]})
+        messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
             {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
         return messages
 
     if pattern == "wrong_name":
         bad_tc = _tc("submit_answers", {"value": gold})                   # unregistered plural name,
-        messages.append({"role": "assistant",                             # well-formed args this time
-                         "content": "I'll record the answer.", "tool_calls": [bad_tc]})
+        messages.append({"role": "assistant", "tool_calls": [bad_tc]})    # well-formed args this time
         messages.append({"role": "tool", "tool_call_id": bad_tc["id"],
                          "content": json.dumps(_unknown_tool_error("submit_answers"))})
         tc = _tc("submit_answer", {"value": gold})
-        messages.append({"role": "assistant",
-                         "content": "Correcting the tool name.", "tool_calls": [tc]})
+        messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
             {"ok": True, "message": f"Recorded answer for problem {prob['idx']}."})})
         return messages
@@ -610,14 +650,11 @@ def render_error_recovery_session(fam: str, seed: int, pattern: str) -> list[dic
     if pattern == "unknown_script":
         name = f"{fam}_solver"
         bad_tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})   # never written yet
-        messages.append({"role": "assistant",
-                         "content": "I already have a script for this -- I'll run it.",
-                         "tool_calls": [bad_tc]})
+        messages.append({"role": "assistant", "tool_calls": [bad_tc]})
         messages.append({"role": "tool", "tool_call_id": bad_tc["id"],
                          "content": json.dumps(_no_script_error(name, known=()))})
         tc = _tc("write_script", {"name": name, "code": FAMILY_CODE[fam]})
-        messages.append({"role": "assistant",
-                         "content": "It doesn't exist yet -- I'll write it first.", "tool_calls": [tc]})
+        messages.append({"role": "assistant", "tool_calls": [tc]})
         messages.append({"role": "tool", "tool_call_id": tc["id"], "content": json.dumps(
             {"ok": True, "message": f"Saved script '{name}'.", "scripts": [name]})})
         tc = _tc("run_script", {"name": name, "inputs": prob["inputs"]})
@@ -753,8 +790,11 @@ def _selftest_family_code():
 
 def _selftest_decisions():
     """Every rendered session's embedded decisions must match a freshly-recomputed policy, every
-    submit_answer value must match the stream's true gold, and both system prompts must DISCLOSE N
-    (A2 protocol) -- regression tripwire + correctness proof. Uses A2-realistic N/T/B (T>=60)."""
+    submit_answer value must match the stream's true gold ON COMMIT/REUSE TURNS (a WAIT turn's
+    submit_answer is gold+1, decoupled from correctness -- item 6, 2026-07-06 corpus regeneration:
+    a hand/wait turn has no script behind it, so asserting it's correct taught "hand-solving works",
+    contradicting a_hand=0.0), and both system prompts must DISCLOSE N (A2 protocol) -- regression
+    tripwire + correctness proof. Uses A2-realistic N/T/B (T>=60)."""
     print("\n=== decision + gold-value + N-disclosure consistency (urn + tool_bridge, pistar + eager) ===")
     for policy in ("pistar", "eager"):
         # urn: recompute independently and diff against a couple of rendered sessions
@@ -780,15 +820,18 @@ def _selftest_decisions():
                 families=UNIFORM[:N], n_hot=B, T=T, budget=B, guarantee_trap_early=1.0,
                 magnitude=100, seed=TOOL_SEED_START + i))
             gold_by_slot = {s["slot_index"]: int(s["gold"]) for s in slots}
+            builds = _labels(slots, N, T, B, policy)
+            steps = _walk(slots, builds, B)
             msgs = render_tool_bridge_session(N, T, B, TOOL_SEED_START + i, policy)
             assert f"exactly {N} distinct" in msgs[0]["content"], "tool system prompt missing N"
             submits = [json.loads(tc["function"]["arguments"])["value"]
                        for m in msgs for tc in m.get("tool_calls", [])
                        if tc["function"]["name"] == "submit_answer"]
             assert len(submits) == T, (policy, i, len(submits), T)
-            golds_in_order = [gold_by_slot[s["slot_index"]]
-                              for s in sorted(slots, key=lambda z: z["slot_index"])]
-            assert submits == golds_in_order, (policy, i, "submit != gold")
+            expected = [gold_by_slot[s["slot_index"]] + (1 if s["action"] == "wait" else 0)
+                       for s in sorted(steps, key=lambda z: z["slot_index"])]
+            assert submits == expected, (policy, i, "submit mismatch (gold on commit/reuse, "
+                                         "gold+1 on wait)")
         print(f"  policy={policy}: OK")
 
 
@@ -851,23 +894,30 @@ def _selftest_anchor():
         assert names and set(names) <= known, (i, names)
         submits = [json.loads(tc["function"]["arguments"])["value"] for m in msgs
                    for tc in m.get("tool_calls", []) if tc["function"]["name"] == "submit_answer"]
-        assert submits == [gold], (i, submits, gold)
         if "write_script" in names:
             n_build += 1
+            assert submits == [gold], (i, submits, gold)
             rv = [json.loads(m["content"])["return_value"] for m in msgs
                   if m["role"] == "tool" and "return_value" in m["content"]]
             assert rv == [gold], (i, "run_script return != gold", rv, gold)
+        else:
+            # hand mode: decoupled from gold (item 6) -- no script backs this submission
+            assert submits == [gold + 1], (i, submits, gold)
     hand = N_ANCHOR - n_build
     assert abs(hand / N_ANCHOR - ANCHOR_HAND_FRAC) < 0.1, (hand, ANCHOR_HAND_FRAC)
     print(f"  anchor: {N_ANCHOR} sessions, {n_build} build / {hand} hand (hand_frac="
-          f"{ANCHOR_HAND_FRAC}); all submits == gold; prompts policy-neutral; deterministic")
+          f"{ANCHOR_HAND_FRAC}); build submits == gold, hand submits == gold+1 (decoupled, item 6); "
+          f"prompts policy-neutral; deterministic")
 
 
 def _selftest_mechanics_bridge():
     """Mechanics-bridge guards: deterministic + arm-independent, correct gold on every submit/run_script
     return, N disclosed + RECURRENCE_NOTE present (matches the real eval framing), known tools only, and
     -- the key correctness property -- build timing is NOT degenerate (some commits at k=1 AND some at
-    k>=2), so it cannot be read as teaching either an eager or a reserve policy."""
+    k>=2), so it cannot be read as teaching either an eager or a reserve policy. Also guards item 5
+    (2026-07-06 corpus regeneration): k=1 commits must not all cluster in the first few absolute slots
+    of the session (the position-clustering artifact that -- on top of the fixed-rationale bug --
+    matched all 7 real-eval builds landing at problem #2 or #3)."""
     print("\n=== mechanics-bridge guard (Design A fix: policy-neutral long-context tool sessions) ===")
     mech = generate_mechanics_bridge()
     assert len(mech) == N_MECH, (len(mech), N_MECH)
@@ -886,6 +936,7 @@ def _selftest_mechanics_bridge():
 
     known = {"write_script", "run_script", "submit_answer"}
     k1 = kge2 = 0
+    k1_early_slots = k1_slots = 0     # item 5 guard: k=1 commits' ABSOLUTE position in the session
     for i, msgs in enumerate(mech):
         B = 2 if i % 2 == 0 else 3
         N, T = 8, 60
@@ -898,6 +949,9 @@ def _selftest_mechanics_bridge():
         for s in steps:
             if s["action"] == "commit":
                 k1 += (s["k"] == 1); kge2 += (s["k"] >= 2)
+                if s["k"] == 1:
+                    k1_slots += 1
+                    k1_early_slots += s["slot_index"] < 10
 
         assert f"exactly {N} distinct" in msgs[0]["content"], "mechanics system prompt missing N"
         assert "recurring TYPES" in msgs[0]["content"], "mechanics system prompt missing RECURRENCE_NOTE"
@@ -906,8 +960,9 @@ def _selftest_mechanics_bridge():
         submits = [json.loads(tc["function"]["arguments"])["value"] for m in msgs
                    for tc in m.get("tool_calls", []) if tc["function"]["name"] == "submit_answer"]
         assert len(submits) == T, (i, len(submits), T)
-        golds_in_order = [gold_by_slot[s["slot_index"]] for s in sorted(slots, key=lambda z: z["slot_index"])]
-        assert submits == golds_in_order, (i, "submit != gold")
+        expected = [gold_by_slot[s["slot_index"]] + (1 if s["action"] == "wait" else 0)
+                   for s in sorted(steps, key=lambda z: z["slot_index"])]
+        assert submits == expected, (i, "submit mismatch (gold on commit/reuse, gold+1 on wait)")
         run_returns = [json.loads(m["content"])["return_value"] for m in msgs
                        if m["role"] == "tool" and "return_value" in m["content"]]
         # run_script fires on commit + reuse actions only (not wait) -- mirror _walk exactly rather than
@@ -919,9 +974,14 @@ def _selftest_mechanics_bridge():
 
     tot = k1 + kge2
     frac_k1 = k1 / tot if tot else 0
+    frac_early = k1_early_slots / k1_slots if k1_slots else 0
     print(f"  mechanics: {N_MECH} sessions, {tot} commits (k=1: {k1}, k>=2: {kge2}, "
-          f"{frac_k1:.0%} first-sighting); all submits/run_script == gold; N + RECURRENCE_NOTE present")
+          f"{frac_k1:.0%} first-sighting); k=1 commits landing in slot<10: {frac_early:.0%} "
+          f"(de-clustered, item 5); commit/reuse submits/run_script == gold, wait submits == gold+1 "
+          f"(item 6); N + RECURRENCE_NOTE present")
     assert k1 > 0 and kge2 > 0, "build timing is degenerate (all-k=1 or all-k>=2) -- not policy-neutral"
+    assert frac_early <= 0.5, (frac_early, "k=1 commits still cluster in the first 10 slots -- "
+                              "de-clustering (item 5) regressed")
 
 
 def _selftest_error_recovery():
@@ -1019,6 +1079,40 @@ def _selftest_no_consecutive_assistant():
         print(f"  {name}: {len(sessions)} sessions, no back-to-back assistant turns")
 
 
+def _selftest_content_diversity():
+    """CONTENT-DIVERSITY GUARD (2026-07-06 corpus regeneration, item 7): no slice may let a single
+    literal assistant-content string dominate more than a modest fraction of its content-bearing
+    turns. This is the actual coverage gap that let anchor_tool (2/150 sessions, 1.3% unique) and
+    mechanics_bridge (3/1500 turns, 0.2% unique) collapse into verbatim repetition at eval undetected
+    through two retrains -- every other guard here checks correctness/determinism/structure, none
+    checked text diversity. Threshold (25%) sits above urn's own worst coincidental repeat (~2.4%,
+    parameterized text that legitimately recurs when (k, budget, vocab) coincide) and above
+    error_recovery's deliberately-small, intentionally-repeating set of 5 known malformed-content
+    patterns (~20%, by design -- see _MALFORMED_CONTENT), but far below the old bugs' 48-70%."""
+    print("\n=== content-diversity guard (2026-07-06: catches the fixed-literal-rationale bug class) ===")
+    urn_p, tool_p = generate_corpus("pistar")
+    urn_e, tool_e = generate_corpus("eager")
+    slices = {
+        "urn_pistar": urn_p, "tool_bridge_pistar": tool_p, "urn_eager": urn_e, "tool_bridge_eager": tool_e,
+        "anchor": generate_anchor(), "mechanics_bridge": generate_mechanics_bridge(),
+        "error_recovery": generate_error_recovery(),
+    }
+    for name, sessions in slices.items():
+        contents = [m["content"] for msgs in sessions for m in msgs
+                   if m["role"] == "assistant" and m.get("content")]
+        if not contents:
+            print(f"  {name}: 0 content-bearing assistant turns (bare tool calls only) -- OK")
+            continue
+        cnt = Counter(contents)
+        top_str, top_n = cnt.most_common(1)[0]
+        frac = top_n / len(contents)
+        print(f"  {name}: {len(contents)} content-bearing turns, {len(cnt)} distinct "
+              f"({len(cnt) / len(contents):.1%} unique), top string x{top_n} ({frac:.0%}): {top_str[:60]!r}")
+        assert frac <= 0.25, (name, frac, "a single literal content string dominates >25% of turns "
+                              "-- degenerate/repetitive content risks a verbatim-repetition collapse, "
+                              "see docs/qwen-finetune-transfer-plan.md 'corpus regeneration'")
+
+
 def _selftest_examples():
     print("\n=== example transcripts (A2, T=60 so pi* actually reserves) ===")
     urn_msgs = render_urn_session(URN_VOCAB[0], 8, 60, 3, URN_SEED_START, "pistar")
@@ -1044,6 +1138,7 @@ def _selftest():
     _selftest_mechanics_bridge()
     _selftest_error_recovery()
     _selftest_no_consecutive_assistant()
+    _selftest_content_diversity()
     _selftest_examples()
     print("\nphase3_demos self-test OK")
 

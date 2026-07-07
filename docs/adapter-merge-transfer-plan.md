@@ -8,16 +8,17 @@ box mechanics live in `docs/box-setup.md`. Code lives in `scripts/creator/tool_d
 
 ## Status (2026-07-06)
 
-**PLANNED, not started, GATED — and the bar just got higher.** `qwen-finetune-transfer-plan.md`'s
-"Mechanics bridge training — root-cause diagnosis and fix" found and fixed two concrete bugs behind
-Result 2's collapse (a `train_lora.py` masking bug that trained the model to emit the chat template's
-own `<|im_start|>assistant\n` role text as content, reinforced by a `phase3_demos.py` corpus bug in
-`mechanics_bridge`'s "reuse" branch that was the only slice with the shape needed to teach it — hence
-the name). Both are fixed; the corpus is regenerated locally and ready to retrain. Mechanics bridge
-training (bug fixes + the already-built `error_recovery.jsonl`, no adapter split) is now the standing
-next experiment — run it first. This plan's entanglement question only becomes live if that retrain
-**still** collapses, which would now be much stronger evidence for entanglement than before (two known, concrete bugs would already
-be ruled out). No training run, no code beyond the small changes scoped below.
+**NOT NEEDED — gating condition did not trigger.** `qwen-finetune-transfer-plan.md`'s mechanics bridge
+training (root-cause fix: a `train_lora.py` masking bug + a `phase3_demos.py` corpus bug in
+`mechanics_bridge`'s "reuse" branch) ran clean on a fresh H100 — zero malformed output, zero collapse,
+across all 12 tool-eval seeds (see that doc's Result 3). This plan's entanglement question was only
+meant to become live if that retrain *still* collapsed after both bugs were fixed; it didn't, so there's
+no evidence motivating an adapter split for this purpose. The transfer result itself still reads
+negative (100% eager in the tool framing, same as every prior reading) — but that's now a clean,
+non-confounded finding, not a legibility problem this plan was designed to fix. Leaving this doc in
+place as a reference design (task-vector/adapter-merging is a real technique) in case a different
+motivation for it comes up later, but not pursuing it for this question. No training run happened, no
+code from this plan was written.
 
 ## Why adapter merging instead of joint SFT
 
