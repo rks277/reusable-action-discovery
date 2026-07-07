@@ -447,10 +447,13 @@ def generate_anchor(n: int = N_ANCHOR, hand_frac: float = ANCHOR_HAND_FRAC) -> l
 # --------------------------------------------------------------------- mechanics bridge (Design A fix,
 # 2026-07-06): realistic full-length tool sessions, policy-neutral on build TIMING (see module docstring).
 MECH_SEED_START = 7000     # disjoint from urn(5000+)/tool_bridge(4000+)/anchor(6000+)/eval(2000-2023)
-N_MECH = 25     # bumped 10->25 (2026-07-06): 10 wasn't enough repetition -- FT model still hallucinated
-                # tool syntax (a "<script>...</script>" pseudo-tag) on later problems in the real 60-
-                # problem eval; testing whether more exposure to the correct write_script/run_script/
-                # submit_answer format in long sessions fixes it before considering a bigger redesign.
+N_MECH = 100    # bumped 25->100 (2026-07-07, mechanics-rebalance -- see docs/qwen-finetune-transfer-
+                # plan.md "Mechanics-rebalance"): anchor's 150 single-problem "success -> session ends"
+                # sessions outnumber mechanics_bridge's "success -> another problem" ones ~6:1, a
+                # candidate cause of the checkpoint's argmax-silence-after-first-success defect. anchor
+                # is intentionally left untouched (cutting it risks reintroducing the urn-erosion bug it
+                # exists to prevent) -- this narrows the gap from the cheap-to-generate side instead.
+                # (previously bumped 10->25 on 2026-07-06 for a different, now-fixed hallucination bug.)
 
 
 def random_builds(slots: list[dict], B: int, rng: random.Random) -> dict:

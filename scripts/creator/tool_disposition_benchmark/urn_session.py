@@ -64,13 +64,16 @@ IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))   # local models:
 PALETTE = ["red", "blue", "green", "yellow", "purple", "orange", "black", "white"]
 PAIR_TOOL = MODEL_KEY == "haiku"          # the A1 tool baseline (runs/arm_a1_announce) is Haiku-only
 
-_N_NOTE = (f"There are exactly {N} distinct colors in the bag, but you are not told which colors are "
-          "common or rare, nor how many balls of each color there are; you learn the rates only from "
-          "the draws you have seen.") if ANNOUNCE_N else (
-          "You do not know in advance how many colors there are or how many balls of each color are "
-          "in the bag; you learn only from the draws you have seen.")
-
-SYSTEM = f"""You are playing a game with a bag of colored balls.
+def render_system(T: int, B: int, N: int, announce_n: bool) -> str:
+    """Parameterized system prompt (extracted 2026-07-07 so `rl_rollout.py` can reuse it byte-for-byte
+    instead of re-deriving/paraphrasing it -- this project's standing lesson is that a near-miss format
+    is as bad as no fix at all)."""
+    n_note = (f"There are exactly {N} distinct colors in the bag, but you are not told which colors are "
+              "common or rare, nor how many balls of each color there are; you learn the rates only from "
+              "the draws you have seen.") if announce_n else (
+              "You do not know in advance how many colors there are or how many balls of each color are "
+              "in the bag; you learn only from the draws you have seen.")
+    return f"""You are playing a game with a bag of colored balls.
 
 Balls are drawn from the bag one at a time; there will be {T} draws in total. Each ball has a color.
 
@@ -90,12 +93,21 @@ If you PASS a ball it is gone and scores nothing. Balls of a color you never kee
 
 Your goal is to MAXIMIZE the total number of balls you collect by the end of the game.
 
-{_N_NOTE} Decide as each ball appears -- decisions are final.
+{n_note} Decide as each ball appears -- decisions are final.
 
 For each draw, think briefly (one or two sentences), then end your reply with EXACTLY one line:
 DECISION: KEEP
 or
 DECISION: PASS"""
+
+
+_N_NOTE = (f"There are exactly {N} distinct colors in the bag, but you are not told which colors are "
+          "common or rare, nor how many balls of each color there are; you learn the rates only from "
+          "the draws you have seen.") if ANNOUNCE_N else (
+          "You do not know in advance how many colors there are or how many balls of each color are "
+          "in the bag; you learn only from the draws you have seen.")
+
+SYSTEM = render_system(T, B, N, ANNOUNCE_N)
 
 
 def cost_of(turn_usages):
@@ -123,33 +135,32 @@ def parse_decision(text: str):
     return "PASS", "default"
 
 
-async def run_one(client, model, seed):
-    d = BASE / f"seed_{seed}"
-    if (d / "session.json").exists():
-        return 0.0, "cached"
-    slots, meta = build_stochastic_stream(StochasticStreamSpec(
-        families=UNIFORM, n_hot=B, T=T, budget=B, guarantee_trap_early=G, magnitude=MAG, seed=seed))
-    d.mkdir(parents=True, exist_ok=True)
-    (d / "stream.json").write_text(json.dumps(slots, indent=2))
-    (d / "meta.json").write_text(json.dumps(meta, indent=2))
-
+async def run_episode(client, model, slots: list[dict], *, T: int, B: int, system: str,
+                      temperature: float | None = None, palette: list[str] = PALETTE) -> dict:
+    """Run ONE urn episode against a pre-built `slots` stream -- no file I/O, no caching, so callers
+    (the CLI eval below, and `rl_rollout.py`'s RL rollout collector) own persistence. Extracted from
+    `run_one` (2026-07-07, RL Phase 1) so both reuse the EXACT same per-draw loop byte-for-byte, rather
+    than a paraphrased reimplementation (this project's standing lesson: a near-miss reimplementation is
+    as bad as no fix at all). Returns `{kept, collected, unparsed, turn_usages, color_of_class,
+    transcript, messages}` -- `messages` (OpenAI-format user/assistant turns) is new relative to the
+    original inline version, needed for RL's `build_example`-based log-prob masking."""
     # clear color labels assigned by FIRST-APPEARANCE order (leaks nothing about rate/role)
     color = {}
     for s in sorted(slots, key=lambda z: z["slot_index"]):
         if s["class_id"] not in color:
-            color[s["class_id"]] = PALETTE[len(color)]
+            color[s["class_id"]] = palette[len(color)]
 
     messages, turn_usages, transcript = [], [], []
     kept: dict[int, int] = {}                  # class_id -> class_position at which kept
     unparsed = 0
-    budget_left, collected = B, 0
+    budget_left = B
     pending: list[tuple[int, str]] = []        # kept-color draws seen since the last decision prompt
     for s in sorted(slots, key=lambda z: z["slot_index"]):
         cid, pos, n = s["class_id"], s["class_position"], s["slot_index"] + 1
         if cid in kept:                        # already kept -> auto-collected IN PLACE. Still a real
-            collected += 1                     #   draw: the model is TOLD (below), so it observes the
-            pending.append((n, color[cid]))    #   full T-length stream -- OBSERVATION PARITY with the
-            continue                           #   tool player (no removal, no gappy < T view).
+            pending.append((n, color[cid]))    #   draw: the model is TOLD (below), so it observes the
+            continue                           #   full T-length stream -- OBSERVATION PARITY with the
+                                                #   tool player (no removal, no gappy < T view).
         if budget_left == 0:                   # no keeps left -> no decisions remain; tally the rest
             break
         pre = ""
@@ -162,7 +173,7 @@ async def run_one(client, model, seed):
                 f"You have {budget_left} keep(s) left. KEEP or PASS?")
         messages.append({"role": "user", "content": user})
         try:
-            reply = await client.chat(model, SYSTEM, messages, max_tokens=512, temperature=_ARGS.temp)
+            reply = await client.chat(model, system, messages, max_tokens=512, temperature=temperature)
             u = dict(client.last_usage or {})
         except Exception as e:
             reply, u = f"DECISION: PASS   [error {type(e).__name__}]", {}
@@ -177,16 +188,29 @@ async def run_one(client, model, seed):
         if dec == "KEEP":
             kept[cid] = pos
             budget_left -= 1
-            collected += 1                     # the current ball
     # tally any remaining draws of colors kept before budget ran out (loop `continue`d past them
     # only while budget>0; count draws that occur AFTER budget exhaustion too)
     collected = sum(1 for s in slots if s["class_id"] in kept and s["class_position"] >= kept[s["class_id"]])
 
-    row = {"seed": seed, "model_key": MODEL_KEY, "kept": kept, "collected": collected,
-           "budget": B, "unparsed": unparsed, "turn_usages": turn_usages,
-           "color_of_class": color, "transcript": transcript}
+    return {"kept": kept, "collected": collected, "budget": B, "unparsed": unparsed,
+            "turn_usages": turn_usages, "color_of_class": color, "transcript": transcript,
+            "messages": messages}
+
+
+async def run_one(client, model, seed):
+    d = BASE / f"seed_{seed}"
+    if (d / "session.json").exists():
+        return 0.0, "cached"
+    slots, meta = build_stochastic_stream(StochasticStreamSpec(
+        families=UNIFORM, n_hot=B, T=T, budget=B, guarantee_trap_early=G, magnitude=MAG, seed=seed))
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "stream.json").write_text(json.dumps(slots, indent=2))
+    (d / "meta.json").write_text(json.dumps(meta, indent=2))
+
+    row = await run_episode(client, model, slots, T=T, B=B, system=SYSTEM, temperature=_ARGS.temp)
+    row = {"seed": seed, "model_key": MODEL_KEY, **row}
     (d / "session.json").write_text(json.dumps(row, indent=2))
-    return cost_of(turn_usages), "ran"
+    return cost_of(row["turn_usages"]), "ran"
 
 
 async def main():
@@ -233,13 +257,20 @@ def _balls_collected(slots, builds):
     return sum(sizes[cid] - b + 1 for cid, b in builds.items() if b is not None)
 
 
-def report():
+def make_costs_and_dp(N: int, T: int, B: int) -> tuple[Costs, ExactDP]:
+    """The urn's cost model + exact-DP reference, as a design constant of {N,T,B} (extracted 2026-07-07,
+    RL Phase 1, so `rl_reward.py` builds the identical reference `report()` uses, not a re-derived one)."""
     # costs: uniform-hand a_hand=0 (passing collects nothing); Haiku A0 token constants (same as pi_star)
     costs = Costs(a_hand={f: 0.0 for f in UNIFORM}, h=987, C=308, r=200, R=100.0, lam=0.1,
                   default_a_hand=0.0)
     a_repr = st.mean(costs.ah(f) for f in UNIFORM)
     dp = ExactDP(costs.R * a_repr - costs.lam * costs.h, costs.u_build(), costs.u_reuse(),
                  N, T, B, alpha=1.0, cap=3)
+    return costs, dp
+
+
+def report():
+    costs, dp = make_costs_and_dp(N, T, B)
 
     lateness, first_sight, nb, match, nseed, regs, mtr, ptr, pos_reg, unp = [], 0, 0, 0, 0, [], [], [], 0, 0
     mballs, pballs, cballs = [], [], []          # balls collected: model / pi* / clairvoyant, per seed

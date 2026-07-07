@@ -480,6 +480,183 @@ to sync to a fresh box.
 fixed AND `error_recovery` included, in one pass (see that section's "Next step" and attribution
 caveat), rather than as a standalone test of the coverage-gap hypothesis.
 
+## Corpus-fix retrain result — new degeneration, not the same bug (2026-07-07)
+
+Retrained on the regenerated corpus (rationale strings stripped, wait-turn submissions decoupled to
+gold+1, build-timing de-clustered, content-diversity selftest guard added — see "Corpus regeneration").
+Confirms the specific verbatim-repetition bug is gone: no single dominant repeated phrase anywhere in
+the eval transcripts. But a different, arguably worse degeneration sits underneath it:
+
+- **Near-total silence.** Most turns across most of a 60-problem session generate 1-2 output tokens.
+- **Raw-JSON tool-call reversion on other seeds.** The model emits bare JSON tool-call objects without
+  the `<tool_call>` XML wrapper the base model was fine-tuned to use — a pre-fine-tune failure mode
+  resurfacing mid-session.
+- Submission rate stayed at ~3.5%, correct answers at 0 — no improvement over Result 3's collapsed
+  numbers, just a different collapse shape.
+
+**Adapter F (`train_lora.py --skip-urn`, format-only, zero urn exposure)** — trained to isolate whether
+gradient interference from co-training with urn's long, text-heavy signal caused this. It did not:
+the format-only checkpoint shows the identical degeneration (2.6% submission rate, 0 correct, 17
+instances of the raw-JSON reversion). This rules out **both** urn-interference and corpus content as
+sufficient explanations — the format-only slices alone reproduce it.
+
+**Leading hypothesis (structural, not corpus-content): DAgger compounding error.** Every training
+session (urn, anchor, mechanics_bridge, error_recovery) is a clean, well-formed trajectory by
+construction. The one existing attempt to cover failure states (`error_recovery.jsonl`, 45 sessions,
+3 hand-authored patterns from an earlier collapse) evidently doesn't cover the actual space of
+off-distribution states a real rollout drifts into — the model has no learned behavior for whatever
+conversational state it's actually in by turn 2-3 of a real session, because no training trajectory
+ever visited that state. Token-level SFT cross-entropy compounds this: it forces exact reproduction of
+whichever surface tokens a label-generator happened to pick (the original repetition collapse was this
+mechanism operating on an over-fit rationale string), rather than rewarding the parsed action/outcome
+regardless of phrasing.
+
+### Transcript-level investigation (2026-07-07) — refines the trigger, not just the non-recovery
+
+Read all 12 raw `transcript` arrays (in `sessions.jsonl`, one `run_session()` return value per seed)
+for both the corpus-fix retrain and Adapter F tool evals directly, rather than only the aggregate
+counters. Two things the aggregate numbers alone didn't show:
+
+- **The derailment trigger is early, small-context, and content-independent — not a long-context or
+  context-window effect.** Every one of the 12 corpus-fix seeds and all 12 Adapter F seeds derails
+  within the session's first 1-14 assistant turns (cumulative context ~1,000-2,500 estimated tokens by
+  the `driver.py: _est_tokens` formula), nowhere near the served checkpoint's loaded 32,768-token
+  context window (confirmed live via `ollama api/ps` → `context_length: 32768` — Ollama loads the
+  model's native window here, it does not silently truncate at some smaller default). Ruled out by
+  direct token-count reconstruction of the transcript prefix at the derailment point, not assumption.
+- **What derails it is a single, semantically-empty multilingual token** — Cyrillic (` официальн`,
+  `хоз`, ` рейт`, ` огромн`), Chinese (`应收账`, `营业执`, `名列前`), Arabic (` سبحانه`), Turkish
+  (` örgüt`), German-ish fragments, even stray English (`mercury is the capital of which country?`,
+  `StatusBarError`) — none of which appear anywhere in `phase3_demos.py`'s training corpus. It doesn't
+  correlate with what precedes it (sometimes right after a successful tool result, sometimes right
+  after a plain problem prompt, sometimes the very first assistant turn of the session). Once it's
+  emitted, the model locks onto repeating that exact token (or a short 2-token oscillation, e.g.
+  `"}"` / `" рейт"` alternating, or `"/."`  or `"()"` verbatim) for **every remaining turn of the
+  60-problem session** — the driver's "two-consecutive-no-tool-call turns force-advances the problem"
+  guard fires and keeps injecting new problems, but the model never breaks out of the fixed point even
+  across dozens of subsequent problem-prompt turns.
+- **This is a *different* collapse signature than Result 3's**, not just the same bug with the
+  corpus-diversity fix incompletely applied. Re-reading Result 3's own saved transcripts
+  (`runs/arm_a1_announce_qwen-ft-pistar-mechbridge_latest_n-announced/`) the same way shows every seed
+  derailing into a recognizable, on-topic **trained English rationale phrase** ("I'll work this one
+  out directly and answer.", "I'll write a script for this one and run it on the...") — legible,
+  topical, just verbatim-memorized. The corpus-fix/Adapter-F collapse instead derails into
+  **semantically-empty cross-lingual noise that was never in any training data.** The fix didn't
+  reveal a pre-existing DAgger gap unchanged — it traded a stable-but-parroting failure mode for a
+  qualitatively different, more chaotic one.
+
+**Candidate mechanism (new, narrower than "DAgger" alone): bare-tool-call turns removed the
+natural-language anchor that made the first token of an assistant turn well-calibrated.** The
+corpus-fix's content-diversity fix (per "Corpus regeneration") stripped rationale text down to bare
+tool calls across ~1,500 turns; Adapter F's slices (anchor + mechanics_bridge + error_recovery) share
+this bare-call shape and reproduce the identical signature, while urn (long, text-heavy) is absent from
+Adapter F entirely — pointing at the bare-call turns themselves, not urn co-training, as compatible
+with (and narrowing) the existing DAgger explanation. Under bare tool-call training, an assistant
+turn's first token is now almost always a fixed, low-entropy structural token (`<`, `{`, a small
+vocabulary of tool names) instead of the varied natural-language openers Result 3's rationale-heavy
+corpus provided — removing an implicit stabilizing prior at exactly the position where derailment is
+observed to occur. The DAgger point still explains why, once derailed, the model never recovers (no
+training trajectory ever shows a correction from a garbage-token state) — this adds a candidate
+explanation for *why the derailment itself happens so early and so consistently*, which the DAgger
+framing alone doesn't address.
+
+**Confirmed NOT the cause:** context-window truncation (checked directly, ruled out above).
+
+**Greedy-decoding diagnostic — RUN (2026-07-07), decisive.** `chat_tools()`/`run_session()` gained an
+optional `temperature` passthrough (`lomekwi/raw_chat.py`, `driver.py`) and a throwaway harness
+(`scripts/box/diag_temp0.py`) reran 2 seeds each on the live box for both `qwen-ft-pistar-corpusfix`
+and `qwen-ft-format-only` at `temperature=0` (greedy), capped at the first ~12 problems (`max_turns=30`)
+— cheap, no retrain, a few minutes total on the already-loaded checkpoints.
+
+Result, identical and deterministic across all 4 (checkpoint × seed) combinations: **the random
+multilingual garbage tokens disappear entirely under greedy decoding** — but the model then submits
+problem 1 correctly (empty content, real `submit_answer` tool call) and goes **completely silent**
+(empty string, zero tool calls) for every subsequent problem, all the way to the `max_turns` cap. This
+settles the sampling-vs-defect question: greedy decoding doesn't fix the collapse, it just removes the
+noise that was obscuring a cleaner, fully deterministic failure underneath. The checkpoint's true
+top-1 (argmax) continuation after one successful tool interaction is silence, not "solve the next
+problem." Reading the two results together: at default sampling (temp 0.7 / top_p 0.8 / top_k 20, the
+GGUF's own embedded defaults, never overridden), that silence-preferring, low-confidence region is
+where a low-probability multilingual token occasionally gets drawn instead — sampling variance decides
+*which* failure shows up (chaotic loop vs. clean silence), but the underlying defect — no learned
+"keep working" behavior past the first success — is real and checkpoint-level either way.
+
+**Candidate concrete cause (testable, cheap to act on): corpus imbalance between single-problem and
+multi-problem sessions.** Of the three non-urn slices, two are single-problem by construction —
+`anchor` (`N_ANCHOR=150`) and `error_recovery` (`N_RECOVERY=45`) — where the training sequence simply
+*ends* right after `submit_answer`, contributing no gradient signal either way about what should follow
+a success. Only `mechanics_bridge` (`N_MECH=25` persistent 60-problem sessions) directly demonstrates
+"success → new problem → keep working," and it's outnumbered roughly 8:1 by single-problem sessions at
+the session level (though not necessarily at the token/transition level, since each mechanics_bridge
+session contains ~59 such transitions — this arithmetic hasn't been fully reconciled against the
+observed behavior, so treat as a plausible contributing factor, not a proven sole cause). If real, the
+fix is a corpus-mix change, not new algorithmic infra: add more multi-problem bare-tool-call sessions
+(more `mechanics_bridge`-shaped data, or a new short-multi-problem slice) so "keep going after success"
+gets broader-context reinforcement, then retrain with the existing SFT recipe and rerun both the
+greedy-decoding diagnostic and the full tool eval. Not started — this is a third, cheaper candidate
+alongside the iterative-DAgger-loop and RL/GRPO options above, worth trying before either heavier
+option since it reuses the existing corpus generator and training script with no new infra.
+
+### Mechanics-rebalance result — RUN (2026-07-07), rejected as a sole fix, but informative
+
+Bumped `N_MECH` 25→100 (`scripts/creator/tool_disposition_benchmark/phase3_demos.py`; corpus regen is
+free, no LLM calls) and retrained Adapter F only (`scripts/box/run_format_only_mechbal_training.sh`,
+distinct `qwen-ft-format-only-mechbal` tag/paths, nothing overwritten) — `anchor` deliberately left at
+150 per the earlier discussion (cutting it risks reintroducing the urn-erosion bug it exists to
+prevent; the fix was proposed from the cheap-to-generate side only). Full pipeline: corpus regen →
+train → merge → GGUF → **greedy-decoding diagnostic (gating check)** → full 12-seed tool eval →
+pre-registered automated summary, ~47 min total on the already-live box.
+
+**Diagnostic (2 seeds, capped ~12 problems, temperature=0) was a genuine partial win:** seed 2001 went
+from 1 tool call (permanent silence after problem 1, the original defect) to **19 tool calls** — real
+multi-problem engagement, not silence. Seed 2000 showed no change (still 1 tool call then silent).
+
+**Full 12-seed eval: REJECTED by the pre-registered criteria.** Submission rate 4.6% (vs. 2.6-3.5%
+baseline — barely moved), `eff_solve_by_hand` still 0.0 on every seed, 1 correct answer total. One
+metric got *worse*: raw-JSON-without-`<tool_call>`-wrapper reversions rose to **89** (vs. 17 for the
+original Adapter F baseline). One seed (2000) errored out (`BadRequestError`) partway through the full
+run without writing output — not chased down, likely a transient serving issue, not central to the
+verdict either way.
+
+**Reading the two results together — the rebalance traded one failure mode for another, not fixed for
+broken.** Inspecting seed 2001's full 60-problem transcript (the one that looked promising in the
+capped diagnostic) shows the model now *attempts* far more tool calls instead of going silent, but
+spends most of them on the raw-JSON-without-wrapper pattern and hallucinated/garbled script names and
+arguments (e.g. `write_script` with names like `"cn"`, `"joes"`, `"lfsr"`, `"rc4shift"` that don't match
+any real family, or malformed JSON like `{'name':'run_script', 'arguments': {...}` with Python-style
+single quotes) — including one turn of genuinely relevant reasoning text in Chinese about the xorshift
+masking logic, i.e. real understanding surfacing in the wrong output register, not pure noise. So the
+mechanics-rebalance measurably fixed the *silence* half of the defect (the model no longer defaults to
+giving up after one success) but did nothing for the *format-stability* half — if anything, more
+attempts means more chances to drop the wrapper or garble a name, which is why the raw-JSON-reversion
+count went up rather than down.
+
+**Conclusion: corpus-mix imbalance was a real, partial contributor (confirmed by the engagement
+increase) but not the dominant cause — some more basic format-stability defect survives the rebalance.**
+This favors the DAgger-style explanation over a pure corpus-content explanation for the *remaining* gap:
+no training trajectory anywhere in the corpus shows a recovery from a dropped-wrapper or hallucinated-
+name state once the model is already mid-attempt on a real problem (the existing `error_recovery` slice
+only covers recovery from a *complete* absence of tool calls or an *unknown* tool name, not a
+malformed-but-present tool-call attempt with a wrong script name). Both remaining candidates — the
+iterative DAgger loop and RL/GRPO — would need to specifically target this failure shape, not just
+"more coverage" in general.
+
+Two candidate next directions, neither started:
+
+1. **Iterative DAgger loop** — roll out the current checkpoint, collect its actual off-distribution
+   failure states, generate corrected continuations for those specific states, retrain, repeat. Direct
+   fix for the diagnosed mechanism; no new algorithm, but needs a rollout-collection + correction-
+   generation harness that doesn't exist yet.
+2. **Switch to RL (GRPO)** — see `docs/rl-finetuning-plan.md` (status: PLANNED, not started). Reward
+   the parsed outcome instead of surface tokens, and on-policy rollouts naturally provide DAgger-style
+   state coverage (including post-error retry-nudge states) as a side effect of sampling, without
+   hand-authoring them. Structurally more appealing but materially more expensive and needs real infra
+   (vLLM forced-tool-call path for Qwen2.5-Coder, custom multi-turn GRPO loop) built first.
+
+Per [[no-auto-reps]]: propose a pilot (short episodes, small rollout group, capped steps for RL; a
+capped number of collect-correct-retrain rounds for DAgger) and cost it before committing GPU time to
+either.
+
 ## What's preserved locally (2026-07-06)
 
 - **Adapters** (LoRA weights only — Trainer's per-epoch `checkpoint-N` subdirs, which duplicate the
@@ -513,10 +690,12 @@ caveat), rather than as a standalone test of the coverage-gap hypothesis.
 
 1. ~~Run mechanics bridge training~~ **DONE (2026-07-06) — see Result 3.** Read as clean at the time;
    **retracted 2026-07-07** — see "Corpus regeneration".
-2. **Retrain on the regenerated corpus and re-run the tool eval — NEW TOP PRIORITY (2026-07-07), not yet
-   run.** Corpus fixes are implemented, selftest-verified, and regenerated locally (`phase3_demos.py`
-   `--selftest` passes, including the new content-diversity guard). Needs a fresh box + go-ahead per
-   [[no-auto-reps]]. Until this runs, Result 3's numbers are unconfirmed, not trustworthy as the
+2. ~~Retrain on the regenerated corpus and re-run the tool eval~~ **DONE (2026-07-07) — see "Corpus-fix
+   retrain result".** Confirmed the repetition bug is gone but surfaced a different degeneration
+   (near-silence / raw-JSON reversion); Adapter F ruled out urn-interference and corpus content as the
+   cause. Leading hypothesis is now DAgger compounding error — see that section for the two candidate
+   next directions (iterative DAgger loop vs RL/GRPO). Until one of those runs, Result 3's numbers
+   remain unconfirmed, not trustworthy as the
    framing-wall answer.
 3. **Adapter-merge split — still not triggered by the *legibility* question** (that gating condition —
    a retrain surviving the 2026-07-06 masking bug fixes still collapsing — didn't happen), but the

@@ -244,10 +244,14 @@ class RawChat:
 
     async def chat_tools(self, model: str, system: str, messages: list[dict],
                          tools: list[dict], max_tokens: int = 1200,
-                         tool_choice: str = "auto") -> ChatTurn:
+                         tool_choice: str = "auto",
+                         temperature: float | None = None) -> ChatTurn:
         """Tool-calling chat. `messages` are OpenAI-format (incl. assistant tool_calls and
         role="tool" results); translated to Anthropic blocks when needed. Sets last_usage
-        identically to chat(). Returns a ChatTurn (.content, .tool_calls, .finish_reason)."""
+        identically to chat(). Returns a ChatTurn (.content, .tool_calls, .finish_reason).
+        temperature=0 forces greedy decoding (diagnostic use — e.g. isolating whether a
+        fine-tuned checkpoint's early derailment is a sampling-variance artifact or a genuine
+        learned-distribution defect); left unset by default so callers keep serving defaults."""
         prov = _provider_for(model)
         self.last_usage = None
         self.last_debug = None
@@ -257,6 +261,8 @@ class RawChat:
                       "vllm": self._vllm}[prov]()
             oai_msgs = [{"role": "system", "content": system}] + messages
             kwargs = dict(model=model, messages=oai_msgs, tools=tools, tool_choice=tool_choice)
+            if temperature is not None:
+                kwargs["temperature"] = temperature
             try:
                 resp = await client.chat.completions.create(max_completion_tokens=max_tokens, **kwargs)
             except TypeError:

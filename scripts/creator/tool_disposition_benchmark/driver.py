@@ -49,7 +49,8 @@ def _est_tokens(system: str, messages: list, turn) -> int:
 async def run_session(client: RawChat, model: str, state: SessionState, *,
                       token_cap: int = 200_000, max_tokens: int = DEFAULT_MAX_TOKENS,
                       max_turns: int | None = None, announce_cap: bool = True,
-                      stop_on_budget_exhausted: bool = False, progress_cb=None) -> dict:
+                      stop_on_budget_exhausted: bool = False, progress_cb=None,
+                      temperature: float | None = None) -> dict:
     """token_cap is always enforced as a hard ceiling. announce_cap=False ('no-cap' arm) hides it
     from the model: the system prompt omits the budget paragraph and tool results omit
     tokens_remaining — token_cap then acts only as a silent safety ceiling on cost."""
@@ -87,7 +88,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
             break
         call_max = max(64, min(max_tokens, remaining))
         n_turns += 1
-        turn = await client.chat_tools(model, system, messages, tools, max_tokens=call_max)
+        turn = await client.chat_tools(model, system, messages, tools, max_tokens=call_max,
+                                       temperature=temperature)
         last_finish = turn.finish_reason
         u = client.last_usage
         if u and (u.get("input_tokens") or u.get("output_tokens")):
