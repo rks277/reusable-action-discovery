@@ -78,16 +78,24 @@ SEQ_LEN_CAPS = [4096, 8192, 16384, 32768]
 
 # --------------------------------------------------------------------- data loading
 def load_sessions(arm: str, data_dir: Path, anchor: str = "tool", mechanics: str = "on",
-                  recovery: str = "on") -> list[list[dict]]:
+                  recovery: str = "on", skip_urn: bool = False) -> list[list[dict]]:
     """Load + concatenate the arm's urn and tool_bridge slices (+ the arm-independent tool-calling
     anchor unless anchor='none', + the arm-independent mechanics bridge unless mechanics='off', + the
     arm-independent error-recovery bridge unless recovery='off'); normalize tool_call arguments. The
     anchor (option c), mechanics bridge (Design A fix, 2026-07-06), and error-recovery bridge
     (error-recovery ablation, folded into mechanics bridge training, 2026-07-06 --
     docs/qwen-finetune-transfer-plan.md) are all shared byte-identically across arms -- they preserve
-    tool-calling modality / long-context mechanics / bad-turn recovery without teaching build timing."""
+    tool-calling modality / long-context mechanics / bad-turn recovery without teaching build timing.
+
+    skip_urn (2026-07-07, "Adapter F" / format-only run -- docs/qwen-finetune-transfer-plan.md "Corpus
+    regeneration" follow-up): skips the urn slice entirely (tool_bridge is loaded as usual -- it's empty
+    under Design A regardless), so the adapter trains on ZERO urn exposure. Used to test whether tool-
+    modality degradation is caused by gradient interference from co-training with urn's dominant,
+    long, text-heavy signal, independent of the corpus-content fixes."""
     sessions: list[list[dict]] = []
     for slice_name in ("urn", "tool_bridge"):
+        if skip_urn and slice_name == "urn":
+            continue
         path = data_dir / f"{slice_name}_{arm}.jsonl"
         if not path.exists():
             raise FileNotFoundError(f"missing corpus file {path} -- run phase3_demos.py first")
@@ -324,7 +332,8 @@ def train(args) -> None:
     else:
         model, tokenizer = load_hf(args.max_seq_len or SEQ_LEN_CAPS[-1], args.qlora)
 
-    sessions = load_sessions(args.arm, args.data_dir, args.anchor, args.mechanics, args.recovery)
+    sessions = load_sessions(args.arm, args.data_dir, args.anchor, args.mechanics, args.recovery,
+                         args.skip_urn)
     verify_template(tokenizer, sessions)
     examples, max_seq_len = build_and_measure(sessions, tokenizer, args.max_seq_len)
 
@@ -380,7 +389,8 @@ def train(args) -> None:
 def dry_run(args) -> None:
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-    sessions = load_sessions(args.arm, args.data_dir, args.anchor, args.mechanics, args.recovery)
+    sessions = load_sessions(args.arm, args.data_dir, args.anchor, args.mechanics, args.recovery,
+                         args.skip_urn)
     print(f"arm={args.arm}  anchor={args.anchor}  mechanics={args.mechanics}  sessions={len(sessions)}\n")
     verify_template(tokenizer, sessions)
     _, max_seq_len = build_and_measure(sessions, tokenizer, args.max_seq_len)
@@ -407,6 +417,11 @@ def main() -> None:
                          "harness-nudge -> recovery sessions, teaching the "
                          "conversational shape driver.py's retry logic creates on a malformed turn; "
                          "'off' reproduces the pre-ablation (Result 2) corpus")
+    ap.add_argument("--skip-urn", action="store_true",
+                    help="'Adapter F' / format-only run (2026-07-07): train on ZERO urn exposure -- "
+                         "anchor + mechanics_bridge + error_recovery only -- to test whether tool-"
+                         "modality degradation is caused by gradient interference from co-training "
+                         "with urn, independent of the corpus-content fixes")
     ap.add_argument("--backend", choices=["unsloth", "hf"], default="unsloth")
     ap.add_argument("--qlora", action="store_true", help="4-bit QLoRA (fallback if bf16 VRAM is tight)")
     ap.add_argument("--max-seq-len", type=int, default=None, help="pin; default = measured max rounded up")
