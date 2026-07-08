@@ -167,6 +167,41 @@ PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.arm_a1_announc
 > error out and builds/seed drops. Behavioral metrics (lateness/first-sight) still read clean; for a
 > publication-grade tool run, debug the template artifact and consider a Q8/Q4 quant matching the baseline.
 
+### B3. RL urn pilot (`rl_urn_pilot.py`) — one-box procedure (sized for a 40GB A100, 2026-07-08)
+
+The RL Phase 1 pilot (`docs/rl-ppo-credit-assignment-spec.md`) alternates Ollama serving (rollouts) and
+HF/PEFT QLoRA training on the same card each outer step — the phases never overlap, and both fit a
+**40GB A100** with the defaults now in `rl_urn_pilot.py` (q8_0 GGUF for serving, `num_ctx` pinned to
+8192; spec §8.6 has the sizing math). On an 80GB box add `--gguf-outtype f16`.
+
+```bash
+# 1. Ollama (§A1) + pull ONLY qwen2.5-coder:14b (§A2) + repo/venv/.env sync (§A3), then add the
+#    training + GGUF-conversion deps on top of the harness ones:
+ssh $BOX 'cd ~/reusable-action-discovery && source .venv/bin/activate && \
+  pip install -q torch transformers peft accelerate datasets bitsandbytes gguf sentencepiece protobuf'
+# 2. llama.cpp (the pilot shells out to convert_hf_to_gguf.py at ~/reusable-action-discovery/llama.cpp):
+ssh $BOX 'cd ~/reusable-action-discovery && git clone --depth 1 https://github.com/ggerganov/llama.cpp'
+# 3. smoke + the step-0 mechanism gate (spec §8.5 item 2) -- run ONE outer step in the foreground and
+#    READ THE DIAGNOSTIC before committing to the run: the "advantage by decision type" line must show
+#    keep_hot > keep_trap and pass_trap > pass_hot_first, else STOP and debug (nothing to train on).
+#    Step 0 also downloads the HF checkpoint (~28GB) on first from_pretrained.
+ssh $BOX 'cd ~/reusable-action-discovery && source .venv/bin/activate && env PYTHONPATH=. \
+  python -u -m scripts.creator.tool_disposition_benchmark.rl_urn_pilot --steps 1'
+# 4. gate passed -> resume the same run to 20 steps (manifest-resumable; ~9-11 min/step on A100):
+ssh $BOX 'cd ~/reusable-action-discovery && source .venv/bin/activate && nohup env PYTHONPATH=. \
+  python -u -m scripts.creator.tool_disposition_benchmark.rl_urn_pilot --steps 20 \
+  > ~/rl_pilot.log 2>&1 </dev/null & echo launched'
+# watch: ssh $BOX 'tail -5 ~/rl_pilot.log'   (per-step line has first_sight%/lateness -- the
+# earlier-resolving signal -- alongside mean_reward; mean_kl and mean|A| are the stability watch)
+```
+
+> Defaults already sized for this box — temperature 1.2 (exploration, spec §3), q8_0 GGUF (f16 + KV is
+> borderline on 40GB and the failure is a SILENT ~8x CPU-offload slowdown, not a crash), num_ctx 8192
+> (Ollama truncates from the FRONT past num_ctx — silent episode corruption, not an error). The pilot
+> needs passwordless `sudo systemctl start/stop ollama` (stock Ubuntu boxes here have it).
+> **Before releasing: rsync `runs/` back** (checkpoint adapter+optimizer+critic+manifest ≈ <1GB;
+> `runs/<out>/merged/` is ~28GB of regenerable intermediate — exclude it if bandwidth matters).
+
 ### B0b. cuDNN SDPA crash on long sequences (torch 2.12 / cu13)
 Real training (not the short smoke) crashes on the ~21k-token tool_bridge session with
 `RuntimeError: Expected mha_graph.execute(...).is_good()` in the attention BACKWARD. `train_lora.load_hf`

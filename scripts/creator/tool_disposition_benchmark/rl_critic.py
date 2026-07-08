@@ -141,18 +141,70 @@ def train_critic_step(critic, optimizer, normalizer: ReturnNormalizer,
     per-decision arrays across an entire outer-step batch (all episodes concatenated) -- decisions, not
     episodes, are the critic's training examples, giving it far more datapoints per step than the policy
     sees episodes. Target normalization happens INSIDE this call (updates `normalizer` first) so callers
-    never have to remember the ordering. Returns the normalized-space MSE loss for logging."""
+    never have to remember the ordering. Returns the normalized-space MSE loss for logging.
+
+    NOTE: kept as the single-step primitive, but `grpo_step` calls `fit_critic` (below), NOT this --
+    one gradient step per outer step was the pre-box-run review's (2026-07-08) main catch, see
+    `fit_critic`'s docstring."""
     import torch
 
     normalizer.update(returns)
     x = torch.tensor(features, dtype=torch.float32)
     y = torch.tensor([normalizer.normalize(r) for r in returns], dtype=torch.float32)
+    return _grad_step(critic, optimizer, x, y)
+
+
+def _grad_step(critic, optimizer, x, y) -> float:
+    import torch
     pred = critic(x)
     loss = torch.nn.functional.mse_loss(pred, y)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
     return loss.item()
+
+
+def fit_critic(critic, optimizer, normalizer: ReturnNormalizer, features: list[list[float]],
+               returns: list[float], *, max_iters: int = 500, min_delta: float = 1e-4,
+               patience: int = 25) -> dict:
+    """Fit the critic to (near-)plateau on this outer step's batch -- many gradient steps, not one
+    (spec §5.3, revised in the 2026-07-08 pre-box-run review).
+
+    Why this exists: `grpo_step` originally gave the critic ONE Adam step per outer step, so an 8-step
+    pilot would train it with 8 total updates -- while this module's own self-test needs ~200 iterations
+    to fit even a single episode's decisions. A fresh MLP after a handful of updates is approximately a
+    constant, which silently degenerates the advantage `G_t - V(s_t)` to REINFORCE-with-a-mean-baseline
+    and throws away the entire point of the critic (the privileged `rate` feature distinguishing
+    "passing a trap was fine" from "passing a hot color was a mistake" never materializes). The cost of
+    fixing it is nil: the critic is on CPU with a few hundred datapoints, so even the full `max_iters`
+    is milliseconds next to a single 14B forward pass.
+
+    Mechanics: updates `normalizer` ONCE per batch (not per iteration -- re-updating on the same
+    returns every iteration would inflate its sample count and overweight the current batch against
+    the warm-started history), then full-batch gradient steps with early stopping (stop after
+    `patience` consecutive iterations without a `min_delta` improvement over the best loss seen).
+    Fitting toward plateau on the current batch is what we want, not overfitting to guard against:
+    the baseline should track V under the CURRENT policy, and the warm start plus a few hundred
+    fresh decision-level datapoints per step keeps it anchored.
+
+    Returns {first_loss, final_loss, n_iters} for logging (normalized-space MSE)."""
+    import torch
+
+    normalizer.update(returns)
+    x = torch.tensor(features, dtype=torch.float32)
+    y = torch.tensor([normalizer.normalize(r) for r in returns], dtype=torch.float32)
+    first = best = last = _grad_step(critic, optimizer, x, y)
+    n_iters, since_best = 1, 0
+    for _ in range(max_iters - 1):
+        last = _grad_step(critic, optimizer, x, y)
+        n_iters += 1
+        if last < best - min_delta:
+            best, since_best = last, 0
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+    return {"first_loss": first, "final_loss": last, "n_iters": n_iters}
 
 
 def critic_values(critic, normalizer: ReturnNormalizer, features: list[list[float]]) -> list[float]:
@@ -253,6 +305,17 @@ def _selftest():
     assert losses[-1] < losses[0], (losses[0], losses[-1])   # loss must actually decrease with training
     values = critic_values(critic, normalizer, features)
     assert len(values) == len(returns)
+
+    # fit_critic (the 2026-07-08 review's fit-to-plateau replacement for one-step-per-outer-step):
+    # a FRESH critic must actually converge within one call, and the normalizer must be updated
+    # exactly once per call (not once per inner iteration -- that would inflate its sample count).
+    critic_f = build_critic(n_features=5)
+    optimizer_f = torch.optim.Adam(critic_f.parameters(), lr=1e-3)
+    normalizer_f = ReturnNormalizer()
+    fit = fit_critic(critic_f, optimizer_f, normalizer_f, features, returns)
+    assert fit["n_iters"] > 1, fit                       # actually looped, not the old single step
+    assert fit["final_loss"] < fit["first_loss"], fit    # and converged toward a fit
+    assert normalizer_f.n == len(returns), (normalizer_f.n, len(returns))
 
     with tempfile.TemporaryDirectory() as td:
         path = Path(td) / "critic.pt"

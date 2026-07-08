@@ -66,8 +66,25 @@ def batch_baselines(batch: list[dict]) -> dict:
     return {"eager_mean": st.mean(eager_r), "wait2_mean": st.mean(wait2_r)}
 
 BASE_MODEL_TAG = "qwen2.5-coder:14b"
+BASE_CTX_TAG = "qwen-rl-base-ctx8k"
 RL_MODEL_TAG = "qwen-rl-urn-pilot"
-GGUF_NAME = "rl-urn-pilot-f16.gguf"
+
+# 40GB-A100 sizing (2026-07-08; the H100s were out of capacity, spec §8.6). Two knobs keep the serving
+# phase deterministic on the smaller card -- the failure mode to avoid is the runbook's documented
+# gotcha (box-setup.md §A1): a GGUF + KV footprint that doesn't quite fit doesn't crash, it silently
+# partial-offloads to CPU and slows rollouts ~8x.
+GGUF_OUTTYPE = "q8_0"  # ~15GB for 14B vs f16's ~28GB. f16 + 8-slot KV (~34-36GB total) is exactly
+                       # borderline on 40GB; q8_0 is effectively lossless and leaves real headroom.
+                       # On an 80GB box, pass --gguf-outtype f16 to remove even that quant mismatch
+                       # between the sampled policy and the bf16 training weights (a mild off-policy
+                       # wrinkle either way; the pre-FT baselines ran on the stock Ollama tag, which
+                       # is Q4, so q8_0 is already closer to the training weights than those were).
+NUM_CTX = 8192         # pinned explicitly (stock modelfile leaves Ollama's default, which varies by
+                       # version) for two reasons: (1) deterministic KV sizing -- 14B GQA is ~0.2MB/tok,
+                       # so 8 slots x 8192 = ~13GB, planned rather than discovered; (2) headroom over
+                       # the longest measured episode (~3.7k tokens at temp 1.2) -- Ollama TRUNCATES
+                       # context from the front when num_ctx is exceeded, which would silently corrupt
+                       # long episodes rather than erroring.
 
 
 def sh(cmd: list[str]) -> None:
@@ -75,25 +92,33 @@ def sh(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True)
 
 
-def serve_checkpoint(out_dir: Path) -> str:
+def _ctx_line() -> str:
+    return f"PARAMETER num_ctx {NUM_CTX}\n"
+
+
+def serve_checkpoint(out_dir: Path, gguf_outtype: str) -> str:
     """Returns the Ollama model tag to sample the NEXT batch of rollouts from. No checkpoint yet
-    (step 0) -> the untouched base model. Otherwise merge -> GGUF convert -> `ollama create` from the
-    adapter the previous step just saved."""
+    (step 0) -> the untouched base model (as a num_ctx-capped variant -- same weights/template, only
+    the context parameter pinned; see NUM_CTX). Otherwise merge -> GGUF convert -> `ollama create`
+    from the adapter the previous step just saved."""
     adapter = out_dir / "checkpoint" / "adapter"
     if not adapter.exists():
         sh(["sudo", "systemctl", "start", "ollama"]); time.sleep(3)
-        return BASE_MODEL_TAG
+        Path("base_ctx.modelfile").write_text(f"FROM {BASE_MODEL_TAG}\n" + _ctx_line())
+        sh(["ollama", "create", BASE_CTX_TAG, "-f", "base_ctx.modelfile"])
+        return f"{BASE_CTX_TAG}:latest"
 
     merged = out_dir / "merged"
     sh(["python", "-m", "scripts.creator.tool_disposition_benchmark.merge_lora",
         "--adapter", str(adapter), "--out", str(merged)])
-    gguf = Path.home() / GGUF_NAME
-    sh(["python", "llama.cpp/convert_hf_to_gguf.py", str(merged), "--outfile", str(gguf), "--outtype", "f16"])
+    gguf = Path.home() / f"rl-urn-pilot-{gguf_outtype}.gguf"
+    sh(["python", "llama.cpp/convert_hf_to_gguf.py", str(merged), "--outfile", str(gguf),
+        "--outtype", gguf_outtype])
     sh(["sudo", "systemctl", "start", "ollama"]); time.sleep(3)
 
     ref = subprocess.run(["ollama", "show", "--modelfile", BASE_MODEL_TAG],
                          check=True, capture_output=True, text=True).stdout
-    modelfile = "FROM " + str(gguf) + "\n" + "\n".join(
+    modelfile = "FROM " + str(gguf) + "\n" + _ctx_line() + "\n".join(
         line for line in ref.splitlines() if not (line.startswith("FROM ") or line.startswith("#")))
     ft_path = Path("ft.modelfile")
     ft_path.write_text(modelfile)
@@ -116,8 +141,15 @@ def main() -> None:
     ap.add_argument("--seeds-per-step", type=int, default=25)
     ap.add_argument("--G", type=int, default=4)
     ap.add_argument("--conc", type=int, default=8)
-    ap.add_argument("--temperature", type=float, default=0.7)
+    ap.add_argument("--temperature", type=float, default=1.2)   # 1.2, not 0.7: load-bearing for
+    # exploration diversity (pilot v2's rollout diagnostic: 0.7 collapsed to 6/8 byte-identical eager
+    # rollouts; 1.2 gave the widest two-sided reward spread with 0 parse failures -- spec §3). Default
+    # aligned with the spec 2026-07-08 so launching without the flag can't silently reintroduce v2's
+    # exploration collapse.
     ap.add_argument("--qlora", action="store_true", default=True)
+    ap.add_argument("--gguf-outtype", default=GGUF_OUTTYPE,
+                    help="GGUF quant for the rollout-serving merge (see GGUF_OUTTYPE comment: q8_0 "
+                         "default sized for a 40GB A100; f16 on an 80GB box)")
     ap.add_argument("--out", type=Path, default=Path("runs/rl_urn_pilot"))
     args = ap.parse_args()
 
@@ -126,6 +158,7 @@ def main() -> None:
     manifest = load_manifest(args.out)
     start_step = manifest["step"] if manifest else 0
     reward_history = list(manifest["reward_history"]) if manifest else []
+    behavior_history = list(manifest.get("behavior_history", [])) if manifest else []
     next_seed = manifest["next_seed"] if manifest else RL_SEED_START
     print(f"{'resuming from' if manifest else 'starting fresh at'} step {start_step} "
           f"({len(reward_history)} rewards so far, next_seed={next_seed})", flush=True)
@@ -136,7 +169,7 @@ def main() -> None:
 
     for step in range(start_step, args.steps):
         t0 = time.time()
-        model_tag = serve_checkpoint(args.out)
+        model_tag = serve_checkpoint(args.out, args.gguf_outtype)
         t_serve = time.time()
         seeds = list(range(next_seed, next_seed + args.seeds_per_step))
         print(f"\n=== outer step {step}: sampling {model_tag}, seeds {seeds[0]}-{seeds[-1]} "
@@ -170,8 +203,9 @@ def main() -> None:
         t_grpo = time.time()
         next_seed += args.seeds_per_step
         reward_history.append(stats["mean_reward"])
+        behavior_history.append(stats["behavior"])
         save_checkpoint(model, tokenizer, optimizer, critic, critic_optimizer, normalizer, args.out,
-                        step + 1, reward_history, next_seed)
+                        step + 1, reward_history, next_seed, behavior_history)
 
         del model, optimizer
         torch.cuda.empty_cache()
@@ -179,13 +213,19 @@ def main() -> None:
         print(f"  GRPO update: {t_grpo - t_rollout:.0f}s  mean_reward(balls)={stats['mean_reward']:.2f} "
               f"(std={stats['reward_std']:.2f} min={stats['reward_min']:.2f} max={stats['reward_max']:.2f})  "
               f"[baselines: eager={baselines['eager_mean']:.2f} wait2={baselines['wait2_mean']:.2f}]  "
-              f"loss={stats['loss']:.4f}  mean_kl={stats['mean_kl']:.3f}  critic_loss={stats['critic_loss']:.4f}  "
-              f"mean_advantage={stats['mean_advantage']:.3f}  "
+              f"loss={stats['loss']:.4f}  mean_kl={stats['mean_kl']:.3f}  "
+              f"critic_loss={stats['critic_loss']:.4f} ({stats['critic_fit_iters']} iters)  "
+              f"mean_advantage={stats['mean_advantage']:.3f}  mean|A|={stats['mean_abs_advantage']:.2f}  "
+              f"first_sight={stats['behavior']['first_sight_pct']:.0f}%  "
+              f"lateness={stats['behavior']['mean_lateness']:.3f}  "
               f"group_std(mean={stats['mean_group_std']:.3f} max={stats['max_group_std']:.3f})", flush=True)
         print(f"  step {step} total: {time.time() - t0:.0f}s", flush=True)
 
     print(f"\nreward history (step 0 = first completed step): "
           f"{[round(r, 3) for r in reward_history]}", flush=True)
+    print("behavior history (first_sight% / lateness): "
+          f"{[(round(b['first_sight_pct']), round(b['mean_lateness'], 2)) for b in behavior_history]}",
+          flush=True)
 
 
 if __name__ == "__main__":

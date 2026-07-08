@@ -21,8 +21,8 @@ import statistics as st
 from pathlib import Path
 
 from scripts.creator.tool_disposition_benchmark.rl_critic import (
-    ReturnNormalizer, critic_values, extract_features, load_critic, returns_to_go, save_critic,
-    train_critic_step)
+    ReturnNormalizer, critic_values, extract_features, fit_critic, load_critic, returns_to_go,
+    save_critic)
 from scripts.creator.tool_disposition_benchmark.rl_reward import episode_reward, per_decision_rewards
 from scripts.creator.tool_disposition_benchmark.rl_rollout import group_by_seed
 from scripts.creator.tool_disposition_benchmark.train_lora import (
@@ -55,7 +55,17 @@ N_EPOCHS = 1    # tried 3 (2026-07-08 pilot v3): mean_kl exploded (-1 -> -57 ove
                 # per-decision+critic+clip pipeline has a confirmed-stable run at n_epochs=1 (the doc's
                 # own suggested build order, §10 step 5): re-enabling multi-epoch reuse is the LAST lever
                 # to pull, not bundled into the same untested step as everything else.
-KL_BETA = 0.05
+KL_BETA = 0.05  # ⚠ scale caveat (2026-07-08 review): every stable pilot ran this beta against UNIT-SCALE
+                # (z-scored) advantages; the per-decision advantage is now in raw "balls" units (|A|
+                # plausibly ~5-15 early, while the critic is still converging), so the pg:KL balance in
+                # `pg_loss + beta*kl_t` is ~10x tilted toward pg relative to those pilots. AdamW's
+                # moment normalization absorbs OVERALL gradient scale, but not the RELATIVE weighting
+                # inside the summed loss. Deliberately not retuned pre-emptively (one change at a time;
+                # the advantage's interpretable balls-units are worth keeping if we can) -- instead
+                # `grpo_step` now logs `mean_abs_advantage` every step: if mean_kl starts running on the
+                # first real box run, the honest first lever is raising beta (or normalizing advantages
+                # by a running |A| scale), NOT another LR change -- that misdiagnosis already cost one
+                # pilot (v3's "LR too high" first-guess).
 CLIP_EPS = 0.2  # PPO clip epsilon (spec §5) -- a standard default, genuinely untested on this task (spec
                 # §9.3): no pilot has run with it yet. Once ratio_t = exp(new_logp_t - old_logp_t) drifts
                 # outside [1-CLIP_EPS, 1+CLIP_EPS], that decision's gradient contribution stops growing --
@@ -187,6 +197,52 @@ def compute_advantages(rewards: list[float]) -> list[float]:
     return [(r - mean) / std for r in rewards]
 
 
+# --------------------------------------------------------------------- per-step diagnostics
+def behavioral_metrics(batch_results: list[dict]) -> dict:
+    """First-sight % and mean lateness over the batch's KEEP decisions -- the project's standing lead
+    metrics (plan §0), computed per outer step from data already in hand. Added in the 2026-07-08
+    pre-box-run review: `mean_reward` at ~100 episodes/step is noisy enough that a real disposition
+    shift (eager -> reserve) will show up here several steps before it resolves in the reward mean, so
+    a pilot judged only on the reward curve risks reading "flat" on a run that is actually moving.
+    lateness = class_position - 1 (class_position 1 = first sighting)."""
+    keeps = [t for r in batch_results for t in r["row"]["transcript"] if t["decision"] == "KEEP"]
+    if not keeps:
+        return {"first_sight_pct": 0.0, "mean_lateness": 0.0, "n_keeps": 0}
+    lateness = [t["class_position"] - 1 for t in keeps]
+    return {"first_sight_pct": 100.0 * sum(1 for l in lateness if l == 0) / len(lateness),
+            "mean_lateness": st.mean(lateness), "n_keeps": len(keeps)}
+
+
+def advantage_diagnostic(batch_results: list[dict]) -> dict:
+    """Mean advantage bucketed by decision type x the color's ground-truth role (hot/trap, from the
+    stream's hidden metadata -- same privileged source the critic's `rate` feature uses, never shown to
+    the policy). Added in the 2026-07-08 pre-box-run review as a STEP-0 MECHANISM CHECK: if per-decision
+    credit assignment works, the advantage ordering should already separate good from bad decisions on
+    the very first batch, BEFORE any policy update -- concretely, keep_hot > keep_trap and
+    pass_trap > pass_hot_first_sight. If step 0 shows no such separation, the run's remaining outer
+    steps can't be expected to train anything: stop and debug the critic/decomposition instead of
+    burning box time -- this decouples "is the credit signal right?" from "did 8 policy updates move a
+    14B model?", which the flat pilots v2-v5 could never distinguish.
+
+    Buckets: keep_hot / keep_trap (KEEPs by role), pass_hot_first / pass_hot_later / pass_trap (PASSes
+    by role, hot ones split by whether this was the first sighting -- passing a hot color's first
+    sighting to wait for confirmation is exactly what pi*/wait2 do, so it should NOT score clearly
+    negative; passing it again later is squandering)."""
+    buckets: dict[str, list[float]] = {}
+    for r in batch_results:
+        role_of = {s["class_id"]: s["role"] for s in r["slots"]}
+        for t, a in zip(r["row"]["transcript"], r["advantages"]):
+            role = role_of[t["class_id"]]
+            if t["decision"] == "KEEP":
+                key = f"keep_{role}"
+            elif role == "hot":
+                key = "pass_hot_first" if t["class_position"] == 1 else "pass_hot_later"
+            else:
+                key = "pass_trap"
+            buckets.setdefault(key, []).append(a)
+    return {k: {"mean_adv": st.mean(v), "n": len(v)} for k, v in sorted(buckets.items())}
+
+
 # --------------------------------------------------------------------- one PPO update over a whole batch
 def grpo_step(model, tokenizer, optimizer, batch_results: list[dict], critic, critic_optimizer,
              normalizer: ReturnNormalizer, *, beta: float = KL_BETA, max_grad_norm: float = MAX_GRAD_NORM,
@@ -216,17 +272,23 @@ def grpo_step(model, tokenizer, optimizer, batch_results: list[dict], critic, cr
     across outer steps (caller persists/reloads `critic`/`critic_optimizer`/`normalizer` via
     `rl_critic.save_critic`/`load_critic` -- see `rl_urn_pilot.py`), on the flattened per-decision
     (features, returns) pairs across the WHOLE batch -- decisions, not episodes, are its training
-    examples. Trained BEFORE forming this step's advantages, so the advantage always uses the freshest
-    baseline; no separate warm-up gate (spec §9.4 -- judged not worth an extra hyperparameter for this
-    pipeline's first real test: an undertrained early critic gives a noisier, not systematically biased,
-    baseline).
+    examples. Fitted to (near-)plateau via `rl_critic.fit_critic` (2026-07-08 pre-box-run review: the
+    original single `train_critic_step` per outer step meant ~8 critic updates over a whole pilot --
+    an approximately-constant baseline, degenerating the advantage to REINFORCE-with-a-mean-baseline;
+    see `fit_critic`'s docstring) BEFORE forming this step's advantages, so the advantage always uses
+    the freshest baseline; no separate warm-up gate (spec §9.4 -- an undertrained early critic gives a
+    noisier, not systematically biased, baseline, and `fit_critic` now makes even the step-0 critic a
+    real fit rather than noise).
 
     PPO clip (spec §5) is what fixes pilot v3's root cause and makes multi-epoch reuse safe again --
     `n_epochs` defaults to `N_EPOCHS` (currently 1 regardless: see that constant's comment) rather than
     being bumped here, per the doc's own suggested build order (§10): confirm this new pipeline is
     stable at n_epochs=1 before compounding with multi-epoch reuse.
 
-    Returns {mean_reward, critic_loss, mean_advantage, loss, mean_kl, mean_group_std} for logging."""
+    Returns {mean_reward, critic_loss, critic_fit_iters, mean_advantage, mean_abs_advantage,
+    advantage_diagnostic, behavior, loss, mean_kl, mean_group_std, ...} for logging -- `behavior` and
+    `advantage_diagnostic` (both 2026-07-08 review additions, spec §8.5) are also printed inline each
+    step; the caller persists `behavior` per step into the checkpoint manifest."""
     import torch
 
     for r in batch_results:
@@ -239,16 +301,30 @@ def grpo_step(model, tokenizer, optimizer, batch_results: list[dict], critic, cr
         assert abs(sum(r["dec_rewards"]) - r["reward_info"]["reward"]) < 1e-6, \
             "per-decision decomposition must reproduce the scalar reward exactly"
 
-    # ---- critic: one MSE step on the whole batch's flattened decisions, then read fresh baselines ----
+    # ---- critic: fit to plateau on the whole batch's flattened decisions, then read fresh baselines ----
     all_features = [f for r in batch_results for f in r["features"]]
     all_returns = [g for r in batch_results for g in r["returns"]]
-    critic_loss = train_critic_step(critic, critic_optimizer, normalizer, all_features, all_returns)
+    critic_fit = fit_critic(critic, critic_optimizer, normalizer, all_features, all_returns)
+    print(f"  critic fit: {critic_fit['n_iters']} iters, "
+          f"loss {critic_fit['first_loss']:.4f} -> {critic_fit['final_loss']:.4f}", flush=True)
     flat_values = critic_values(critic, normalizer, all_features)
     cursor = 0
     for r in batch_results:
         k = len(r["features"])
         r["advantages"] = [g - v for g, v in zip(r["returns"], flat_values[cursor:cursor + k])]
         cursor += k
+
+    # mechanism check (2026-07-08 review): does the advantage already order decision quality correctly
+    # BEFORE this step's policy update? Expected once the critic is fit: keep_hot > keep_trap, and
+    # pass_trap > pass_hot_first_sight. Most load-bearing at step 0 (if absent there, later steps have
+    # nothing to train on -- stop and debug rather than burn box time); printed every step since it's
+    # ~free and shows whether the separation persists as the policy moves.
+    adv_diag = advantage_diagnostic(batch_results)
+    print("  advantage by decision type (mean_adv, n): " +
+          "  ".join(f"{k}={v['mean_adv']:+.2f}({v['n']})" for k, v in adv_diag.items()), flush=True)
+    behav = behavioral_metrics(batch_results)
+    print(f"  behavior: first_sight={behav['first_sight_pct']:.0f}% "
+          f"mean_lateness={behav['mean_lateness']:.3f} n_keeps={behav['n_keeps']}", flush=True)
 
     # informational only (NOT used for the advantage -- see docstring)
     groups = group_by_seed(batch_results)
@@ -337,9 +413,16 @@ def grpo_step(model, tokenizer, optimizer, batch_results: list[dict], critic, cr
 
     rewards = [r["reward_info"]["reward"] for r in batch_results]
     all_advantages = [a for r in batch_results for a in r["advantages"]]
+    # mean |A| is logged because the advantage is now in raw "balls" units (~5-15+ early on), not the
+    # unit-scale z-scores every stable pilot ran with -- so the pg:KL balance inside the loss is ~10x
+    # tilted toward pg vs. those pilots at the same KL_BETA (see the KL_BETA comment). This makes the
+    # imbalance visible per step instead of discovered via a mystery KL runaway.
     return {"mean_reward": st.mean(rewards), "reward_std": st.pstdev(rewards),
             "reward_min": min(rewards), "reward_max": max(rewards),
-            "critic_loss": critic_loss, "mean_advantage": st.mean(all_advantages),
+            "critic_loss": critic_fit["final_loss"], "critic_fit_iters": critic_fit["n_iters"],
+            "mean_advantage": st.mean(all_advantages),
+            "mean_abs_advantage": st.mean(abs(a) for a in all_advantages),
+            "advantage_diagnostic": adv_diag, "behavior": behav,
             "mean_group_std": st.mean(group_stds) if group_stds else 0.0,
             "max_group_std": max(group_stds) if group_stds else 0.0,
             "loss": total_loss,
@@ -348,7 +431,8 @@ def grpo_step(model, tokenizer, optimizer, batch_results: list[dict], critic, cr
 
 # --------------------------------------------------------------------- checkpoint / resume
 def save_checkpoint(model, tokenizer, optimizer, critic, critic_optimizer, normalizer: ReturnNormalizer,
-                    out_dir: Path, step: int, reward_history: list[float], next_seed: int) -> None:
+                    out_dir: Path, step: int, reward_history: list[float], next_seed: int,
+                    behavior_history: list[dict] | None = None) -> None:
     import torch
     ck = out_dir / "checkpoint"
     ck.mkdir(parents=True, exist_ok=True)
@@ -360,7 +444,11 @@ def save_checkpoint(model, tokenizer, optimizer, critic, critic_optimizer, norma
     torch.save(optimizer.state_dict(), ck / "optimizer.pt")
     save_critic(critic, normalizer, ck / "critic.pt")             # spec §3.3: warm-started across steps
     torch.save(critic_optimizer.state_dict(), ck / "critic_optimizer.pt")
-    manifest = {"step": step, "reward_history": reward_history, "next_seed": next_seed}
+    # behavior_history (first_sight_pct/mean_lateness per step, 2026-07-08 review) rides in the
+    # manifest so the DISPOSITION trend survives a box interruption the same way the reward trend
+    # does -- it's the earlier-resolving signal of the two (see `behavioral_metrics`).
+    manifest = {"step": step, "reward_history": reward_history, "next_seed": next_seed,
+                "behavior_history": behavior_history or []}
     (ck / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
 
@@ -408,6 +496,28 @@ def _dry_run():
     advs = compute_advantages([m["reward_info"]["reward"] for m in groups[9000]])
     assert len(advs) == 4 and abs(sum(advs)) < 1e-6, advs   # z-scored -> sums to ~0
     print(f"advantages: {[round(a, 3) for a in advs]}")
+
+    # behavioral_metrics + advantage_diagnostic (2026-07-08 review additions) against heuristic-policy
+    # transcripts with hand-set advantages (+1 every KEEP, -1 every PASS), so the expected bucket means
+    # are known exactly and the test isolates the BUCKETING logic, not any model behavior.
+    from scripts.creator.tool_disposition_benchmark.pi_star import wait_k_builds
+    from scripts.creator.tool_disposition_benchmark.rl_reward import builds_to_transcript
+    diag_batch = []
+    for builds in (eager_builds(slots, B), wait_k_builds(slots, B, 2)):
+        transcript = builds_to_transcript(slots, builds, B)
+        diag_batch.append({"seed": 9000, "slots": slots, "row": {"transcript": transcript},
+                           "advantages": [1.0 if t["decision"] == "KEEP" else -1.0 for t in transcript]})
+    behav = behavioral_metrics(diag_batch)
+    assert behav["n_keeps"] == 2 * B, behav              # both heuristics spend the full budget on T=60
+    assert 0.0 < behav["first_sight_pct"] < 100.0, behav  # eager keeps at sight 1, wait2 waits -> mixed
+    diag = advantage_diagnostic(diag_batch)
+    known = {"keep_hot", "keep_trap", "pass_hot_first", "pass_hot_later", "pass_trap"}
+    assert set(diag) <= known, diag
+    for k, v in diag.items():
+        expected = 1.0 if k.startswith("keep_") else -1.0
+        assert v["mean_adv"] == expected and v["n"] > 0, (k, v)
+    print(f"behavioral_metrics/advantage_diagnostic OK "
+          f"(first_sight={behav['first_sight_pct']:.0f}%, buckets={sorted(diag)})")
 
     with tempfile.TemporaryDirectory() as td:
         out_dir = Path(td)
