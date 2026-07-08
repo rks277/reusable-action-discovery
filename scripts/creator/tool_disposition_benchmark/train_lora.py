@@ -185,15 +185,25 @@ def build_example(messages: list[dict], tokenizer, tools=None) -> dict:
     checkpoints hallucinate the literal word "assistant" as content in 90%+ of their turns, and the one
     training slice containing two back-to-back assistant messages with no separating turn
     (mechanics_bridge's old 'reuse' branch, fixed in phase3_demos.py) is the only place that shape could
-    have been reinforced from an in-context example rather than merely a masking-label artifact."""
+    have been reinforced from an in-context example rather than merely a masking-label artifact.
+
+    Also returns `turn_spans`: a `[(start, end), ...]` list, one (start, end) half-open range into
+    `input_ids`/`labels` per ASSISTANT message, in message order -- the trained-token span for that turn
+    ALONE (same exclusion of the role-declaration prefix as the labels themselves). Added
+    2026-07-08 for RL's per-decision credit assignment (docs/rl-ppo-credit-assignment-spec.md §6):
+    `urn_session.run_episode` emits exactly one assistant message per KEEP/PASS decision, so turn i here
+    IS decision i in `rl_reward.per_decision_rewards`. SFT training (this file's own callers) ignores
+    the extra key; it changes no existing behavior."""
     input_ids: list[int] = []
     labels: list[int] = []
+    turn_spans: list[tuple[int, int]] = []
     prev: list[int] = []        # empty prefix (transformers refuses apply_chat_template([])); the first
                                 # message renders any template preamble and is masked as non-assistant
     for i, msg in enumerate(messages):
         cur = _ids(tokenizer.apply_chat_template(messages[: i + 1], tokenize=True,
                                                  add_generation_prompt=False, tools=tools))
         seg = cur[len(prev):]
+        start_before = len(input_ids)
         if msg["role"] == "assistant":
             gen = _ids(tokenizer.apply_chat_template(messages[:i], tokenize=True,
                                                       add_generation_prompt=True, tools=tools))
@@ -201,12 +211,14 @@ def build_example(messages: list[dict], tokenizer, tools=None) -> dict:
                 "chat template not prefix-additive under add_generation_prompt -- masking assumption broken"
             n_prefix = len(gen) - len(prev)     # '<|im_start|>assistant\n' -- NOT trained
             labels.extend([-100] * n_prefix + seg[n_prefix:])
+            turn_spans.append((start_before + n_prefix, start_before + len(seg)))
         else:
             labels.extend([-100] * len(seg))
         input_ids.extend(seg)
         prev = cur
     assert len(input_ids) == len(labels)
-    return {"input_ids": input_ids, "labels": labels, "attention_mask": [1] * len(input_ids)}
+    return {"input_ids": input_ids, "labels": labels, "attention_mask": [1] * len(input_ids),
+            "turn_spans": turn_spans}
 
 
 # --------------------------------------------------------------------- template correctness check

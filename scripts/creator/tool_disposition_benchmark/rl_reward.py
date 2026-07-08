@@ -36,6 +36,50 @@ def episode_reward(slots: list[dict], kept: dict) -> dict:
     return {"reward": float(balls), "balls": balls}
 
 
+def per_decision_rewards(slots: list[dict], transcript: list[dict]) -> list[float]:
+    """docs/rl-ppo-credit-assignment-spec.md §2: decompose the scalar episode reward into one term per
+    KEEP/PASS decision, aligned 1:1 with `transcript` (== one entry per assistant turn in `row["messages"]`
+    -- `urn_session.run_episode` appends exactly one user+assistant pair per decision, never per raw draw,
+    so index i here IS turn i there; no separate index-mapping needed downstream).
+
+    A KEEP at `class_position` out of `class_size` total occurrences contributes exactly
+    `class_size - class_position + 1` (itself plus every future same-color draw, auto-collected free);
+    a PASS contributes exactly 0. This is not reward shaping -- summing these across the episode
+    reproduces `episode_reward`'s scalar exactly (see `_selftest`), because that scalar was already this
+    sum in disguise (`_balls_collected`/`episode_reward` group the same per-color terms by class instead
+    of by decision)."""
+    sizes: dict[int, int] = {}
+    for s in slots:
+        sizes[s["class_id"]] = sizes.get(s["class_id"], 0) + 1
+    return [float(sizes[t["class_id"]] - t["class_position"] + 1) if t["decision"] == "KEEP" else 0.0
+            for t in transcript]
+
+
+def builds_to_transcript(slots: list[dict], builds: dict, B: int) -> list[dict]:
+    """Reconstruct a decision-turn list (the subset of `urn_session.run_episode`'s `transcript` fields
+    `per_decision_rewards`/the critic's feature extraction need: slot/class_id/class_position/decision)
+    from a `builds` dict ({class_id: class_position_kept_at, or None}) as produced by `pi_star.py`'s
+    heuristics (`eager_builds`/`wait_k_builds`/`clairvoyant_builds`). Lets self-tests and the critic's
+    standalone validation (docs/rl-ppo-credit-assignment-spec.md §10 step 2) exercise real decision
+    sequences without an LLM call -- mirrors `run_episode`'s own decision loop exactly: skip draws of an
+    already-kept color (auto-collected, not a decision), stop once the keep budget is exhausted."""
+    kept: set[int] = set()
+    budget_left = B
+    out = []
+    for s in sorted(slots, key=lambda z: z["slot_index"]):
+        cid, pos = s["class_id"], s["class_position"]
+        if cid in kept:
+            continue
+        if budget_left == 0:
+            break
+        decision = "KEEP" if builds.get(cid) == pos else "PASS"
+        out.append({"slot": s["slot_index"], "class_id": cid, "class_position": pos, "decision": decision})
+        if decision == "KEEP":
+            kept.add(cid)
+            budget_left -= 1
+    return out
+
+
 def _selftest():
     from scripts.creator.tool_disposition_benchmark.stream_builder import (
         StochasticStreamSpec, build_stochastic_stream)
@@ -55,6 +99,17 @@ def _selftest():
     assert eager_r > none_r, (eager_r, none_r)   # keeping something beats keeping nothing
     assert clair_r >= wait2_r >= 0, (clair_r, wait2_r)
     print(f"none={none_r:.0f}  eager={eager_r:.0f}  wait2={wait2_r:.0f}  clairvoyant={clair_r:.0f}")
+
+    # per-decision decomposition (docs/rl-ppo-credit-assignment-spec.md §2): sum of per-decision
+    # rewards must reproduce the scalar exactly, on every policy above (0 keeps, all-eager, wait2).
+    for name, builds in [("none", {}), ("eager", eager_builds(slots, B)),
+                         ("wait2", wait_k_builds(slots, B, 2))]:
+        kept = {cid: v for cid, v in builds.items() if v is not None}
+        transcript = builds_to_transcript(slots, builds, B)
+        decomposed = sum(per_decision_rewards(slots, transcript))
+        scalar = episode_reward(slots, kept)["reward"]
+        assert decomposed == scalar, (name, decomposed, scalar)
+    print("per-decision decomposition matches scalar reward on none/eager/wait2 -- OK")
     print("rl_reward self-test OK")
 
 

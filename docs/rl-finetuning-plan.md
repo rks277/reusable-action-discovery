@@ -272,6 +272,178 @@ two-stage order this project always has —
    did RL-on-urn's reserve policy transfer better than SFT-on-urn's did (100% first-sight / 0.000
    lateness, i.e. no transfer at all)?
 
+### Pilot v2, take 1 (2026-07-08): exploration insufficiency + step-size diagnosis
+
+With the reward fixed (see "Reward, revised" above), the pilot was rerun fresh (`runs/rl_urn_pilot_v2`,
+base model, 8 outer steps planned) — stopped after step 7 on user request once the reward curve showed
+no upward trend. **This run is also considered a diagnostic dead end, not a result to read at face
+value — like `rl_urn_smoke`, it surfaced a design problem rather than a clean pass/fail.**
+
+- **Reward history (7 steps):** `[36.42, 37.64, 36.61, 35.63, 36.51, 35.95, 34.62]` — flat, converging
+  *down* to almost exactly the eager baseline (34.56) by the final step, not up toward wait2 (~42-44).
+  `n_zero_advantage_groups` bounced between 1 and 5 (of 25 groups) across steps — noisy, not cleanly
+  monotonic, but consistently a meaningful fraction of the batch.
+- **Root-caused via a direct rollout diagnostic** (8 rollouts, temperature=0.7, one fixed stream,
+  against the final checkpoint): 6/8 rollouts were byte-identical (`KEEP` on the first three distinct
+  colors — pure eager), 0/8 hit a parse failure (replies were coherent, on-topic reasoning, not
+  garbled). **The model re-converged onto the base model's own pre-existing eager disposition rather
+  than discovering anything new** — not a new local optimum, just insufficient exploration diversity to
+  escape the starting policy's already-low-entropy bias toward eager.
+- **Compounding step-size problem, found on follow-up:** each outer step is exactly ONE
+  `optimizer.step()` (100 `backward()` calls accumulate into a single update — not 100 updates), so a
+  7-8 step pilot takes only 7-8 total weight updates, ever. AdamW's per-parameter step size is
+  ~bounded by `lr` regardless of gradient magnitude (moment-normalized), so at the original `lr=1e-5`
+  the ceiling on cumulative movement after 7 steps is ~7e-5 per weight — likely too small to shift
+  behavior at all within this step budget, independent of whether the exploration problem above is
+  fixed. Even a working reward signal would plausibly look flat at this LR/step-count combination.
+- **Temperature sanity check** (same checkpoint, same fixed stream, 8 rollouts each): raising sampling
+  temperature increases behavioral diversity without breaking output parsing —
+
+  | temp | distinct patterns (of 8) | dominant-mode share | reward range | unparsed |
+  |---|---|---|---|---|
+  | 0.7 | 3 | 6/8 | 37–44 | 0 |
+  | 1.0 | 6 | 3/8 | 21–37 | 0 |
+  | 1.2 | 4 | 4/8 | 23–49 | 0 |
+
+  1.2 produced the widest, most informative spread — two rollouts found genuinely good deviations
+  (48-49 balls, near clairvoyant, via wait-then-commit patterns like `KpppKK`) alongside two clearly
+  worse ones (23), exactly the two-sided spread GRPO's group-relative advantage needs. Parsing stayed
+  clean (0 unparsed) at every temperature tested.
+- **Fix attempted (`rl_train.py`):** `RL_LR` raised `1e-5 → 3e-5` (still 3x below SFT's `1e-4`, tuned
+  for a different, denser supervision signal); added `N_EPOCHS=3` — reuse each collected batch for 3
+  separate `optimizer.step()`s instead of 1, multiplying total weight updates for free (no extra
+  rollout collection, the expensive part of an outer step) rather than only via a bigger LR. Reference
+  log-probs are policy-independent (frozen base model), so they're computed once per batch and reused
+  across epochs rather than recomputed. Rollout temperature raised `0.7 → 1.2` for the same run.
+
+### Pilot v3 (2026-07-08): multi-epoch reuse without an importance-ratio clip caused KL blowup
+
+Relaunched fresh from base model (`runs/rl_urn_pilot_v3`) with the fix above. Temperature=1.2 worked as
+intended — `n_zero_advantage_groups` dropped to 0/25 at step 0 (vs 1-5/25 before) and stayed low, and
+`group_std` rose (~5.7-6.3 vs ~4-6 before), confirming real per-group behavioral diversity. **But
+`mean_kl` exploded — `-1.03, -5.49, -16.63, -30.81, -56.82` over 5 steps, accelerating each step with
+no sign of leveling off — while `mean_reward` stayed flat/noisy (37.58, 37.63, 36.05, 35.75, 38.39),
+not tracking the divergence at all.** Killed at step 5 on user request rather than let it run to
+completion; checkpoint/manifest left in a clean (non-corrupt) state but not usable as a result.
+
+**Root cause, not just "LR too high":** the loss (`-(advantage * seq_logp)`) is only a valid gradient
+estimator when the policy being updated is the one that generated the sampled actions (the on-policy
+assumption). Reusing one rollout batch across `N_EPOCHS=3` violates this with nothing to catch it:
+epoch 2+ recomputes `seq_logp` under the already-shifted post-epoch-1 weights but reapplies the SAME
+advantage computed from the original (pre-any-update) policy, with no mechanism to reduce an example's
+gradient contribution once its probability has already moved. Every epoch pushes further in the same
+direction on the identical 100 examples — exactly the failure mode PPO's clipped importance-ratio
+surrogate exists to prevent, which this implementation doesn't have. Raising `RL_LR` to 3e-5 didn't
+cause this but multiplied it, since the instability is about *uncorrected repeated pushes*, and a
+bigger LR just makes each push bigger. The flat reward alongside exploding KL is the tell: purposeful,
+reward-driven divergence should track reward upward; this looked like unconstrained drift on
+increasingly stale advantage estimates instead.
+
+**Fix (2026-07-08): reverted `N_EPOCHS` to 1**, keeping `RL_LR=3e-5` and temperature=1.2. This isolates
+whether the LR bump alone (without the unsafe multi-epoch reuse) is enough, before considering the
+more invasive alternative (implementing a real PPO-style clipped surrogate — caching each example's
+log-prob at sampling time, computing an importance ratio each epoch, and clipping it — which would be
+the textbook-correct way to make multi-epoch reuse safe, deferred for now as more code than a quick
+pilot iteration warrants). The `grpo_step` epoch loop is left in place parameterized by `n_epochs`
+(just defaults to 1) so re-enabling multi-epoch later, if a proper clip is added, is a small change.
+**Next pilot restarts from the base model in a fresh directory (`runs/rl_urn_pilot_v4`)**, not resumed
+from `rl_urn_pilot_v3`'s checkpoint (destabilized, not a clean starting point).
+
+### Pilot v4 (2026-07-08): stable, but reward still flat — two more root causes found
+
+`N_EPOCHS=1` fixed the instability: `mean_kl` stayed small and bounded (`0.000, -0.143, -0.629, -1.457,
+...`) through 5 steps, roughly 20x smaller than v3's runaway at the same step count, and
+`n_zero_advantage_groups` stayed low (0-2/25). But `mean_reward` still didn't move
+(`37.43, 36.47, 36.53, 35.18, 36.54`) — killed at step 5 on user request to redirect rather than let it
+run out the clock on a config already showing the same flat pattern. Two further issues diagnosed:
+
+1. **Reverting `N_EPOCHS` to 1 gave up most of the intended step-size fix, not just the unsafe part of
+   it.** The original plan was LR×3 *and* epochs×3 together (~10x more cumulative movement than the
+   original run). Dropping epochs back to 1 left only the LR×3 — cumulative movement after 8 steps is
+   ~3x the original run's, not ~10x. A flat curve at this point was expected, not a new failure.
+2. **The loss uses a raw SUM of per-token log-probs, and episode length is confounded with the exact
+   behavior being trained.** `urn_session.run_episode` stops generating decision turns the moment the
+   keep budget is exhausted (`if budget_left == 0: break`) — an eager episode (commits all 3 keeps
+   almost immediately) produces a short transcript; a reserve/wait episode (keeps deciding for longer
+   before committing) produces a much longer one. Since `_seq_logprob` summed log-probs over the whole
+   transcript, longer (reserve-like) episodes got systematically larger-magnitude gradients than
+   shorter (eager-like) ones at the *same* advantage value — noise correlated with the thing being
+   learned, not a length-neutral signal.
+
+**Fixes applied (`rl_train.py`):**
+- `_seq_logprob` changed from a raw sum to a length-normalized **mean** over labeled tokens — removes
+  the length confound. Verified against an independent `log_softmax`-based reference computation
+  (exact match to 1e-4) before relaunching.
+- `RL_LR` raised `3e-5 → 6e-5` — a second, deliberately incremental step (6x the original 1e-5, still
+  ~40% below SFT's 1e-4), kept separate from the `N_EPOCHS` fix so this change is legible on its own.
+  Explicitly a *different* risk axis than the v3 instability: that was a specific compounding pathology
+  (now removed) from reapplying stale advantages across epochs; this is the plain, still-live reason
+  `RL_LR` was originally kept low — single-episode reward is sparse and noisy, so a bigger step still
+  means trusting a noisier gradient direction more, just not compounded 3x per outer step anymore.
+  `MAX_GRAD_NORM` clipping remains as a floor-level safety net regardless of LR.
+
+**Next pilot (`runs/rl_urn_pilot_v5`) restarts from the base model in a fresh directory**, not resumed
+from `rl_urn_pilot_v4`.
+
+### Pilot v5 (2026-07-08): both fixes applied, ran clean to completion, still flat — root cause is credit-assignment density, not tuning
+
+`_seq_logprob` switched from a raw sum to a length-normalized mean (verified against an independent
+`log_softmax` reference computation before relaunching); `RL_LR` raised `3e-5 → 6e-5`. Ran the full 8
+steps to completion without intervention (first pilot to do so) — single process, no OOM, no crash.
+`mean_kl` stayed small and bounded throughout (note: not comparable in magnitude to v2-v4's numbers,
+since the length-normalization changed the metric's scale) and `n_zero_advantage_groups` stayed low
+(0-1/25 across steps) — the exploration and stability fixes all held.
+
+**Final reward history (8 steps): `[37.89, 35.62, 36.76, 36.52, 36.46, 37.69, 35.5, 37.36]`** — flat,
+oscillating in the same 35-38 range as every prior attempt, no trend toward wait2 (~42-44) anywhere in
+the run. This is now the fourth consecutive pilot (v2 with the pi*-based reward already ruled out;
+v2-restart, v3, v4, v5 all reward-fixed and progressively de-bugged) to show no reward improvement,
+despite independently fixing: the reward's reference-policy dependency, insufficient exploration
+diversity, step-size, multi-epoch instability, and a length confound in the loss. **Ruling out tuning
+as the remaining explanation** — see the conversation's live discussion for the full reasoning, summarized
+here:
+
+**Root cause: the loss applies ONE scalar advantage uniformly across every token in the episode, with
+no per-decision or per-timestep credit propagation** (no critic/value function — GRPO deliberately
+omits one). Reward genuinely depends on only a handful of pivotal decisions (a first-sighting
+KEEP/PASS call on a color that turns out to matter) out of the ~3-13+ decisions in an episode; most
+other decisions are easy/low-information and don't actually determine the outcome. Applying the same
+flat advantage to all of them dilutes the gradient signal for the pivotal decisions with noise from the
+rest, and from pure environmental luck (which stream got drawn) unrelated to the model's choices. This
+is the standard weakness of vanilla per-episode REINFORCE/GRPO relative to actor-critic methods (PPO
+with GAE, TD-learning, the family used for genuinely sparse-reward tasks like checkpoint-based racing-
+game RL) — those work with sparse *reward events* specifically because a learned value function
+propagates credit backward through every intervening timestep via bootstrapping, not because sparse
+reward is inherently easy to learn from with a flat, uncredited scalar. GRPO's design assumption (a
+whole generated completion is graded as one homogeneous unit — its origin is single-shot math/code
+RLHF) also doesn't fit a multi-turn *sequential decision* trajectory like this one as well as it fits
+a single-shot completion.
+
+This also reframes the SFT-vs-RL comparison the phase was designed around: SFT reached near-optimal
+urn performance from only 170 sessions specifically *because* it had dense, per-decision supervision
+(`qwen-finetune-transfer-plan.md` Result 2) — deliberately not replicated here so RL's disposition
+would be *discovered*, not imitated (see "Why this first" above) — and that choice is exactly what
+cost the sample efficiency. Fixing this for real would mean either (a) constructing a per-decision
+advantage from this project's existing scoring machinery (π*/wait2/`value_of_builds` can already say,
+in hindsight, whether an individual KEEP/PASS was good) instead of one flat episode-level scalar, or
+(b) accepting that vanilla per-episode GRPO on this task needs a training budget several orders of
+magnitude larger than a pilot (successful sparse-reward RL with a *proper* critic still typically runs
+into the millions of environment steps) — both open, unstarted, and outside a quick-pilot scope.
+
+**Status at end of session (2026-07-08): Phase 1 GPU box work paused here, box being released.**
+Model checkpoints/GGUF artifacts from all pilots were NOT pulled off the box before release (all
+runs were flat/diagnostic dead-ends, not validated results, and the artifacts are large — the merged
+model alone is ~28-29GB per run, regenerated fresh each step, pure intermediate output; the LoRA
+adapter+optimizer checkpoints are ~800MB each). Preserved instead: full `pilot.log`s and
+`manifest.json`s for `rl_urn_smoke`/v2/v3/v4/v5 (`runs/box_archive_2026-07-08/`, ~6MB total) and the
+rollout-diversity diagnostic script (`scripts/box/diag_rl_pilot_rollouts.py`). If Phase 1 resumes, it
+restarts from the base model on a fresh box — nothing here needs to survive except this doc's record
+of what was tried and why it didn't work yet.
+
+**Next step spec'd, not started: `docs/rl-ppo-credit-assignment-spec.md`** — adds per-decision credit
+assignment (a lightweight critic + PPO-clipped surrogate) instead of GRPO's flat per-episode advantage,
+targeting the root cause diagnosed above.
+
 ## Phase 2 (tool framing) — only if Phase 1 is inconclusive because of channel fragility
 
 Everything below this point (through "Infra spec") was the original tool-framing RL design, from
@@ -524,18 +696,25 @@ proposed and agreed before spending GPU time.
 1. **Implement the GRPO loss/step + outer-step loop** — DONE (`rl_reward.py`, `rl_train.py`,
    `rl_rollout.py`, `rl_urn_pilot.py`), including checkpoint/resume support.
 2. **Run one outer step for real and time it** — DONE, see "Time estimate" above.
-3. **Run the 5-8 step pilot and read it as a direction check** — RUN BUT VOID (`runs/rl_urn_smoke`, 7
-   steps, reward history never trended cleanly) — root-caused to the reward design flaw in "Reward,
-   revised" above, not the model/gradient wiring. **Reward fixed (raw balls collected, no reference
-   policy); restarting from a fresh output directory (`runs/rl_urn_pilot_v2`) is the immediate next
-   step.**
-4. **Only if the (re-)pilot shows a clear upward trend, propose and cost a separate convergence run**
+3. **Run the 5-8 step pilot and read it as a direction check** — RUN FIVE TIMES (`rl_urn_smoke` void on
+   the old pi*-based reward; v2/v3/v4 each root-caused and fixed a distinct real bug — exploration
+   diversity, step-size, multi-epoch instability, a length confound; v5 ran clean to completion with
+   all fixes applied). **Reward stayed flat across all of them (final v5: `[37.89, 35.62, 36.76, 36.52,
+   36.46, 37.69, 35.5, 37.36]`).** With every tuning/stability explanation exhausted, this now points to
+   a structural cause, not a bug: vanilla per-episode GRPO has no per-decision credit assignment, and
+   this task's reward depends on a handful of pivotal decisions diluted among many easy ones (see
+   "Pilot v5" above for the full reasoning). **Not resolved. Two live options, neither started:**
+   (a) construct a per-decision advantage from this project's existing π*/wait2/`value_of_builds`
+   scoring machinery instead of one flat episode-level scalar, or (b) accept vanilla GRPO here needs a
+   training budget several orders of magnitude past pilot scale. GPU box work paused pending a decision
+   between these (see "Pilot v5" above for what was/wasn't preserved before the box was released).
+4. **Only if a future pilot shows a clear upward trend, propose and cost a separate convergence run**
    (rough order of magnitude 30-50+ outer steps, sharpened using the pilot's actual measured per-step
    cost and learning curve) — a new decision point, not something to commit to now. Not started.
 5. **After Phase 1 training completes (pilot or convergence run), run the falsifiable legibility +
    transfer check** (see "Falsifiable check" above) using the existing tool eval harness unchanged, read
    in the same two-stage order (legibility vs. pre-FT baseline, then policy transfer vs. pre-FT
-   baseline). Not started.
+   baseline). Not started — blocked on (3).
 
 ## Open follow-ups — Phase 2 (tool framing, conditional on Phase 1's result)
 

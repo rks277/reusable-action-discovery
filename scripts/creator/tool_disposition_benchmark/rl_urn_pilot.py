@@ -38,11 +38,17 @@ from dotenv import load_dotenv
 
 from lomekwi.raw_chat import RawChat
 from scripts.creator.tool_disposition_benchmark.pi_star import eager_builds, wait_k_builds
+from scripts.creator.tool_disposition_benchmark.rl_critic import ReturnNormalizer, build_critic, load_critic
 from scripts.creator.tool_disposition_benchmark.rl_reward import episode_reward
 from scripts.creator.tool_disposition_benchmark.rl_rollout import RL_SEED_START, collect_batch
 from scripts.creator.tool_disposition_benchmark.rl_train import (
-    grpo_step, load_manifest, load_optimizer_state, load_policy_model, save_checkpoint, RL_LR)
+    grpo_step, load_critic_optimizer_state, load_manifest, load_optimizer_state, load_policy_model,
+    save_checkpoint, RL_LR)
 from scripts.creator.tool_disposition_benchmark.urn_session import B, MAG, N, T, UNIFORM
+
+N_CRITIC_FEATURES = 5    # 4 fair + 1 privileged (`rate`) -- spec §3.2, sign-off 2026-07-08
+CRITIC_LR = 1e-3          # spec §3.3: tiny well-posed regression problem, higher LR than the policy is
+                          # fine since the target never depends on the critic's own weights
 
 
 def _baseline_reward(slots: list[dict], builds: dict) -> float:
@@ -150,11 +156,22 @@ def main() -> None:
         if has_checkpoint:
             load_optimizer_state(optimizer, args.out, next(model.parameters()).device)
 
-        stats = grpo_step(model, tokenizer, optimizer, batch)
+        # critic: same resume-every-step pattern as the policy (spec §3.3: warm-started, not refit from
+        # scratch each outer step) -- rebuilt fresh here (a few thousand params, negligible cost) and
+        # loaded from the same checkpoint dir the policy adapter/optimizer resume from.
+        critic = build_critic(N_CRITIC_FEATURES)
+        critic_optimizer = torch.optim.Adam(critic.parameters(), lr=CRITIC_LR)
+        normalizer = ReturnNormalizer()
+        if has_checkpoint:
+            load_critic(critic, normalizer, args.out / "checkpoint" / "critic.pt", "cpu")
+            load_critic_optimizer_state(critic_optimizer, args.out, "cpu")
+
+        stats = grpo_step(model, tokenizer, optimizer, batch, critic, critic_optimizer, normalizer)
         t_grpo = time.time()
         next_seed += args.seeds_per_step
         reward_history.append(stats["mean_reward"])
-        save_checkpoint(model, tokenizer, optimizer, args.out, step + 1, reward_history, next_seed)
+        save_checkpoint(model, tokenizer, optimizer, critic, critic_optimizer, normalizer, args.out,
+                        step + 1, reward_history, next_seed)
 
         del model, optimizer
         torch.cuda.empty_cache()
@@ -162,9 +179,9 @@ def main() -> None:
         print(f"  GRPO update: {t_grpo - t_rollout:.0f}s  mean_reward(balls)={stats['mean_reward']:.2f} "
               f"(std={stats['reward_std']:.2f} min={stats['reward_min']:.2f} max={stats['reward_max']:.2f})  "
               f"[baselines: eager={baselines['eager_mean']:.2f} wait2={baselines['wait2_mean']:.2f}]  "
-              f"loss={stats['loss']:.4f}  mean_kl={stats['mean_kl']:.3f}  "
-              f"group_std(mean={stats['mean_group_std']:.3f} max={stats['max_group_std']:.3f})  "
-              f"zero_adv_groups={stats['n_zero_advantage_groups']}/{stats['n_groups']}", flush=True)
+              f"loss={stats['loss']:.4f}  mean_kl={stats['mean_kl']:.3f}  critic_loss={stats['critic_loss']:.4f}  "
+              f"mean_advantage={stats['mean_advantage']:.3f}  "
+              f"group_std(mean={stats['mean_group_std']:.3f} max={stats['max_group_std']:.3f})", flush=True)
         print(f"  step {step} total: {time.time() - t0:.0f}s", flush=True)
 
     print(f"\nreward history (step 0 = first completed step): "
