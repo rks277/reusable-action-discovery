@@ -1,0 +1,154 @@
+{
+  "seed": 2003,
+  "model_key": "qwen2.5-coder:14b",
+  "vocab": "treasure_chest",
+  "modality": "tool",
+  "tool_choice": "required",
+  "kept": {
+    "7": 1,
+    "6": 1,
+    "0": 1
+  },
+  "collected": 31,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 590,
+      "output_tokens": 15,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 690,
+      "output_tokens": 12,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 765,
+      "output_tokens": 16,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "7": "skull",
+    "6": "anchor",
+    "0": "dragon",
+    "1": "kraken",
+    "3": "phoenix",
+    "4": "serpent",
+    "2": "raven",
+    "5": "crown"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "skull",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a skull coin appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 2,
+      "color": "anchor",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 2: another skull coin (already kept -> auto-collected, +1).) Draw 3 of 60: an anchor coin appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 3,
+      "color": "dragon",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a dragon coin appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a skull coin appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_f1b71d8d",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_f1b71d8d",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 2: another skull coin (already kept -> auto-collected, +1).) Draw 3 of 60: an anchor coin appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_64844541",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_64844541",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Draw 4 of 60: a dragon coin appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_ac1eb793",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_ac1eb793",
+      "content": "{\"ok\": true}"
+    }
+  ]
+}

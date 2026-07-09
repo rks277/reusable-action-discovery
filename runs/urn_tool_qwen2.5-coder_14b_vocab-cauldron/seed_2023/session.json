@@ -1,0 +1,180 @@
+{
+  "seed": 2023,
+  "model_key": "qwen2.5-coder:14b",
+  "vocab": "cauldron",
+  "modality": "tool",
+  "tool_choice": "required",
+  "kept": {
+    "0": 1,
+    "6": 1,
+    "1": 2
+  },
+  "collected": 36,
+  "budget": 3,
+  "unparsed": 1,
+  "turn_usages": [
+    {
+      "input_tokens": 595,
+      "output_tokens": 15,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 695,
+      "output_tokens": 12,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 831,
+      "output_tokens": 2,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 874,
+      "output_tokens": 12,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "0": "frost",
+    "6": "ember",
+    "1": "venom",
+    "3": "mist",
+    "7": "thorn",
+    "4": "spark",
+    "5": "gale",
+    "2": "shade"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "frost",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a frost potion appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 2,
+      "color": "ember",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 2: another frost potion (already kept -> auto-collected, +1).) Draw 3 of 60: an ember potion appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 6,
+      "color": "venom",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 4: another frost potion (already kept -> auto-collected, +1); draw 5: another frost potion (already kept -> auto-collected, +1); draw 6: another frost potion (already kept -> auto-collected, +1).) Draw 7 of 60: a venom potion appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "PASS",
+      "how": "default",
+      "reply": "",
+      "n_tool_calls": 0
+    },
+    {
+      "slot": 7,
+      "color": "venom",
+      "class_id": 1,
+      "class_position": 2,
+      "prompt": "Draw 8 of 60: a venom potion appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a frost potion appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_40619dde",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_40619dde",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 2: another frost potion (already kept -> auto-collected, +1).) Draw 3 of 60: an ember potion appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_d39dc1f4",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_d39dc1f4",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 4: another frost potion (already kept -> auto-collected, +1); draw 5: another frost potion (already kept -> auto-collected, +1); draw 6: another frost potion (already kept -> auto-collected, +1).) Draw 7 of 60: a venom potion appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "user",
+      "content": "Draw 8 of 60: a venom potion appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_04e3cd0e",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_04e3cd0e",
+      "content": "{\"ok\": true}"
+    }
+  ]
+}

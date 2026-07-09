@@ -1,0 +1,180 @@
+{
+  "seed": 2023,
+  "model_key": "qwen2.5-coder:14b",
+  "vocab": "quiver",
+  "modality": "tool",
+  "tool_choice": "required",
+  "kept": {
+    "0": 1,
+    "6": 1,
+    "1": 2
+  },
+  "collected": 36,
+  "budget": 3,
+  "unparsed": 1,
+  "turn_usages": [
+    {
+      "input_tokens": 591,
+      "output_tokens": 15,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 692,
+      "output_tokens": 12,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 828,
+      "output_tokens": 2,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 871,
+      "output_tokens": 16,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "0": "hawk",
+    "6": "raven",
+    "1": "owl",
+    "3": "falcon",
+    "7": "eagle",
+    "4": "kestrel",
+    "5": "heron",
+    "2": "crane"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "hawk",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a hawk arrow appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 2,
+      "color": "raven",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 2: another hawk arrow (already kept -> auto-collected, +1).) Draw 3 of 60: a raven arrow appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 6,
+      "color": "owl",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 4: another hawk arrow (already kept -> auto-collected, +1); draw 5: another hawk arrow (already kept -> auto-collected, +1); draw 6: another hawk arrow (already kept -> auto-collected, +1).) Draw 7 of 60: an owl arrow appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "PASS",
+      "how": "default",
+      "reply": "",
+      "n_tool_calls": 0
+    },
+    {
+      "slot": 7,
+      "color": "owl",
+      "class_id": 1,
+      "class_position": 2,
+      "prompt": "Draw 8 of 60: an owl arrow appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a hawk arrow appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_be53b197",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_be53b197",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 2: another hawk arrow (already kept -> auto-collected, +1).) Draw 3 of 60: a raven arrow appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_2242b08e",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_2242b08e",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 4: another hawk arrow (already kept -> auto-collected, +1); draw 5: another hawk arrow (already kept -> auto-collected, +1); draw 6: another hawk arrow (already kept -> auto-collected, +1).) Draw 7 of 60: an owl arrow appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "user",
+      "content": "Draw 8 of 60: an owl arrow appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_0f801b49",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_0f801b49",
+      "content": "{\"ok\": true}"
+    }
+  ]
+}

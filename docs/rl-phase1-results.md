@@ -4,8 +4,9 @@ Standalone, candid results writeup for the Phase 1 RL work. **Method/design/pilo
 `docs/rl-ppo-credit-assignment-spec.md`** (per-decision PPO + privileged critic, the five flat GRPO
 pilots, the build order, the pre-box-run review); this doc is only *what happened and what it means*,
 including the caveats we found by reading the raw transcripts. Broader project framing:
-`docs/online-tool-investment-plan.md`. All numbers here are from runs on 2026-07-08 (A100-40GB,
-`ubuntu@150.136.64.191`), artifacts listed in §7.
+`docs/online-tool-investment-plan.md`. §1–4 are from runs on 2026-07-08 (A100-40GB,
+`ubuntu@150.136.64.191`); §5 (framing-generalization follow-ups) is from a fresh box on 2026-07-09
+(A100-40GB, `ubuntu@129.213.82.160`); artifacts listed in §8.
 
 ---
 
@@ -14,16 +15,24 @@ including the caveats we found by reading the raw transcripts. Broader project f
 1. **RL works in the urn (in-framing).** From the *untouched base* `qwen2.5-coder:14b` (QLoRA,
    per-decision PPO + privileged critic, no demonstrations), a 20-step run **discovered the reserve
    policy from the balls reward alone** and reached π\* parity: paired held-out eval 75%→**32%**
-   first-sight, 87%→**101%** of π\* balls. This matches the SFT install but is *reward-discovered*, not
-   imitated — the distinction Phase 1 existed to make.
+   first-sight, 87%→**101%** of π\* balls.
 2. **It does NOT transfer to the tool framing — the framing wall holds for RL too.** Zero-shot tool eval
    of the same checkpoint: it stays essentially eager in the tool task (95% first-sight, lateness 0.238)
    despite reserving in the urn (32% / 0.903), over a **verifiably legible** tool channel (0 malformed /
    0 unknown calls). Its tool-frame behavior is nearly **indistinguishable from base**.
-3. **Interpretation (the payoff):** SFT already showed an *imitated* reserve policy doesn't transfer; RL
-   now shows a *self-discovered* one doesn't either, over a channel we verified is legible. That rules
-   out both "it failed only because it was imitated" and "the tool channel can't carry any policy." The
-   framing gap suppresses the disposition **regardless of how it was acquired**.
+3. **Interpretation (the payoff):** a policy discovered from reward in the abstract task remains
+   context-bound: it does not activate in reusable script creation, even though the tool channel is
+   legible and the model retains ordinary script-writing and tool-use competence.
+4. **Follow-up (2026-07-09, §5): the disposition survives a lexical re-skin but only partly survives a
+   decision-modality change.** Same RL-final checkpoint, three novel surface vocabularies (coins/
+   treasure-chest, arrows/quiver, potions/cauldron) that swap every content word while holding the
+   decision structure fixed: RL-final stays clearly more reserved than base (pooled first-sight 19% vs
+   89%) — the reserve policy is bound to the abstract KEEP/PASS structure, not the literal ball/bag/color
+   words. Switching the SAME task from free-text decisions to actual tool calls (`keep`/`pass`) shrinks
+   the gap by ~3x (RL-final 62% vs base 99%) and makes it wildly vocab-dependent (RL-final ranges
+   44%–97% across the three vocabs, vs a tight 10–33% band in free text) — including one vocab
+   (potions/cauldron) where RL-final collapses into an unconditional "keep the first 3 things shown, then
+   stop looking" policy in 16/24 seeds, nearly indistinguishable from base.
 
 ---
 
@@ -49,8 +58,8 @@ q8_0 GGUF via Ollama; same-seed so the delta is the policy, not stream luck):
 | balls-regret vs π\* | +5.2 | **−0.4** |
 | unparsed | 0 | 1 |
 
-RL is less extreme than SFT on first-sight (32% vs SFT's ~7%) yet hits the same balls result — an equally
-good urn policy via a slightly less eager-suppressing route.
+RL reaches the urn reference through a policy that still keeps some colors on first sight: first-sight
+falls to 32% while balls collected reaches 101% of π\*.
 
 ---
 
@@ -160,7 +169,7 @@ tool-calling fix." 32b is the only rung with **nascent allocation competence in 
 CI brushing 0, vs 14b's 737) and higher `a_script` (0.96 vs 0.83), and may be more robust to the tail as
 a side effect. **But 14b was deliberately chosen** (plan §3/§7) because its urn failure is *genuine
 absence* of the competence, not framing-suppression — the clean subject for "teach it, then test
-transfer." 32b already has some competence, so RL/SFT on 32b tests a weaker claim (filed as the optional
+transfer." 32b already has some competence, so training 32b tests a weaker claim (filed as the optional
 stronger subject). Cheaper levers were **tested first (§4.1, 2026-07-09)**: raising `num_ctx` and
 lowering temperature do **not** help (temperature *worsens* it); a harness empty-fence hard-retry
 **partially** mitigates (breaks the runaway loop, ~halves regret, lifts realized builds) but does **not**
@@ -220,7 +229,84 @@ non-degenerate long-session tool eval still points to 32b or a retrained model.
 
 ---
 
-## 5. Caveats / threats to validity (read before citing any number)
+## 5. Framing-generalization follow-ups (2026-07-09): vocab reskins and tool-call modality
+
+Two follow-up probes on the SAME RL-final checkpoint (`qwen-rl-urn-final:latest`, q8_0) vs the SAME
+base control (`qwen2.5-coder:14b`, Q4), on a fresh box (`ubuntu@129.213.82.160`), extending
+`urn_session.py` (now backed by shared `urn_common.py`) with a `--vocab` flag and adding a sibling
+harness `urn_tool_session.py`. Same N=8/T=60/B=3 streams, same π\* reference, same 24 seeds
+(2000–2023), same `--temp 0`, in all cases — only the vocabulary and/or decision modality changes.
+
+### 5.1 Vocab reskin (still free-text `DECISION: KEEP/PASS`): disposition transfers cleanly
+
+Three HELD-OUT surface vocabularies that RL's ball-only training never saw:
+**treasure_chest** (coins, attr="crest"), **quiver** (arrows,
+attr="feather"), **cauldron** (potions, attr="label"). Same KEEP/PASS structure, only the words differ.
+
+| | base, pooled (range) | RL-final, pooled (range) |
+|---|---|---|
+| first-sight % | 89% (71–100%) | **19%** (10–33%) |
+| mean lateness | 0.134 | **0.968** |
+| balls-regret vs π\* | 5.9 (84–86% of π\*'s) | **−2.4 (105–108% of π\*'s)** |
+
+RL-final is **even more reserved here than in the original ball-framing eval** (19% vs the §1 headline
+32%) while base stays comparably eager (89% vs 75%) — and RL-final again collects *more* balls than
+π\* on average (105–108%), consistent with §1's balls-regret −0.4. The two distributions don't overlap
+on any single vocab (base's low end 71% still exceeds RL-final's high end 33%). **Verdict: the reserve
+policy is bound to the abstract KEEP/PASS decision, not the literal ball/bag/color wording** — a clean
+positive result, in contrast to the tool-framing transfer failure in §2.
+
+### 5.2 Tool-call modality: partial transfer, with a real methodological trap along the way
+
+Same three vocabs, decision now elicited via an actual tool call (`keep`/`pass`, zero-argument) instead
+of a free-text line — isolating decision MODALITY as an axis orthogonal to vocab. This is NOT the §2
+tool-framing benchmark (different decision structure entirely, build-once-reuse with a hand-solve
+alternative) — only its `chat_tools` plumbing is reused.
+
+**The trap:** under the initial `tool_choice="auto"` + the vocab-reskinned system prompt reused
+verbatim from §5.1, BOTH models made **zero real tool calls** in a smoke test. RL-final emitted the
+literal trained `"DECISION: PASS"` text as plain message content; base emitted that text plus an empty
+` ```json``` ` fence — the SAME empty-fence collapse §4 documents for the tool-framing benchmark's idle
+tail, but here present from turn 1, not onsetting after a few problems. `tool_choice="required"` did
+**not** fix it (verified: Ollama's OpenAI-compat shim accepts the parameter but doesn't enforce it as a
+hard grammar constraint — confirmed by feeding the real system prompt through both `"auto"` and
+`"required"` and getting identical zero-tool-call behavior). **The actual cause and fix:** the system
+prompt's own closing paragraph explicitly instructed "end your reply with EXACTLY one line: DECISION:
+KEEP/PASS" — a direct competing instruction. Rewriting that one paragraph to instruct tool use instead
+(byte-identical everywhere else, verified) immediately produced clean tool-calling behavior (0 unparsed
+in a follow-up smoke test) for both models. Left as the default (`--tool-choice required`, now largely
+moot given the prompt fix, but kept as a second line of defense).
+
+**Result, once the channel actually works:**
+
+| | base, pooled (range) | RL-final, pooled (range) |
+|---|---|---|
+| first-sight % | 99% (99–100%) | **62%** (44–97%) |
+| mean lateness | 0.009 | **0.412** |
+| unparsed (typ. per 72 decisions) | 0–2 | **4–19** |
+
+RL-final is still measurably more reserved than base (62% vs 99%) — the disposition has **not**
+vanished under tool-calling — but the gap shrank roughly 3x versus free text (62% vs 19%) and the
+between-vocab spread exploded (44–97%, stdev 30%, vs free text's tight 10–33%). Elevated `unparsed`
+counts for RL-final (vs base's near-zero) suggest a milder, residual version of the same
+channel-engagement friction that fully blocked the pre-fix run.
+
+**The cauldron collapse, read from the raw transcripts:** in 16/24 cauldron seeds, RL-final calls
+`keep` on the first three distinct potions shown with zero passes, exhausting its entire 3-keep budget
+by decision turn 3 and never observing draws 4–60 of the 60-draw stream. Confirmed NOT a stream
+artifact — cauldron and treasure_chest see byte-identical class-id sequences per seed (checked
+directly). In treasure_chest/quiver, the same model runs 5–11 decision turns per seed, passing
+repeatedly before committing — the genuine reserve pattern from §5.1. **No transcript explains why**:
+every tool call in every vocab carries empty message content (the model never uses the "you may think
+briefly first" allowance), so there's no chain-of-thought to inspect. Speculative, unverified reading:
+"potion" may carry a stronger immediate-use association from pretraining than "coin"/"arrow" (naturally
+hoardable resources) — but this is a guess, not something these transcripts confirm. **Open diagnostic**
+(not run): sample cauldron at `temp > 0`, several samples/seed, to check whether the collapse is a hard
+greedy-decoding attractor or persists under sampling variance.
+
+---
+
+## 6. Caveats / threats to validity (read before citing any number)
 
 - **`a_script` defaulted to 1.0** in the tool eval because the `qwen-rl-*` tags aren't in
   `arm_a1_announce`'s calibration dict (the historical 2934±324 baseline used the measured 0.83 for
@@ -241,12 +327,11 @@ non-degenerate long-session tool eval still points to 32b or a retrained model.
 
 ---
 
-## 6. What this establishes, and open next steps
+## 7. What this establishes, and open next steps
 
-**Establishes:** across *both* acquisition modes — SFT-imitated (7% urn first-sight, 100% eager in tool)
-and RL-discovered (32% urn first-sight, 95% eager in tool) — the reserve/allocation disposition installs
-cleanly in the urn and **does not cross into the tool framing**, over a channel verified to be legible.
-The framing wall is not an artifact of imitation and not an artifact of tool-channel fragility.
+**Establishes:** a reserve/allocation disposition discovered from reward installs cleanly in the urn and
+**does not cross into the reusable-script framing**, over a channel verified to be legible. The learned
+policy generalizes across free-text vocabularies but remains strongly context- and modality-dependent.
 
 **Open next steps (none launched — [[no-auto-reps]]):**
 1. **Phase 2 — RL directly in the tool framing** (specced contingency, `docs/old/rl-finetuning-plan.md`):
@@ -263,13 +348,22 @@ The framing wall is not an artifact of imitation and not an artifact of tool-cha
    the urn effect depended on the critic's privileged `rate` feature.
 5. **Publication-grade tool rerun** — repair the empty-fence tail, calibrate `a_script` for the served
    tag, more seeds, for a citable tool build-count/regret (disposition verdict already solid).
+6. **Cauldron collapse diagnostic (from §5.2, not yet run)** — sample the tool-modality cauldron arm at
+   `temp > 0`, several samples/seed: is the "keep first 3, stop looking" policy a hard greedy-decoding
+   attractor, or does it persist under sampling variance? No chain-of-thought exists in the temp=0
+   transcripts to explain the vocab-specific collapse, so this is the cheapest next lever.
+7. **Tool-modality vocab-dependence, unexplained** — §5.2's RL-final range (44–97% first-sight across
+   3 vocabs, vs free text's 10–33%) is a real, measured effect with no mechanistic explanation yet (empty
+   tool-call content in every transcript, both vocabs). Worth a lens other than transcript-reading if
+   pursued further (e.g. logprob/entropy comparison at the decision token across vocabs).
 
 ---
 
-## 7. Provenance / artifacts
+## 8. Provenance / artifacts
 
-- **Box:** A100-40GB, `ubuntu@150.136.64.191`, `num_ctx 8192`. Ollama tags: `qwen-rl-urn-final:latest`
-  (q8_0), `qwen-rl-base-ctx8k:latest` (Q4, context-matched base control), `qwen2.5-coder:14b` (stock Q4).
+- **Box (§1–4):** A100-40GB, `ubuntu@150.136.64.191`, `num_ctx 8192`. Ollama tags:
+  `qwen-rl-urn-final:latest` (q8_0), `qwen-rl-base-ctx8k:latest` (Q4, context-matched base control),
+  `qwen2.5-coder:14b` (stock Q4).
 - **Urn checkpoint (local):** `runs/rl_urn_pilot/checkpoint/` (adapter + optimizer + critic + manifest);
   logs `runs/rl_urn_pilot/{paired_eval.log, pilot_resume_full.log}`. `merged/` (~28GB bf16) not pulled
   (regenerable).
@@ -282,3 +376,18 @@ The framing wall is not an artifact of imitation and not an artifact of tool-cha
   Lever: `driver.py` `prune_no_tool`/`max_no_tool_retries` + `arm_a1_announce.py --empty-fence-retry N`.
 - **Historical pre-FT tool A2 baseline** (for reference, different box, a_script=0.83): 88% first-sight,
   0.125 lateness, regret 2934±324 (plan §3).
+- **Box (§5, 2026-07-09):** fresh A100-40GB, `ubuntu@129.213.82.160` (no persistent disk; adapter
+  re-pulled from local `runs/rl_urn_pilot/checkpoint/adapter/` (274MB, LoRA weights only) and re-merged/
+  re-quantized to `qwen-rl-urn-final:latest` q8_0, same recipe as §1's box; base `qwen2.5-coder:14b`
+  pulled fresh, both served at Ollama defaults, no `num_ctx` override needed (urn turns are short)).
+- **Harness changes (§5):** `scripts/creator/tool_disposition_benchmark/urn_common.py` (new — shared
+  `VOCAB`/`_art`/`render_system`/scoring/`report_summary`, extracted from `urn_session.py` so both
+  harnesses share logic byte-for-byte; `render_system` gained an optional `response_instruction` param,
+  default reproduces the original DECISION-line text byte-for-byte); `urn_session.py`'s `--vocab` flag
+  (`ball`/`treasure_chest`/`quiver`/`cauldron`, `nargs="+"` for pooled multi-vocab runs);
+  `urn_tool_session.py` (new — tool-call modality variant, `runs/urn_tool_*` prefix, `--tool-choice`).
+  `rl_rollout.py`/RL training code untouched (re-verified via its own `_selftest()` after the refactor).
+- **§5 run artifacts (local):** `runs/urn_{qwen2.5-coder_14b,qwen-rl-urn-final_latest}_vocab-{treasure_chest,quiver,cauldron}/`
+  (§5.1, free text) and `runs/urn_tool_{qwen2.5-coder_14b,qwen-rl-urn-final_latest}_vocab-{treasure_chest,quiver,cauldron}/`
+  (§5.2, tool call) — per-seed `stream.json`/`session.json` (full transcripts, `"how"`-tagged decisions).
+  Consolidated logs: `runs/vocab3_eval.log` (§5.1), `runs/vocab3_tool_eval.log` (§5.2).

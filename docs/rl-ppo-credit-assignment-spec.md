@@ -1,8 +1,8 @@
 # RL Phase 1 (urn framing): per-decision credit-assignment spec — standalone
 
-Self-contained as of 2026-07-08: absorbs everything a reader needs from `rl-finetuning-plan.md` and
-`qwen-finetune-transfer-plan.md` (both moved to `docs/old/`, superseded by this doc for RL/SFT purposes) to
-understand and continue this work without opening either. `online-tool-investment-plan.md` (§1 below draws
+Self-contained as of 2026-07-08: absorbs everything a reader needs from the superseded training plans
+(moved to `docs/old/`) to understand and continue the RL work without opening them.
+`online-tool-investment-plan.md` (§1 below draws
 on it for the headline claim/task definition) is NOT archived — it's the broader project doc covering more
 than just this RL phase, still active. (`docs/box-setup.md`, the GPU-box runbook, is also NOT archived —
 still the reference for provisioning/setup mechanics.)
@@ -32,10 +32,8 @@ condition), q8_0 GGUF via Ollama, base vs RL-final:**
 | balls-regret vs π\* | +5.2 | **−0.4** |
 | unparsed | 0 | 1 |
 
-**This matches the SFT install (both ≈101% of π\*) but was discovered from reward with zero
-demonstrations** — the distinction Phase 1 existed to establish over SFT (see §1). RL is less extreme
-on first-sight than SFT (32% vs ~7%) yet hits the same balls result, i.e. an equally good policy in the
-urn's own objective via a slightly less eager-suppressing route. In-training trajectory (per-step,
+**The policy was discovered from reward with zero demonstrations.** It reaches 101% of π\*'s balls
+while still keeping 32% of selected colors on first sight. In-training trajectory (per-step,
 batch-confounded so noisier than the paired eval): first-sight 77%→42%, lateness 0.32→0.72, reward
 36→40 over 20 steps; `mean_kl` grew monotonically to −0.568 by step 19 and was **still coupled with
 reward (productive drift), not converged** — the policy had not plateaued when the run stopped, so more
@@ -60,8 +58,8 @@ served as Ollama tag `qwen-rl-urn-final:latest` (q8_0). Checkpoint + all logs ba
 `pilot_resume_full.log`). The `runs/rl_urn_pilot/merged/` bf16 dir was NOT pulled (regenerable ~28GB).
 
 **THE open next step — the actual Phase 1 headline experiment (NOT yet run):** zero-shot **tool-transfer
-eval** of `qwen-rl-urn-final` — does the reward-discovered reserve disposition cross the framing gap
-where the SFT-imitated one did not? Per §1's falsifiable check, read in two stages: (1) **legibility**
+eval** of `qwen-rl-urn-final` — does the reward-discovered reserve disposition cross the framing gap?
+Per §1's falsifiable check, read in two stages: (1) **legibility**
 first (n_malformed/n_unknown tool calls vs the base tool baseline's clean 0/0 — LoRA touched shared
 weights, so this must be verified, not assumed), then (2) **policy transfer** (first-sight/lateness vs
 the pre-FT tool baseline: **88% first-sight, 0.125 lateness, regret 2934±324**). Box is up and the
@@ -73,7 +71,7 @@ checkpoint is served, so this is the immediate high-value action before release.
 both tags at `num_ctx 8192`: base control `qwen-rl-base-ctx8k` (Q4) vs `qwen-rl-urn-final` (q8_0) — the
 same Q4-vs-q8_0 quant wrinkle knowingly accepted in the urn eval above). Verdict: the reserve disposition
 RL discovered under reward, which reaches π\* parity *in the urn*, evaporates in the tool framing — the
-model is still eager there, exactly the wall SFT's imitated policy hit.**
+model is still eager there.**
 
 | metric (tool A2) | base (Q4) | RL-final (q8_0) | *RL-final in the urn, for contrast* |
 |---|---|---|---|
@@ -94,13 +92,11 @@ model is still eager there, exactly the wall SFT's imitated policy hit.**
   *within the same model*, same information (N disclosed both sides). The 5% off-first-sight (1 of 21
   builds late, one seed with a lateness-5 build) is within seed noise, not a reserve signal. Regret did
   not improve (3729 vs base 3377, overlapping CIs, both fully eager).
-- **This is the sharper negative Phase 1 existed to produce.** SFT only showed an *imitated* reserve
-  policy doesn't transfer (could be blamed on imitation, or on channel fragility). RL now shows a
-  **reward-discovered, self-installed** reserve policy — never given a demonstration — *also* doesn't
-  transfer, over a **verifiably legible** tool channel (0/0). So "transfer fails because the policy was
-  merely imitated" and "transfer fails because the tool channel can't carry any policy" are both ruled
-  out: the framing gap suppresses the disposition regardless of how it was acquired. Phase 2 (RL directly
-  in the tool framing, §1) is the natural follow-up if crossing the gap is still wanted.
+- **This is the negative Phase 1 existed to produce.** A **reward-discovered, self-installed** reserve
+  policy — never given a demonstration — does not transfer over a **verifiably legible** tool channel
+  (0 malformed / 0 unknown calls). The allocation disposition learned in the abstract task is not
+  activated by reusable script creation. Phase 2 (RL directly in the tool framing, §1) is the natural
+  follow-up if crossing the gap is still wanted.
 
 **Transcript-level mechanism (why it doesn't reserve — read the raw sessions, 2026-07-08):**
 tool-calling competence is INTACT (this is not a channel-failure result) — across the 12 base seeds the
@@ -167,7 +163,7 @@ end-to-end without an LLM. Specifically verified, all passing:
 - `rl_train._per_decision_logprobs`: shift-indexing verified against the old whole-sequence masked-sum
   approach on hand-built fake logits (token-count-weighted recombination of per-turn means reproduces the
   whole-sequence sum to 1e-3).
-- `build_example`'s new `turn_spans` output is backward-compatible (SFT callers ignore the extra key).
+- `build_example`'s new `turn_spans` output is backward-compatible (existing callers ignore the extra key).
 - Full module import chain (`rl_urn_pilot.py` → `rl_train.py` → `rl_critic.py`/`train_lora.py`/
   `urn_session.py`) resolves without error.
 
@@ -248,27 +244,15 @@ streams with the same information*. Full result, all the supporting numbers and 
   toward 100%-eager (not enough remaining runway for waiting to pay off), which would make training
   against this reward pointless for the question being asked. T≥60 with B/N≈0.25-0.35 reliably reserves.
 
-**Why this is being trained via RL now, not continuing the SFT approach:** an SFT arm (imitation learning
-on π\*-optimal demonstrations, full detail archived in `qwen-finetune-transfer-plan.md`) already
-**installs the urn policy near-optimally** — 7% first-sight, 101% of π\*'s balls collected, essentially
-solved via imitation — but that installed competence **did not visibly transfer** to the tool-calling
-framing in the evaluations run so far (the fine-tuned model still built eagerly there). That SFT
-tool-eval history is genuinely messy — several real training/corpus/serving bugs were found and fixed
-along the way, and at least one prior "clean transfer-fails" verdict was itself later retracted and
-reinvestigated after a corpus bug surfaced — so the specific tool-side numbers shouldn't be treated as a
-clean, final result without reading that doc's full revision history. What IS solid regardless of that
-mess: (a) the urn-side install number above, and (b) the untouched base (pre-fine-tune) model's own tool
-baseline is clean and eager (12 seeds: 0 malformed calls, 88% first-sight, 0.125 lateness, regret
-2934±324) — i.e. the base model doesn't need fixing, it's eager, not broken.
+**Why train with RL:** the scientific question is whether the untouched base model can discover the
+reserve disposition from the task's own reward, without demonstrations or a reference policy in the
+gradient. The untouched base model's tool baseline is clean and eager (12 seeds: 0 malformed calls,
+88% first-sight, 0.125 lateness, regret 2934±324), while its urn behavior is also suboptimal. This makes
+Qwen-14b a clean subject for learning the missing policy and testing whether it activates across
+framings.
 
-**The sharper question RL asks that SFT couldn't:** SFT only ever tests whether an **imitated** policy
-transfers across framings. It can't distinguish "the policy doesn't transfer" from "the tool-calling
-channel itself is too fragile to carry any policy, imitated or not" (a real risk — SFT's tool-calling
-eval independently hit multiple serving/format bugs, documented in the archived doc). RL sidesteps this
-by testing whether a policy the model **discovers itself** under its own reward signal — never shown a
-single demonstration — installs and transfers differently, independent of whatever the tool-calling
-channel's own fragility turns out to be. **Phase 1 (this doc): RL entirely within the urn framing, from
-the untouched base model** — cheap, and it avoids the entire tool-calling engineering surface (no JSON
+**Phase 1 (this doc) trains entirely within the urn framing, from the untouched base model.** This keeps
+the acquisition experiment separate from the tool-calling engineering surface (no JSON
 tool-call schema, no `<tool_call>` wrapper, no malformed/unknown-tool/raw-JSON-reversion failure modes
 exist in this framing at all: `urn_session.py` parses a plain `DECISION: KEEP/PASS` regex from ordinary
 chat text). A Phase 2 (RL directly in the tool framing) exists as a fully specced contingency plan if
@@ -279,11 +263,11 @@ active work and depends on Phase 1's outcome first.
 **Falsifiable check, once Phase 1 training ever succeeds** (not yet reached — training hasn't produced a
 result yet): run the existing zero-shot tool eval and read it in two stages. (1) **Legibility first**
 (necessary, not sufficient): are `n_malformed_tool_calls`/`n_unknown_tool_calls`/raw-JSON-reversion counts
-still clean vs. the pre-FT baseline's 0/0? LoRA updates the same shared weight matrices both the urn and
+still clean vs. the untouched base baseline's 0/0? LoRA updates the same shared weight matrices both the urn and
 tool generation paths flow through, so there's no architectural guarantee urn-only training leaves
 tool-calling mechanics untouched — this must be checked, not assumed. (2) **Only then, policy transfer**:
-first-sight/lateness vs. the pre-FT baseline's 88%/0.125 — did the reward-discovered urn policy transfer
-better than the imitated one did?
+first-sight/lateness vs. the untouched base baseline's 88%/0.125 — did the reward-discovered urn policy
+activate in reusable script creation?
 
 ---
 
@@ -435,7 +419,7 @@ than v3's runaway; `n_zero_advantage_groups` stayed low, 0-2/25). But `mean_rewa
 **Fixes:** `_seq_logprob` changed from a raw sum to a length-normalized **mean** over labeled tokens
 (verified against an independent `log_softmax` reference computation, exact match to 1e-4, before
 relaunching); `RL_LR` raised `3e-5 → 6e-5` (a second, deliberately incremental step, kept separate from
-the `N_EPOCHS` fix so it's legible on its own — still ~40% below SFT's `1e-4`).
+the `N_EPOCHS` fix so its effect stayed legible).
 
 ### v5 — both fixes applied, ran clean to completion, still flat — the structural diagnosis
 
@@ -464,12 +448,10 @@ specifically because a learned value function propagates credit backward through
 timestep via bootstrapping, not because sparse reward is inherently easy to learn from with a flat,
 uncredited scalar.
 
-This also reframes why SFT (§1) reached near-optimal urn performance from only 170 sessions: imitation
-learning got dense, per-decision supervision (every one of ~60-100 KEEP/PASS decisions per session
-directly labeled with π\*'s correct action) — deliberately not replicated for RL, so the policy would be
-*discovered* under reward rather than imitated (§1's whole point) — and that choice is exactly what cost
-the sample efficiency here. Fixing this for real means constructing a genuine per-decision advantage
-instead of one flat episode-level scalar — which is what the rest of this document specs and implements.
+The pilot history isolates the remaining problem as credit density: a single episode-level scalar was
+applied to every decision even though only a few KEEP/PASS choices determine the outcome. Fixing this
+means constructing a genuine per-decision advantage instead of one flat episode-level scalar — which is
+what the rest of this document specs and implements.
 
 **End-of-pilot-run state:** GPU box released, no persistent disk. Model checkpoints/GGUF artifacts from
 all five pilots were NOT pulled (all runs are diagnostic dead ends, not validated results; the merged
@@ -610,8 +592,8 @@ sampling, so multi-epoch reuse compounds unboundedly. Fix:
 **Per-decision log-probs — the tokenization/masking rework.** `build_example` (`train_lora.py`) now also
 returns `turn_spans`: a `[(start, end), ...]` list, one half-open range into `input_ids`/`labels` per
 ASSISTANT message, in order — `urn_session.run_episode` emits exactly one assistant message per KEEP/PASS
-decision, so turn `i` here IS decision `i` in `per_decision_rewards`. Backward-compatible: SFT training
-(this file's other callers) ignores the extra key. `rl_train._per_decision_logprobs` replaces the old
+decision, so turn `i` here IS decision `i` in `per_decision_rewards`. Backward-compatible: this file's
+other callers ignore the extra key. `rl_train._per_decision_logprobs` replaces the old
 `_seq_logprob`: still **one forward pass** over the full concatenated transcript (efficient — no N
 separate forward passes per episode), but instead of collapsing every assistant token into one scalar, it
 segments the per-token log-probs by turn span and returns one **length-normalized mean** per decision
@@ -722,10 +704,10 @@ active.
 ## 8.5 Pre-box-run review (2026-07-08) — changes made before any box spend
 
 An external review of §4-§8 as implemented, done the same day, before provisioning a box. Overall
-verdict: the credit-assignment diagnosis (§3) is well-supported (the strongest evidence being the SFT
-contrast — dense per-decision imitation installed the policy from 170 sessions while episode-scalar RL
-got nothing from ~800 episodes; same model, task, and data scale, differing only in credit density),
-and the §4-§6 design is the standard, appropriately-sized remedy. But as wired, the first run had a
+verdict: the credit-assignment diagnosis (§3) is well-supported by five pilots that separately ruled out
+reward scaling, exploration, step size, multi-epoch instability, and sequence-length confounding while
+leaving the episode-scalar advantage as the common failure. The §4-§6 design is the standard,
+appropriately-sized remedy. But as wired, the first run had a
 real chance of coming back flat for reasons *other than* the hypothesis being wrong — which would be
 ambiguous in exactly the way pilots v2-v5 were. Three changes plus one watch-item, all applied and
 re-verified against the local self-tests:
@@ -771,8 +753,8 @@ worse phase, not the sum:
 - **Training phase — fits with margin.** QLoRA 4-bit 14B base ≈ 9-10GB; with the two §3 OOM fixes
   active (bf16 recast keeping SDPA fast kernels + gradient checkpointing actually on), measured
   scaling was ~1.7MB/token → ~15-20GB peak at this pilot's ≤3.7k-token episodes. (The 80GB OOM war
-  stories in `box-setup.md` all came from the SFT corpus's 21k-token tool-bridge sessions, which this
-  run never touches.) The merge subprocess loads the base in bf16 (~28GB) while Ollama is down — fits.
+  stories in `box-setup.md` came from earlier 21k-token training sessions, which this run never
+  touches.) The merge subprocess loads the base in bf16 (~28GB) while Ollama is down — fits.
 - **Serving phase — the binding constraint, two knobs changed in `rl_urn_pilot.py`:**
   1. **GGUF quant `q8_0` by default** (`--gguf-outtype`, was hardcoded f16). f16 (~28GB) + 8-slot KV
      (~5-7GB) is exactly borderline on 40GB, and the failure mode isn't a crash — it's the runbook's

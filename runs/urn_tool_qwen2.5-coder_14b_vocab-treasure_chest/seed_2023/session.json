@@ -1,0 +1,154 @@
+{
+  "seed": 2023,
+  "model_key": "qwen2.5-coder:14b",
+  "vocab": "treasure_chest",
+  "modality": "tool",
+  "tool_choice": "required",
+  "kept": {
+    "0": 1,
+    "6": 1,
+    "1": 1
+  },
+  "collected": 37,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 590,
+      "output_tokens": 15,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 690,
+      "output_tokens": 12,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 826,
+      "output_tokens": 18,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "0": "skull",
+    "6": "anchor",
+    "1": "dragon",
+    "3": "kraken",
+    "7": "phoenix",
+    "4": "serpent",
+    "5": "raven",
+    "2": "crown"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "skull",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a skull coin appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 2,
+      "color": "anchor",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 2: another skull coin (already kept -> auto-collected, +1).) Draw 3 of 60: an anchor coin appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    },
+    {
+      "slot": 6,
+      "color": "dragon",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 4: another skull coin (already kept -> auto-collected, +1); draw 5: another skull coin (already kept -> auto-collected, +1); draw 6: another skull coin (already kept -> auto-collected, +1).) Draw 7 of 60: a dragon coin appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide.",
+      "decision": "KEEP",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a skull coin appears. You have 3 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_76a8e348",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_76a8e348",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 2: another skull coin (already kept -> auto-collected, +1).) Draw 3 of 60: an anchor coin appears. You have 2 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_92006f89",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_92006f89",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 4: another skull coin (already kept -> auto-collected, +1); draw 5: another skull coin (already kept -> auto-collected, +1); draw 6: another skull coin (already kept -> auto-collected, +1).) Draw 7 of 60: a dragon coin appears. You have 1 keep(s) left. Call the keep tool or the pass tool to decide."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "untagged_473c3ac4",
+          "type": "function",
+          "function": {
+            "name": "keep",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "untagged_473c3ac4",
+      "content": "{\"ok\": true}"
+    }
+  ]
+}

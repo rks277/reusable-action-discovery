@@ -300,10 +300,18 @@ class RawChat:
                 blocks[-1] = {**blocks[-1], "cache_control": {"type": "ephemeral"}}
                 last["content"] = blocks
                 anth_msgs = anth_msgs[:-1] + [last]
+            # BUG FIX (2026-07-09, found via the framing ladder's R2 rung): `tool_choice` was never
+            # passed here, so a caller's "required" was silently dropped and Anthropic defaulted to
+            # "auto" -- the model was always free to answer with plain text and no tool call at all.
+            # This didn't surface on R1 (abstract balls: nothing to "solve," so the model always
+            # chose to call a tool anyway even under unenforced "auto") but did on R2 (real numeric
+            # problems tempt the model into hand-solving the arithmetic in free text instead of
+            # deciding claim_solver/skip_solver, with nothing stopping it).
             resp = await self._anthropic().messages.create(
                 model=model, max_tokens=max_tokens, system=system,
                 messages=anth_msgs,
                 tools=_oai_tools_to_anthropic(tools),
+                tool_choice=_oai_tool_choice_to_anthropic(tool_choice),
             )
             u = getattr(resp, "usage", None)
             self._set_usage(
@@ -410,6 +418,13 @@ def _norm_oai_tool_calls(tool_calls) -> list[dict]:
             parsed = None  # malformed JSON args -> caller counts as malformed
         out.append({"id": tc.id, "name": tc.function.name, "arguments": raw, "args": parsed})
     return out
+
+
+def _oai_tool_choice_to_anthropic(tool_choice: str) -> dict:
+    """Translate this codebase's OpenAI-style `tool_choice` convention ("auto"/"required") into
+    Anthropic's `{"type": ...}` shape. Anthropic has no "required" literal -- its equivalent is
+    `{"type": "any"}` (force some tool call; the model may not respond with text-only)."""
+    return {"type": "any"} if tool_choice == "required" else {"type": "auto"}
 
 
 def _oai_tools_to_anthropic(tools: list[dict]) -> list[dict]:
