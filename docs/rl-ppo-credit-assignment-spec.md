@@ -7,9 +7,152 @@ on it for the headline claim/task definition) is NOT archived — it's the broad
 than just this RL phase, still active. (`docs/box-setup.md`, the GPU-box runbook, is also NOT archived —
 still the reference for provisioning/setup mechanics.)
 
+> **Consolidated, candid results writeup (both the urn result below AND the tool-transfer result): see
+> `docs/rl-phase1-results.md`.** This doc keeps the design/method/pilot-history; the results doc is the
+> place to read the outcome, the transcript-level mechanism, and the caveats (idle tail, a_script, etc.).
+
+## RESULT (2026-07-08 evening) — RL WORKS: reserve policy discovered from reward alone, reaches π\*
+
+**A 20-step run on a 40GB A100 trained the untouched base (`qwen2.5-coder:14b`, QLoRA, per-decision
+PPO+privileged-critic, `n_epochs=1`, `lr=6e-5`, temp 1.2, 25 seeds/step × G=4, training seeds 9000+)
+and it learned to reserve — no demonstrations, discovered under its own balls reward.** The step-0
+mechanism gate passed cleanly (advantage ordering `keep_hot +2.23 > keep_trap −2.10`,
+`pass_trap +2.80 > pass_hot_first −1.50` before any policy update), and the paired held-out eval is
+decisive:
+
+**Paired eval, seeds 2000–2023 (held out, disjoint from training 9000+), no-announce (= training
+condition), q8_0 GGUF via Ollama, base vs RL-final:**
+
+| metric | base | RL-final |
+|---|---|---|
+| first-sight % (eager) | 75% | **32%** |
+| mean lateness | 0.375 | **0.903** |
+| balls/seed | 33.7 | **39.3** |
+| % of π\* balls | 87% | **101%** |
+| balls-regret vs π\* | +5.2 | **−0.4** |
+| unparsed | 0 | 1 |
+
+**This matches the SFT install (both ≈101% of π\*) but was discovered from reward with zero
+demonstrations** — the distinction Phase 1 existed to establish over SFT (see §1). RL is less extreme
+on first-sight than SFT (32% vs ~7%) yet hits the same balls result, i.e. an equally good policy in the
+urn's own objective via a slightly less eager-suppressing route. In-training trajectory (per-step,
+batch-confounded so noisier than the paired eval): first-sight 77%→42%, lateness 0.32→0.72, reward
+36→40 over 20 steps; `mean_kl` grew monotonically to −0.568 by step 19 and was **still coupled with
+reward (productive drift), not converged** — the policy had not plateaued when the run stopped, so more
+steps and/or `n_epochs>1` (staged, see §6/§8) can likely push it further, though urn parity with π\* is
+already reached so that's optional.
+
+**Process notes from this run (all fixed/handled):**
+- **Step-8 crash → fixed.** The per-step resync's bf16 merge (`merge_lora.py`, `device_map="auto"`,
+  ~28GB) OOM'd against the parent pilot process's leftover ~13GB CUDA context on the 40GB card.
+  **Fix: `merge_lora.py` now defaults to a CPU merge** (`--device cpu`; 216GB host RAM, GGUF-convert
+  was CPU anyway). Resumed from the step-8 checkpoint with zero lost progress (per-step checkpointing
+  worked as designed). Any single-card RL resync MUST use the CPU merge.
+- The three pre-box-run review changes (§8.5) all earned their keep: the step-0 gate gave an immediate
+  go/no-go; `fit_critic` (500-iter plateau fit) made advantages real from step 0; the per-step
+  behavioral metrics showed the disposition shift well before the noisy reward mean did.
+- One benign `httpx`/`httpcore` async-teardown traceback appears in the log during an Ollama client
+  close between rollout batches — cosmetic, not in train/rollout logic, step completed normally.
+
+**Box state at handoff:** A100-40GB at `ubuntu@150.136.64.191`, **idle, NOT released**. Final checkpoint
+served as Ollama tag `qwen-rl-urn-final:latest` (q8_0). Checkpoint + all logs backed up locally at
+`runs/rl_urn_pilot/` (`checkpoint/` = adapter+optimizer+critic+manifest; `paired_eval.log`,
+`pilot_resume_full.log`). The `runs/rl_urn_pilot/merged/` bf16 dir was NOT pulled (regenerable ~28GB).
+
+**THE open next step — the actual Phase 1 headline experiment (NOT yet run):** zero-shot **tool-transfer
+eval** of `qwen-rl-urn-final` — does the reward-discovered reserve disposition cross the framing gap
+where the SFT-imitated one did not? Per §1's falsifiable check, read in two stages: (1) **legibility**
+first (n_malformed/n_unknown tool calls vs the base tool baseline's clean 0/0 — LoRA touched shared
+weights, so this must be verified, not assumed), then (2) **policy transfer** (first-sight/lateness vs
+the pre-FT tool baseline: **88% first-sight, 0.125 lateness, regret 2934±324**). Box is up and the
+checkpoint is served, so this is the immediate high-value action before release.
+
+## TOOL-TRANSFER RESULT (2026-07-08 night) — the reward-discovered policy does NOT transfer either: framing wall holds for RL
+
+**The headline experiment ran (paired tool A2 eval, `arm_a1_announce`, `--announce-n`, seeds 2000–2011,
+both tags at `num_ctx 8192`: base control `qwen-rl-base-ctx8k` (Q4) vs `qwen-rl-urn-final` (q8_0) — the
+same Q4-vs-q8_0 quant wrinkle knowingly accepted in the urn eval above). Verdict: the reserve disposition
+RL discovered under reward, which reaches π\* parity *in the urn*, evaporates in the tool framing — the
+model is still eager there, exactly the wall SFT's imitated policy hit.**
+
+| metric (tool A2) | base (Q4) | RL-final (q8_0) | *RL-final in the urn, for contrast* |
+|---|---|---|---|
+| first-sight % | 100% (23/23) | **95% (20/21)** | *32%* |
+| mean lateness | 0.000 | **0.238** (max 5) | *0.903* |
+| n_malformed / n_unknown | 0 / 0 | **0 / 0** | *n/a* |
+| tool calls / turns | 95 / 577 | 75 / 530 | *n/a* |
+| builds/seed | 1.92 | 1.75 | — |
+| regret vs π\* (a_script=1.0) | 3377±717 | 3729±534 | *−0.4 balls-regret* |
+
+- **Stage 1 — legibility: PASS.** Both models emitted **0 malformed / 0 unknown** tool calls (75 tool
+  calls across 530 turns for the RL model, no early-stop errors on any seed). Urn-only QLoRA did **not**
+  degrade the shared tool-calling mechanics — the concern in §1 (LoRA touches weights both paths flow
+  through) is verified clean, not assumed. This channel is legible enough to carry a policy if the model
+  had one to express here.
+- **Stage 2 — policy transfer: FAILS.** RL-final stays essentially eager in the tool framing (95%
+  first-sight, lateness 0.238) despite reserving in the urn (32% / 0.903) — a ~63pt first-sight gap
+  *within the same model*, same information (N disclosed both sides). The 5% off-first-sight (1 of 21
+  builds late, one seed with a lateness-5 build) is within seed noise, not a reserve signal. Regret did
+  not improve (3729 vs base 3377, overlapping CIs, both fully eager).
+- **This is the sharper negative Phase 1 existed to produce.** SFT only showed an *imitated* reserve
+  policy doesn't transfer (could be blamed on imitation, or on channel fragility). RL now shows a
+  **reward-discovered, self-installed** reserve policy — never given a demonstration — *also* doesn't
+  transfer, over a **verifiably legible** tool channel (0/0). So "transfer fails because the policy was
+  merely imitated" and "transfer fails because the tool channel can't carry any policy" are both ruled
+  out: the framing gap suppresses the disposition regardless of how it was acquired. Phase 2 (RL directly
+  in the tool framing, §1) is the natural follow-up if crossing the gap is still wanted.
+
+**Transcript-level mechanism (why it doesn't reserve — read the raw sessions, 2026-07-08):**
+tool-calling competence is INTACT (this is not a channel-failure result) — across the 12 base seeds the
+model makes **95 valid tool calls, 0 malformed / 0 unknown / 0 refused, 24 scripts written, 30 run calls,
+22 submits, 15 correct**, including debugging a broken script and rewriting it, and reusing saved scripts
+(RL is comparable: 75 calls, 16 correct). The model plainly understands the tools. What's absent is
+*allocation reasoning*, and behavior falls into two regimes, **both present identically in base and RL**:
+- *Eager-burst seeds* (RL 2000/2001/2002/2006): a clean write→run→submit loop that spends all B=3 writes
+  on the first 3 distinct types immediately (first-sight, budget exhausted by problem 2–3). Reactive
+  "I need to solve X → write a script," never "should I spend a write here?" — the §4 mechanism verbatim.
+  Assistant turns carry ~no deliberation.
+- *Idle-tail seeds* (RL 2003/2005/2007/2008/2010/…): after ~1–2 early first-sight builds the model
+  gives up on the long tail of remaining problems — emitting **empty ```json``` fences that yield no tool
+  call**, taking the harness's "respond with a REAL tool call" reminder each problem, leaving them
+  unanswered. This looks like "restraint" in the aggregate (1–2 builds over 24–32 problems) but is
+  **an idle/give-up tail, not reserve** — there is zero waiting/budget/recurrence reasoning, and it even
+  fails to *reuse* (e.g. base seed 2000 problem 7 is the same 32-bit-xorshift type it built a script for
+  at problem 1, yet it emits an empty fence instead of `run_script`). The couple of late builds (seed
+  2004's problem-20 build, the source of lateness 0.238) are stray emissions from such a tail, not waits.
+- **This idle tail is a pre-existing property of qwen-coder-14b in this long multi-problem harness, NOT
+  an RL artifact and NOT a tool-competence gap:** the base control has the SAME rate of content-free
+  no-tool turns (**base 84%, RL 86%** of assistant turns, dominated by the 60-problem tail after ~9 real
+  tool calls) and the same ~2 scripts/seed. So the paired verdict is unaffected (base and RL behave
+  alike), but builds/seed here is depressed by the tail, and Stage-1 "0 malformed/0 unknown" is
+  necessary-but-incomplete: the tool *calls* are clean, but the model often makes no call at all late in
+  a session. A publication-grade rerun should quantify/repair the idle tail (matches the documented
+  f16/GGUF tool-eval noise, box-setup §B2). **Idle-tail diagnostic since run (2026-07-09) —
+  `docs/rl-phase1-results.md` §4.1:** config levers (`num_ctx` 16384, temp 0.2) do NOT fix it (temp
+  worsens it); a new harness lever `--empty-fence-retry` (prune the no-tool turn + hard-retry the problem,
+  `driver.py`) partially repairs it (breaks the runaway empty-fence loop, ~halves regret, lifts realized
+  builds) but doesn't restore sustained engagement — a robust 14b generation pathology. First-sight stayed
+  ~91–100% across every arm, so the tail was never masking transfer. Bottom line: the RL model's
+  tool-frame behavior is nearly indistinguishable from base's — the urn-installed reserve disposition is
+  simply not activated by the tool-calling context.
+
+**Caveats (don't over-read the regret):** (a) `a_script` defaulted to **1.0** because the `qwen-rl-*`
+tags aren't in `arm_a1_announce`'s calibration dict (the historical 2934±324 baseline used the measured
+0.83 for `qwen2.5-coder:14b`), so the **absolute** regret here is **not** comparable to 2934 — but
+base-vs-final *is* internally apples-to-apples (both 1.0), and regret is the project's secondary/noisy
+metric anyway; the behavioral lead metrics (first-sight/lateness, a_script-independent) carry the verdict.
+(b) The fresh base control read 100% first-sight vs the historical 88% — quant/ctx/seed noise; both are
+unambiguously open-loop. Both tags served at `num_ctx 8192` with the stock qwen tool template, so the
+paired delta is the weights, not context or template. Logs: `runs/rl_urn_pilot/tool_transfer_eval.log`;
+run dirs `runs/arm_a1_announce_qwen-rl-{base-ctx8k,urn-final}_latest_n-announced/`.
+
+---
+
 ## Status (2026-07-08)
 
-**Per-decision credit-assignment machinery IMPLEMENTED, UNTESTED ON A REAL BOX.** The design questions in
+**[SUPERSEDED by the RESULT block above — the machinery below was implemented and has now had a
+successful real-box run.]** Per-decision credit-assignment machinery IMPLEMENTED (was untested on a real
+box when this section was written; the RESULT block records the run that validated it). The design questions in
 §7 are resolved (privileged critic first; SAC-derived extensions deferred — see §7 for the decision
 record). §4-§6 built and unit-tested locally (CPU-only torch installed in `.venv` for this) against
 synthetic/heuristic-policy data, since the GPU box from the GRPO pilots (§3) was released and no rollout

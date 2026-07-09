@@ -39,6 +39,18 @@ FORMAT_REMINDER = (
     "Available tools: write_script / run_script / list_scripts / read_script / submit_answer."
 )
 
+# Escalated reminder for the specific empty-```json```-fence collapse (2026-07-09 idle-tail work): the
+# 14b model degenerates into emitting a bare, empty markdown fence with no tool call, and (once a few of
+# them are in context) copies that pattern turn after turn. Fired on the 2nd+ consecutive no-tool turn
+# in the hard-retry path, it names the failure explicitly and demands a single tool call.
+EMPTY_FENCE_REMINDER = (
+    "Your last message contained NO tool call (an empty code fence or plain text). Do NOT emit ```json "
+    "or any empty fence. Emit exactly ONE tool call now and nothing else, in this exact form:\n"
+    "<tool_call>\n{\"name\": \"<tool_name>\", \"arguments\": {<json object>}}\n</tool_call>\n"
+    "Available tools: write_script / run_script / list_scripts / read_script / submit_answer."
+)
+_REMINDERS = (FORMAT_REMINDER, EMPTY_FENCE_REMINDER)
+
 
 def _est_tokens(system: str, messages: list, turn) -> int:
     n = len(system) + len(json.dumps(messages))
@@ -50,10 +62,19 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                       token_cap: int = 200_000, max_tokens: int = DEFAULT_MAX_TOKENS,
                       max_turns: int | None = None, announce_cap: bool = True,
                       stop_on_budget_exhausted: bool = False, progress_cb=None,
-                      temperature: float | None = None) -> dict:
+                      temperature: float | None = None,
+                      prune_no_tool: bool = False, max_no_tool_retries: int = 2) -> dict:
     """token_cap is always enforced as a hard ceiling. announce_cap=False ('no-cap' arm) hides it
     from the model: the system prompt omits the budget paragraph and tool results omit
-    tokens_remaining — token_cap then acts only as a silent safety ceiling on cost."""
+    tokens_remaining — token_cap then acts only as a silent safety ceiling on cost.
+
+    Empty-fence hard-retry (idle-tail lever, 2026-07-09): with prune_no_tool=True, a turn that yields
+    no parseable tool call is DROPPED from the model's context (not committed) and the SAME problem is
+    re-prompted with an escalating format reminder, up to max_no_tool_retries attempts, before the
+    problem is force-advanced. This (a) keeps the model on the problem instead of abandoning the tail
+    and (b) prevents a wall of empty ```json``` fences from accumulating in context and self-reinforcing
+    the collapse. Defaults (prune_no_tool=False, max_no_tool_retries=2) reproduce the prior behavior
+    exactly: commit the empty turn, one FORMAT_REMINDER, then force-advance on the 2nd consecutive miss."""
     t0 = time.time()
     if max_turns is None:
         max_turns = max(60, 15 * state.n)
@@ -72,6 +93,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     presented = 0                            # highest problem index already presented
 
     spent = n_turns = n_tool_calls = n_malformed = n_unknown = consecutive_no_tool = 0
+    n_pruned_no_tool = n_forced_advances = 0
     usage_estimated = False
     last_finish = None
     turn_usages: list[dict] = []          # per-turn exact usage + which tools it called (for cost model)
@@ -114,8 +136,18 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
 
         if not turn.tool_calls:
             consecutive_no_tool += 1
-            if consecutive_no_tool >= 2:
-                # force-advance the current problem (left unsubmitted) so the session continues
+            if prune_no_tool:
+                # drop the degenerate (no-tool) assistant turn so a wall of empty ```json``` fences
+                # never accumulates in context and self-reinforces the collapse
+                messages.pop()
+                n_pruned_no_tool += 1
+                # and drop any reminder we appended on the previous retry, so reminders don't stack
+                if messages and messages[-1]["role"] == "user" and messages[-1]["content"] in _REMINDERS:
+                    messages.pop()
+            retry_limit = max_no_tool_retries if prune_no_tool else 2
+            if consecutive_no_tool >= retry_limit:
+                # give up on this problem (left unsubmitted), force-advance so the session continues
+                n_forced_advances += 1
                 if not state.done:
                     state.cur += 1
                 consecutive_no_tool = 0
@@ -125,7 +157,10 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                                  "content": problem_prompt(state.current(), state.cur + 1, state.n)})
                 presented = state.cur
                 continue
-            messages.append({"role": "user", "content": FORMAT_REMINDER})
+            # escalating hard-retry on the SAME problem: plain wrapper reminder first, then an explicit
+            # "no empty fence" reminder on subsequent misses
+            reminder = _REMINDERS[min(consecutive_no_tool - 1, len(_REMINDERS) - 1)]
+            messages.append({"role": "user", "content": reminder})
             continue
         consecutive_no_tool = 0
 
@@ -169,6 +204,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         "n_tool_calls": n_tool_calls,
         "n_malformed_tool_calls": n_malformed,
         "n_unknown_tool_calls": n_unknown,
+        "n_pruned_no_tool": n_pruned_no_tool,
+        "n_forced_advances": n_forced_advances,
         "usage_estimated": usage_estimated,
         "turn_usages": turn_usages,
         "last_finish_reason": last_finish,

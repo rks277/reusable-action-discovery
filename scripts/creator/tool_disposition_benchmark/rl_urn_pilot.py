@@ -150,6 +150,12 @@ def main() -> None:
     ap.add_argument("--gguf-outtype", default=GGUF_OUTTYPE,
                     help="GGUF quant for the rollout-serving merge (see GGUF_OUTTYPE comment: q8_0 "
                          "default sized for a 40GB A100; f16 on an 80GB box)")
+    ap.add_argument("--n-epochs", type=int, default=None,
+                    help="override rl_train.N_EPOCHS for THIS invocation (spec §8 step 5: re-enable "
+                         "multi-epoch reuse only after a stable n_epochs=1 run -- this flag exists so "
+                         "that continuation is a relaunch, not an on-box edit of the constant; the PPO "
+                         "clip is what makes >1 safe, and it's untested at >1, so back up the "
+                         "checkpoint dir first and watch mean_kl on the first steps)")
     ap.add_argument("--out", type=Path, default=Path("runs/rl_urn_pilot"))
     args = ap.parse_args()
 
@@ -199,7 +205,9 @@ def main() -> None:
             load_critic(critic, normalizer, args.out / "checkpoint" / "critic.pt", "cpu")
             load_critic_optimizer_state(critic_optimizer, args.out, "cpu")
 
-        stats = grpo_step(model, tokenizer, optimizer, batch, critic, critic_optimizer, normalizer)
+        epoch_kw = {"n_epochs": args.n_epochs} if args.n_epochs is not None else {}
+        stats = grpo_step(model, tokenizer, optimizer, batch, critic, critic_optimizer, normalizer,
+                          **epoch_kw)
         t_grpo = time.time()
         next_seed += args.seeds_per_step
         reward_history.append(stats["mean_reward"])

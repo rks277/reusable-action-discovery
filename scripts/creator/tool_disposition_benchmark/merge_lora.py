@@ -24,10 +24,19 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--adapter", required=True, help="LoRA adapter dir (runs/phase3_ft/<arm>)")
     ap.add_argument("--out", required=True, help="output dir for the merged bf16 checkpoint")
+    ap.add_argument("--device", default="cpu", choices=["cpu", "auto"],
+                    help="cpu (default) merges entirely in host RAM -- REQUIRED for the RL pilot's "
+                         "per-step resync on a single card (rl_urn_pilot.py), where the parent process "
+                         "still holds the GPU's CUDA context/cache from training and a device_map=auto "
+                         "bf16 load (~28GB) OOMs the leftover ~14GB (observed 2026-07-08, step 8 on a "
+                         "40GB A100). CPU merge needs ~28GB RAM (box has plenty) and the GGUF-convert "
+                         "step downstream is CPU anyway, so nothing is lost but a little wall-clock. "
+                         "Use auto only for a standalone merge when the GPU is known-empty.")
     a = ap.parse_args()
 
-    print(f"[merge] loading base {BASE} in bf16 ...", flush=True)
-    model = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.bfloat16, device_map="auto")
+    device_map = None if a.device == "cpu" else "auto"
+    print(f"[merge] loading base {BASE} in bf16 on {a.device} ...", flush=True)
+    model = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.bfloat16, device_map=device_map)
     print(f"[merge] applying adapter {a.adapter} ...", flush=True)
     model = PeftModel.from_pretrained(model, a.adapter)
     print("[merge] merge_and_unload ...", flush=True)

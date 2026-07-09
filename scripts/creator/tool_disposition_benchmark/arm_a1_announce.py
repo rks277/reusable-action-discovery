@@ -36,15 +36,23 @@ _ap.add_argument("--seeds", type=int, nargs="+", default=None, help="override se
 _ap.add_argument("--announce-n", action="store_true",
                  help="A2 arm: tell the model the exact number of distinct types N (matches pi*'s own "
                       "information -- see the 2026-07-03 same-information audit)")
+_ap.add_argument("--empty-fence-retry", type=int, default=0, metavar="N",
+                 help="idle-tail lever: on a no-tool (empty-```json```-fence) turn, prune it from context "
+                      "and hard-retry the SAME problem up to N attempts before force-advancing "
+                      "(default 0 = off, prior force-advance-after-2 behavior). Writes to a "
+                      "_efrN-suffixed dir so it doesn't collide with baseline runs.")
 _ARGS = _ap.parse_known_args()[0]
 MODEL_KEY = _ARGS.model
 MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)      # Claude key -> id; else pass the raw tag through
 IS_LOCAL = MODEL_KEY not in CLAUDE                # non-Claude => Ollama/vLLM, free, stop-on-budget
 ANNOUNCE_N = _ARGS.announce_n
+EMPTY_FENCE_RETRY = _ARGS.empty_fence_retry
 _safe = MODEL_KEY.replace(":", "_").replace("/", "_")
 BASE = Path("runs/arm_a1_announce" if MODEL_KEY == "haiku" else f"runs/arm_a1_announce_{_safe}")
 if ANNOUNCE_N:
     BASE = Path(str(BASE) + "_n-announced")
+if EMPTY_FENCE_RETRY:
+    BASE = Path(str(BASE) + f"_efr{EMPTY_FENCE_RETRY}")
 SEEDS = _ARGS.seeds if _ARGS.seeds else list(range(2000, 2012))  # 12 -- paired with the urn, same seeds
 CAP_USD, EST, CONC = (12.0, 1.0, 12) if MODEL_KEY == "haiku" else (12.0, 2.5, 12)
 if IS_LOCAL:
@@ -97,7 +105,9 @@ async def run_one(client, model, seed):
                   f"{spent/1000:.0f}k tok  {elapsed:.0f}s", flush=True)
 
     row = await run_session(client, model, state, token_cap=300_000, max_tokens=4096,
-                            announce_cap=True, stop_on_budget_exhausted=IS_LOCAL, progress_cb=_progress)
+                            announce_cap=True, stop_on_budget_exhausted=IS_LOCAL, progress_cb=_progress,
+                            prune_no_tool=bool(EMPTY_FENCE_RETRY),
+                            max_no_tool_retries=EMPTY_FENCE_RETRY or 2)
     row["model_key"] = MODEL_KEY
     (d / "sessions.jsonl").write_text(json.dumps(row) + "\n")
     return cost_of(row), "ran"

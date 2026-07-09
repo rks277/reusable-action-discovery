@@ -202,6 +202,34 @@ ssh $BOX 'cd ~/reusable-action-discovery && source .venv/bin/activate && nohup e
 > **Before releasing: rsync `runs/` back** (checkpoint adapter+optimizer+critic+manifest ≈ <1GB;
 > `runs/<out>/merged/` is ~28GB of regenerable intermediate — exclude it if bandwidth matters).
 
+**Post-run paired eval (do this BEFORE releasing the box).** The per-step behavior numbers are
+batch-confounded (each step trains/measures on fresh seeds), so the clean before/after readout is the
+final checkpoint vs. the untouched base on ONE fixed held-out seed set — the standard eval range
+2000–2023, disjoint from training seeds (9000+). Note the run ends right after the final update, so the
+last-served Ollama tag is one step stale — re-serve the final checkpoint first:
+
+```bash
+# 1. serve the FINAL checkpoint (merge on CPU -> GGUF -> create; ~6 min):
+ssh $BOX 'cd ~/reusable-action-discovery && source .venv/bin/activate && \
+  PYTHONPATH=. python -m scripts.creator.tool_disposition_benchmark.merge_lora \
+    --adapter runs/rl_urn_pilot/checkpoint/adapter --out runs/rl_urn_pilot/merged && \
+  python llama.cpp/convert_hf_to_gguf.py runs/rl_urn_pilot/merged \
+    --outfile ~/rl-urn-final-q8_0.gguf --outtype q8_0 && sudo systemctl start ollama && sleep 3 && \
+  { echo "FROM /home/ubuntu/rl-urn-final-q8_0.gguf"; echo "PARAMETER num_ctx 8192"; \
+    ollama show --modelfile qwen2.5-coder:14b | grep -vE "^FROM |^# "; } > final.modelfile && \
+  ollama create qwen-rl-urn-final -f final.modelfile'
+# 2. paired eval, SAME seeds, SAME (no-announce-n) condition as training -- base then final:
+ssh $BOX 'cd ~/reusable-action-discovery && source .venv/bin/activate && for m in \
+  qwen2.5-coder:14b qwen-rl-urn-final:latest; do echo "##### $m #####"; env PYTHONPATH=. \
+  python -u -m scripts.creator.tool_disposition_benchmark.urn_session \
+    --model $m --seeds $(seq 2000 2023) --conc 8; done' 2>&1 | tee /tmp/rl_paired_eval.log
+```
+
+Read first-sight %/lateness/balls-vs-π\* per model from the two reports — same-seed, so the delta is
+the policy change, not stream luck. (Training sampled at temperature 1.2 for exploration, but eval uses
+`urn_session`'s default like every prior eval in the project — dispositions are compared at the
+standard readout condition, and the pre-FT baseline numbers were collected the same way.)
+
 ### B0b. cuDNN SDPA crash on long sequences (torch 2.12 / cu13)
 Real training (not the short smoke) crashes on the ~21k-token tool_bridge session with
 `RuntimeError: Expected mha_graph.execute(...).is_good()` in the attention BACKWARD. `train_lora.load_hf`
