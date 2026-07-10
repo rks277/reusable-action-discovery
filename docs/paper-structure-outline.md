@@ -10,46 +10,74 @@ optional scope widening, not required empirical gates.
 
 ### Working title
 
-**Building Before Evidence: LLMs Fail to Treat Reusable Tool Creation as Online Investment**
+**Code Before Evidence: Measuring Online Tool-Investment Capability in LLM Agents**
 
 Alternative titles:
 
-- **Code Before Evidence: A Framing Failure in LLM Tool Investment**
-- **When Building a Tool Hides the Allocation Problem**
-- **Reusable Tool Creation Suppresses Online Allocation in LLM Agents**
+- **Building Before Evidence: A Capability Boundary in LLM Tool Investment**
+- **When Building a Tool Hides—or Preserves—the Allocation Problem**
+- **Can LLM Agents Treat Reusable Tool Creation as Online Investment?**
 
-The first title is the strongest balance of readability and precision. Avoid “premature commitment,” “knowing–doing gap,” and universal “LLMs cannot allocate” language.
+The first title makes the benchmark and measured capability primary rather than presupposing universal
+failure. It accommodates both the large framing shifts and GPT-5.6 Sol's cross-frame preservation.
+Avoid “premature commitment,” “knowing–doing gap,” universal “LLMs cannot allocate,” and any title
+that implies capability scaling from the two GPT points.
 
 ### One-sentence thesis
 
-LLM agents can possess—or acquire—an online allocation policy yet fail to express it when the same decision requires emitting reusable code: code-required construction triggers first-sight commitment that is insensitive to recurrence evidence and visible economic incentives.
+Reusable tool creation tests whether an agent can preserve an online allocation policy when investment
+requires constructive action: several competent models collapse to economically insensitive first-sight
+commitment, while GPT-5.6 Sol preserves reserve across the same framing change, showing that the
+capability is difficult, consequential, and achievable rather than a universal model failure.
 
 ### Claim hierarchy
 
 The paper should make claims in this order:
 
 1. **Formalization:** reusable tool creation is an online investment decision under uncertain future reuse and a scarce irreversible build budget.
-2. **Controlled dissociation:** with matched streams and disclosed information, a model reserves in an abstract allocation frame but builds immediately in a reusable-script frame.
-3. **Mechanism within the benchmark:** requiring code emission is sufficient to reproduce the full first-sight commitment effect; tool-call modality, realistic problem content, solve/investment conflation, and a hand-solving escape valve are not required.
-4. **Economic invariance:** abstract allocation responds to build charges, while code-required commitment remains near 100% first-sight across eager, selective/wait, and never-build regimes.
-5. **Acquisition without transfer:** a reward-learned reserve policy generalizes across abstract vocabularies but does not reliably activate in reusable script creation.
-6. **Breadth with heterogeneity:** the framing shift replicates in GPT-5.4-mini after a preregistered
-   abstract competence gate, but not in competence-qualified GPT-5.6 Sol.
+2. **Capability measure:** paired abstract and code-required conditions distinguish possessing an allocation policy from preserving it during constructive tool use.
+3. **Controlled dissociation:** with matched streams and disclosed information, Haiku reserves in an abstract allocation frame but builds immediately in a reusable-script frame.
+4. **Mechanism within the Haiku benchmark:** requiring code emission is sufficient to reproduce the full first-sight commitment effect; tool-call modality, realistic problem content, correctness stakes, and a hand-solving escape valve are not required.
+5. **Economic invariance in the affected model:** Haiku's abstract allocation responds to build charges, while its code-required commitment remains near 100% first-sight across eager, selective/wait, and never-build regimes.
+6. **Discriminative boundary:** the shift recurs in Opus and GPT-5.4-mini but not in competence-qualified GPT-5.6 Sol, which preserves reserve across R0 and R2c. The benchmark is therefore difficult but not impossible.
+7. **Acquisition without activation:** a reward-learned Qwen reserve policy generalizes across abstract vocabularies but does not reliably activate in reusable script creation.
 
-Do not make model scaling, universal LLM behavior, or regret magnitude the organizing claim.
+Do not make model scaling, universal LLM behavior, or regret magnitude the organizing claim. GPT-5.6
+establishes achievability and discriminative validity under the locked protocol; it does not establish
+that general capability, scale, or a particular training method caused the preservation.
 
 ### Recommended result order
 
-Lead with the Haiku same-information dissociation, then explain it with the framing ladder and economic surface. Present RL afterward as a convergent case study, not as the paper’s foundation. End the empirical section with model breadth. This order keeps the cleanest causal evidence ahead of the noisier Qwen agent evaluation.
+Lead with the Haiku same-information dissociation, then explain it with the framing ladder and economic
+surface. Present RL afterward as a convergent case study, not as the paper’s foundation. End with the
+competence-gated model panel: replication in GPT-5.4-mini followed by preservation in GPT-5.6 Sol.
+This turns the final result into the benchmark's payoff—the measured failure is common across the tested
+models but avoidable—without pretending that two GPT points define a scaling law.
 
 ---
 
 ## Abstract draft
 
-Creating a reusable tool is an investment: an agent pays a fixed cost now in exchange for uncertain future reuse. We study whether language-model agents recognize this online allocation problem when tool creation competes for a scarce build budget. We construct paired tasks with identical problem streams and information but different decision framings. In an abstract keep/pass frame, Claude Haiku reserves budget and builds on recurrence; in a reusable-script frame, it makes 100% of builds on first sight, compared with 28% in the abstract frame. A preregistered framing ladder localizes the discontinuity to code generation: a declarative solver claim yields 39% first-sight commitment, while requiring code—without correctness-dependent reward or a hand-solving option—raises it to 100%. Across build charges spanning eager, selective, and never-build regimes, abstract choices adjust to the economics, whereas code-required choices remain at 98–100% first-sight, including when never building is optimal. A preregistered GPT-5.4-mini replication shows the same shift (16.7% abstract versus 87.9% code-required first-sight commitments), while competence-qualified GPT-5.6 Sol does not (19.4% versus 27.8%). Finally, in a single privileged-critic case study, a Qwen-14B policy trained from reward learns to reserve in the abstract task but remains eager in reusable script creation. These results identify a consequential but heterogeneous framing-dependent failure to express online allocation policies during constructive tool use.
+Creating a reusable tool is an investment: an agent pays a fixed cost now in exchange for uncertain
+future reuse. We introduce a paired benchmark that tests whether language-model agents preserve online
+allocation behavior when the same investment decision moves from an abstract keep/pass frame to
+reusable code construction. Claude Haiku reserves budget in the abstract frame but makes 100% of its
+script builds on first sight, compared with 28% abstract first-sight commitment. A preregistered framing
+ladder localizes this shift to required code emission: a declarative solver claim yields 39% first-sight
+commitment, while requiring code—without correctness-dependent reward or a hand-solving option—raises
+it to 100%. Across build charges spanning eager, selective, and never-build regimes, Haiku's abstract
+choices adjust to the economics, whereas its code-required choices remain at 98–100% first sight,
+including when never building is optimal. The shift replicates in Opus and, after a preregistered
+competence gate, in GPT-5.4-mini (16.7% abstract versus 87.9% code-required). In contrast,
+competence-qualified GPT-5.6 Sol preserves reserve across the same comparison (19.4% versus 27.8%;
+paired interval includes zero), demonstrating that the tested capability is achievable rather than
+structurally precluded by code generation. In a separate proof-of-possibility case study, a Qwen-14B
+policy trained from reward acquires abstract reserve but remains eager in reusable script creation.
+Together, these results establish online tool investment as a discriminative capability boundary:
+constructive framing can suppress an available allocation policy, but a capable model can preserve it.
 
-**Before submission:** tighten this draft to the venue word limit and replace the provisional Qwen
-figures with the final matched-q8 values.
+**Before submission:** tighten this draft to the venue word limit and verify every value against the
+final matched-q8 Qwen and locked GPT analyses.
 
 ---
 
@@ -78,29 +106,33 @@ Scaffold:
 - It might understand the economics but be pulled toward solving the current problem.
 - Ordinary tool benchmarks cannot separate these explanations because representation, action modality, coding, and immediate task reward change together.
 - Introduce the paper’s strategy: hold streams and information fixed, then vary framing in controlled steps.
+- State the criterion for a meaningful capability measure: competent models must be able to pass, while
+  weaker or context-bound policies can fail under the same locked comparison.
 
 ## 1.3 Main findings
 
-Use one short paragraph or four compact bullets:
+Use one short paragraph or five compact bullets:
 
 1. **Same-information dissociation:** Haiku first-sight commitment is 28% in the abstract A2 condition and 100% in the paired tool condition.
 2. **Code-emission sufficiency:** R0/R1/R2 remain at 28%/17%/39%; adding required code in R2c raises commitment to 100%, matching full script construction.
 3. **Economic invariance:** R2c remains 98–100% first-sight over `K ∈ {0,10,24}`, while R0 becomes cautious as building becomes selective or dominated.
-4. **Learned-policy boundary:** Qwen-14B acquires reserve from reward in the abstract frame but does not reliably transfer it to reusable script creation.
-5. **Measured breadth:** Opus reproduces the frontier dissociation, and GPT-5.4-mini shows a
+4. **Measured failure breadth:** Opus reproduces the frontier dissociation, and GPT-5.4-mini shows a
    preregistered +75.8-point paired first-sight shift after passing the abstract competence gate;
-   GPT-5.6 Sol passes the same gate but shows only +8.3 points with an interval crossing zero.
+5. **Achievable preservation:** GPT-5.6 Sol passes the same gate and preserves reserve in R2c, showing
+   only +8.3 points with an interval crossing zero. Qwen separately shows that acquisition in the
+   abstract frame does not guarantee activation during reusable construction.
 
 ## 1.4 Contributions
 
-State four contributions:
+State five contributions:
 
-- An online tool-investment formulation and benchmark with paired streams, scarce writes, uncertain recurrence, and explicit behavioral timing metrics.
+- An online tool-investment formulation and discriminative benchmark with paired streams, scarce writes, uncertain recurrence, and explicit behavioral timing metrics.
 - A same-information test distinguishing absent allocation competence from framing-dependent non-expression.
 - A causal mechanism study combining a preregistered framing ladder, a code-required control, and an economic response surface.
 - A reward-learning case study showing that acquisition in an abstract frame does not imply activation during reusable construction.
 - A preregistered competence-gated replication in GPT, with seed-paired uncertainty and
-  heterogeneous R2c behavior reported rather than hidden.
+  both a large framing shift and successful cross-frame preservation. The latter establishes that the
+  benchmark measures a difficult but achievable capability.
 
 Do not list every diagnostic as a separate contribution.
 
@@ -212,6 +244,8 @@ State the hypotheses before presenting results:
 - H2: the largest framing-ladder discontinuity occurs when code emission becomes required.
 - H3: abstract commitment changes with build charge, whereas code-required commitment is less economically elastic.
 - H4: an allocation policy learned in the abstract frame need not transfer to reusable script creation.
+- H5: among models that pass the abstract competence gate, code-required preservation is neither
+  guaranteed nor impossible; the paired benchmark can expose model-level capability differences.
 
 Suggested page budget: 0.9–1.1 pages.
 
@@ -304,16 +338,19 @@ Scaffold:
 - Include two short transcript excerpts: one abstract wait decision and one eager script build.
 - Use transcripts as mechanism-consistent qualitative evidence, not as the causal identification by themselves.
 
-## 5.4 Allocation competence and tool eagerness are distinct axes
+## 5.4 Abstract competence and constructive preservation are distinct axes
 
 Scaffold:
 
-- Briefly report Opus abstract behavior and the Qwen baseline ladder.
-- Separate two failure modes:
-  - framing suppression when abstract competence is present;
-  - genuine policy absence when both frames are eager.
-- Incorporate the paired Opus tool result when complete.
-- Do not claim smooth capability scaling.
+- Use the abstract condition as a competence gate rather than interpreting every eager tool policy alike.
+- Separate three observed states:
+  - policy absence or non-expression in both frames, as in baseline Qwen;
+  - abstract competence with framing-dependent suppression, as in Haiku, Opus, and GPT-5.4-mini;
+  - abstract competence with cross-frame preservation, as in GPT-5.6 Sol.
+- Briefly preview the completed paired Opus and GPT results, reserving full statistics for Section 9.
+- Explain why the third state matters: it shows that the benchmark is passable and that code generation
+  does not mechanically force first-sight commitment.
+- Do not claim smooth capability scaling or identify the training feature responsible for preservation.
 
 Suggested page budget: 1.0–1.2 pages.
 
@@ -497,56 +534,62 @@ Suggested page budget: 0.9–1.1 pages.
 
 ---
 
-# 9. Breadth and Boundary Conditions
+# 9. A Difficult but Achievable Capability
 
-This section should be short and completed after the publication-gate experiments.
+This section is the benchmark-level payoff. It should remain short, but it must treat GPT-5.6 Sol as
+positive evidence that cross-frame preservation is achievable—not merely as a failed replication.
 
-## 9.1 Frontier-model paired test
+## 9.1 The framing failure extends beyond the primary model
 
-Scaffold:
+Present:
 
-- Report Opus under matched A2 abstract and tool conditions.
-- If Opus reserves abstractly and builds eagerly in the paired tool cell, state that framing suppression extends to a stronger model with demonstrated allocation competence.
-- If it does not, treat that as a boundary condition and narrow the main claim.
-- Do not substitute historical bait-task behavior for the paired result.
+- Opus under matched A2 abstract and tool conditions: 0% abstract versus 100% tool first-sight,
+  with identical canonical streams and the hardened magnitude setting.
+- GPT-5.4-mini after the locked abstract competence gate: 16.7% R0 versus 87.9% R2c, paired
+  difference +75.8 points, bootstrap 95% CI [+54.5, +93.9].
+- These results show that Haiku's dissociation is neither model-specific nor confined to a weaker
+  capability tier.
+- Preserve GPT-5.4-mini's seed-level heterogeneity: one wait-y R2c seed and one zero-commit seed.
 
-## 9.2 Cross-family replication
+## 9.2 GPT-5.6 Sol preserves allocation across construction
 
-Publication minimum — **complete**:
+Present the result as a successful capability demonstration under the same preregistered test:
 
-- One additional model family with demonstrated abstract allocation competence.
-- Matched R0 and R2c conditions on paired streams.
-- Report both abstract competence and code-frame behavior; a model that fails both does not test suppression.
-- `gpt-5.4-mini-2026-03-17` passed the full 12-seed R0 competence gate: 3.0
-  commitments/seed, 16.7% first-sight among commitments, and 92.6% of the online-Bayesian
-  comparator's collected payoff.
-- On the paired R2c panel, first-sight rose to 87.9% (29/33 realized commitments) and mean
-  lateness fell from 2.08 to 0.42. The paired seed-level difference was +75.8 points,
-  bootstrap 95% CI [+54.5, +93.9].
-- Preserve heterogeneity: one R2c seed waited substantially and one made zero commitments.
-  This is a distributional framing shift, not a universal per-seed response.
-- `gpt-5.6-sol` passed the same R0 gate (19.4% first-sight; 98.5% of comparator payoff) but
-  did **not** replicate: R2c first-sight was 27.8%, with a paired +8.3-point difference and
+- `gpt-5.6-sol` passes the R0 gate: 19.4% first-sight and 98.5% of comparator payoff.
+- In paired R2c it remains selective: 27.8% first-sight, paired difference +8.3 points,
   bootstrap 95% CI [−11.1, +27.8].
-- Treat GPT-5.6 as a competence-qualified boundary condition. Do not infer monotonic scaling,
-  inverse scaling, or a capability law from two GPT points.
-- Full preregistration, execution log, costs, and interpretation:
-  `gpt-cross-family-r0-r2c-spec.md`.
+- Operational interpretation: under the locked prompt, information, and stream contract, Sol retains
+  the timing policy that the affected models lose when code becomes required.
+- Construct-validity implication: code emission does not mechanically induce eagerness, and the metric
+  is not an impossible trap. It distinguishes failure from successful integration of allocation and
+  construction.
+- Scientific implication: the central phenomenon is a capability boundary, not a universal law.
+- Causal limit: this comparison does not show that generic capability or scale produced preservation.
+  Differences in post-training, reasoning policy, architecture, or tool-use experience remain live.
 
-Scope-widening target:
+## 9.3 Interpreting the model panel
 
-- Two frontier and two open-weight families.
-- Same prompt-information contract and seed pairing.
-- Report heterogeneity rather than averaging families into a single effect.
+Synthesize the three-state pattern:
 
-## 9.3 What generalizes—and what does not
+- **Absent policy:** baseline Qwen is eager in both frames.
+- **Possessed but suppressed policy:** Haiku, Opus, and GPT-5.4-mini reserve abstractly but become
+  sharply eager under code-required construction.
+- **Preserved policy:** GPT-5.6 Sol reserves in both frames.
 
-Synthesize:
+This taxonomy is more informative than a single pooled model effect. It separates whether a model has
+the allocation policy from whether it can carry that policy into constructive action.
 
-- Generality across tested families.
-- Dependence on demonstrated abstract competence.
-- Difference between free-text lexical transfer, tool-call modality, and actual reusable code construction.
-- Exact boundary of the paper’s claim after all breadth results are known.
+Do not:
+
+- Rank the models by overall intelligence from this benchmark.
+- Infer monotonic scaling or inverse scaling from two GPT points.
+- Claim that Sol is economically optimal; the GPT panel tests cross-frame timing preservation, not the
+  full Haiku budget-by-charge response surface.
+- Average model effects into a universal “LLM” coefficient that erases the capability boundary.
+
+Scope-widening work can test more frontier and open-weight families under the same prompt-information
+contract and seed pairing, then ask whether preservation predicts performance on naturalistic agent tasks.
+It is not required for the present bounded claim.
 
 Suggested page budget: 0.4–0.7 pages. If space is tight, fold this into Sections 5 and 6.
 
@@ -554,7 +597,7 @@ Suggested page budget: 0.4–0.7 pages. If space is tight, fold this into Sectio
 
 # 10. Discussion
 
-## 10.1 Recognition failure, not a general inability to allocate
+## 10.1 Constructive preservation is a distinct capability
 
 Scaffold:
 
@@ -563,6 +606,10 @@ Scaffold:
 - Code-required construction suppresses that policy in Haiku, Opus, and GPT-5.4-mini, but not
   detectably in GPT-5.6 Sol under the locked protocol.
 - Distinguish policy possession, policy acquisition, and policy activation.
+- Treat Sol's preservation as evidence that activation during construction is a measurable capability,
+  not merely the absence of a statistically significant failure.
+- The benchmark is most useful as a conditional diagnostic: first establish abstract competence, then
+  measure whether timing survives constructive reframing.
 
 ## 10.2 Why code generation may suppress investment reasoning
 
@@ -584,7 +631,19 @@ Scaffold:
 - Evaluate tool-building systems on delayed utility and library opportunity cost, not only immediate task success.
 - Present these as design implications, not tested mitigations.
 
-## 10.4 Implications for training
+## 10.4 Implications for capability evaluation
+
+Scaffold:
+
+- Evaluate online investment separately from coding correctness and existing-tool selection.
+- Require a competence gate so eager behavior can be attributed to policy absence versus suppression.
+- Include both abstract and constructive conditions; either condition alone misses the dissociation.
+- Reward benchmarks that admit successful preservation rather than treating universal model failure as
+  evidence of difficulty.
+- Test whether this metric predicts library quality, resource allocation, and long-horizon agent
+  performance in naturalistic environments.
+
+## 10.5 Implications for training
 
 Scaffold:
 
@@ -611,7 +670,9 @@ Use a dedicated section rather than scattering all caveats.
 
 - The core causal ladder is centered on Haiku.
 - Twelve canonical streams are repeatedly crossed with conditions; raw session count is not independent sample size.
-- State exactly what the completed Opus and cross-family runs add.
+- Opus and GPT-5.4-mini extend the observed failure, while GPT-5.6 Sol demonstrates preservation; this
+  is enough to establish heterogeneity and achievability, not a capability trend.
+- The benchmark has not yet been validated as a predictor of broader agent performance.
 
 ## 11.3 Reference policies
 
@@ -642,8 +703,11 @@ Suggested page budget: 0.4–0.6 pages.
 One paragraph:
 
 - Restate reusable tool creation as an online investment problem.
-- Summarize the central dissociation, code-emission trigger, economic invariance, and learned-policy transfer boundary.
-- End with the practical implication: agents need explicit separation between deciding to invest and executing construction.
+- Summarize the central dissociation, code-emission trigger, economic invariance, and learned-policy activation boundary.
+- State the positive benchmark result: GPT-5.6 Sol preserves reserve across the locked framing change,
+  proving that online allocation during constructive action is achievable by a capable model.
+- End with the scientific implication: online tool investment is a distinct capability worth measuring,
+  and the affected agents may need explicit separation between deciding to invest and executing construction.
 
 Suggested page budget: 0.2–0.3 pages.
 
@@ -674,9 +738,12 @@ Suggested page budget: 0.2–0.3 pages.
 
 ## Figure 4: Learned policy and transfer boundary
 
-- Base versus RL in original abstract, held-out vocabularies, isomorphic tool calls, and reusable script frame.
-- First-sight percentage, with channel-validity annotations.
-- Purpose: show acquisition, lexical generalization, partial modality transfer, and construction failure in one view.
+- Left: base versus RL in original abstract, held-out vocabularies, isomorphic tool calls, and reusable script frame.
+- Right: competence-gated R0/R2c model panel for GPT-5.4-mini and GPT-5.6 Sol, with Opus summarized
+  separately because it uses the A2 urn/tool endpoint.
+- First-sight percentage with paired seed uncertainty and channel-validity annotations.
+- Purpose: show both forms of boundary evidence—acquisition without constructive activation and a
+  model that successfully preserves allocation across construction.
 
 If the venue permits only three main figures, combine Figures 1 and 2 or move the vocabulary panel to the appendix.
 
@@ -695,7 +762,8 @@ Include only the main behavioral measures for:
 - Haiku A2 abstract versus tool.
 - Ladder R0/R1/R2/R2c/R3.
 - Qwen base/RL abstract versus tool.
-- Opus and cross-family breadth results.
+- Opus and the competence-gated GPT panel, visually distinguishing framing-shift replication from
+  cross-frame preservation.
 
 Avoid duplicating every plotted economic cell.
 
@@ -780,6 +848,9 @@ Use:
 - “Exact hindsight net optimum” for the economic upper bound.
 - “Proof-of-possibility RL case study.”
 - “Within this benchmark” whenever making the mechanism claim.
+- “Cross-frame preservation” for GPT-5.6 Sol.
+- “Difficult but achievable capability” when summarizing the competence-gated model panel.
+- “Capability boundary” only when immediately paired with the observed model-level heterogeneity.
 
 Avoid:
 
@@ -790,6 +861,10 @@ Avoid:
 - “216 independent trials”; use “216 sessions over 12 paired stream clusters.”
 - “RL robustly learns” or “RL transfers poorly in general.”
 - “The model understands” based only on a transcript; use behavioral descriptions.
+- “Sol proves scaling” or “stronger models recover”; one model establishes achievability, not the cause.
+- “GPT-5.6 is a non-replication” without also stating the substantive positive result: reserve is
+  preserved under required code emission.
+- “Sol is economically optimal”; the GPT panel does not include the full charge response surface.
 
 ---
 
@@ -809,9 +884,12 @@ If space becomes tight, preserve the core sequence:
 1. same-information dissociation;
 2. code-emission sufficiency;
 3. economic invariance;
-4. RL acquisition-without-activation.
+4. competence-gated model panel, including GPT-5.6 Sol preservation;
+5. RL acquisition-without-activation.
 
-Move the no-N condition, full Qwen ladder, detailed regret tables, K=20 cells, idle-tail diagnostics, and vocabulary-specific results to the appendix.
+If another cut is required, compress RL before cutting the GPT preservation result. Move the no-N
+condition, full Qwen ladder, detailed regret tables, K=20 cells, idle-tail diagnostics, and
+vocabulary-specific results to the appendix.
 
 ---
 
@@ -825,4 +903,7 @@ The repository contains several valuable earlier research threads, but combining
 - **Superseded SFT/adapter-transfer attempts:** retain only as internal history unless needed to explain why the final intervention uses PPO.
 - **Old capability-law narratives:** do not revive inverse-scaling or monotonic-capability claims that later experiments falsified.
 
-At most, mention these as motivation or companion evidence in related work or an appendix. The main paper should remain the July online-investment program: same-information dissociation, code-emission mechanism, economic invariance, and acquisition without activation.
+At most, mention these as motivation or companion evidence in related work or an appendix. The main
+paper should remain the July online-investment program: same-information dissociation, code-emission
+mechanism, economic invariance, competence-gated failure versus preservation, and acquisition without
+activation.
