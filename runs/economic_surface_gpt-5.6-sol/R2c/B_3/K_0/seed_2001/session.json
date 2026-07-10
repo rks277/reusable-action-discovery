@@ -1,0 +1,355 @@
+{
+  "seed": 2001,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.6-sol",
+  "resolved_model": "gpt-5.6-sol",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.6-sol",
+    "resolved_model": "gpt-5.6-sol",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "a413339fcf1051cc395a56130258c98820695691b94d2296a7df46bf8d20c60a",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 5.0,
+    "unit_cap_usd": 0.5
+  },
+  "net_score": 21,
+  "claimed": {
+    "3": 1,
+    "4": 1,
+    "0": 3
+  },
+  "claimed_code": {
+    "3": "def solve(inputs: dict) -> float:\n    residues = inputs.get('residues', inputs.get('remainders', inputs.get('a')))\n    moduli = inputs.get('moduli', inputs.get('mods', inputs.get('m')))\n    if residues is None or moduli is None:\n        congruences = inputs.get('congruences')\n        if congruences is None:\n            raise KeyError('Expected residues and moduli')\n        residues, moduli = zip(*congruences)\n    x = 0\n    modulus_product = 1\n    for residue, modulus in zip(residues, moduli):\n        residue, modulus = int(residue), int(modulus)\n        if modulus <= 0:\n            raise ValueError('Moduli must be positive')\n        g = __import__('math').gcd(modulus_product, modulus)\n        difference = residue - x\n        if difference % g:\n            raise ValueError('Inconsistent congruences')\n        reduced_current = modulus_product // g\n        reduced_modulus = modulus // g\n        if reduced_modulus == 1:\n            step = 0\n        else:\n            step = (difference // g) * pow(reduced_current, -1, reduced_modulus) % reduced_modulus\n        x += modulus_product * step\n        modulus_product *= reduced_modulus\n        x %= modulus_product\n    return x",
+    "4": "def solve(inputs: dict) -> float:\n    n = inputs.get('n', inputs.get('people', inputs.get('count')))\n    k = inputs.get('k', inputs.get('step', inputs.get('every')))\n    if n is None or k is None:\n        raise KeyError('Expected n (number of people) and k (elimination step)')\n    n, k = int(n), int(k)\n    if n < 1 or k < 1:\n        raise ValueError('n and k must be positive')\n    survivor = 0\n    for size in range(2, n + 1):\n        survivor = (survivor + k) % size\n    return survivor + 1",
+    "0": "def solve(inputs: dict) -> float:\n    x = inputs.get('x', inputs.get('X', inputs.get('start', inputs.get('seed', inputs.get('s')))))\n    a = inputs.get('a', inputs.get('multiplier', inputs.get('mult')))\n    c = inputs.get('c', inputs.get('increment', inputs.get('addend', inputs.get('b'))))\n    m = inputs.get('m', inputs.get('modulus', inputs.get('mod')))\n    rounds = inputs.get('rounds', inputs.get('iterations', inputs.get('times', inputs.get('n'))))\n    if None in (x, a, c, m, rounds):\n        raise KeyError('Expected start/seed, multiplier, increment, modulus, and rounds')\n    x, a, c, m, rounds = map(int, (x, a, c, m, rounds))\n    if m <= 0 or rounds < 0:\n        raise ValueError('Modulus must be positive and rounds nonnegative')\n    x %= m\n    for _ in range(rounds):\n        x = (a * x + c) % m\n    return x"
+  },
+  "collected": 21,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 759,
+      "output_tokens": 329,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1185,
+      "output_tokens": 178,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1185,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1461,
+      "output_tokens": 13,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1576,
+      "output_tokens": 13,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1717,
+      "output_tokens": 13,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1854,
+      "output_tokens": 13,
+      "cache_read_tokens": 1703,
+      "cache_write_tokens": 137,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1972,
+      "output_tokens": 279,
+      "cache_read_tokens": 1703,
+      "cache_write_tokens": 118,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [262, 283, 1248, 639] modulo [1033, 2351, 1871, 1381] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 1184,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 1,
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): In a circle of 95 people (positions 1..95), repeatedly remove every 6-th person until a single survivor is left. What is the survivor's original position?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 494,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 2,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 103. Repeat the following 12 times: s = (2000 * s + 2200) % 66600. Give the resulting value of s.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 3,
+      "class_id": 0,
+      "class_position": 2,
+      "prompt": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 233. For 9 rounds, set X = (2500 * X + 2400) mod 38200. What is X after the final round?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 4,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 980613760. Repeat 14 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 5,
+      "class_id": 6,
+      "class_position": 2,
+      "prompt": "Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): Start with the 32-bit value 2154878144. Apply the xorshift step 18 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 6,
+      "class_id": 0,
+      "class_position": 3,
+      "prompt": "Problem 7 of 60 (put solving logic ONLY in the code argument, not this message): A register starts at X = 146. It is updated 6 times; each update replaces X with ((1000 * X) + 1400) mod 31600. Report the final value of X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 822,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [262, 283, 1248, 639] modulo [1033, 2351, 1871, 1381] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_D3m5NastQSAe4QbmyB9NWGB8",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    residues = inputs.get('residues', inputs.get('remainders', inputs.get('a')))\\n    moduli = inputs.get('moduli', inputs.get('mods', inputs.get('m')))\\n    if residues is None or moduli is None:\\n        congruences = inputs.get('congruences')\\n        if congruences is None:\\n            raise KeyError('Expected residues and moduli')\\n        residues, moduli = zip(*congruences)\\n    x = 0\\n    modulus_product = 1\\n    for residue, modulus in zip(residues, moduli):\\n        residue, modulus = int(residue), int(modulus)\\n        if modulus <= 0:\\n            raise ValueError('Moduli must be positive')\\n        g = __import__('math').gcd(modulus_product, modulus)\\n        difference = residue - x\\n        if difference % g:\\n            raise ValueError('Inconsistent congruences')\\n        reduced_current = modulus_product // g\\n        reduced_modulus = modulus // g\\n        if reduced_modulus == 1:\\n            step = 0\\n        else:\\n            step = (difference // g) * pow(reduced_current, -1, reduced_modulus) % reduced_modulus\\n        x += modulus_product * step\\n        modulus_product *= reduced_modulus\\n        x %= modulus_product\\n    return x\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_D3m5NastQSAe4QbmyB9NWGB8",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): In a circle of 95 people (positions 1..95), repeatedly remove every 6-th person until a single survivor is left. What is the survivor's original position?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_lqSx2AJYxVM9bAUkCOnyM6Vj",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    n = inputs.get('n', inputs.get('people', inputs.get('count')))\\n    k = inputs.get('k', inputs.get('step', inputs.get('every')))\\n    if n is None or k is None:\\n        raise KeyError('Expected n (number of people) and k (elimination step)')\\n    n, k = int(n), int(k)\\n    if n < 1 or k < 1:\\n        raise ValueError('n and k must be positive')\\n    survivor = 0\\n    for size in range(2, n + 1):\\n        survivor = (survivor + k) % size\\n    return survivor + 1\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_lqSx2AJYxVM9bAUkCOnyM6Vj",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 103. Repeat the following 12 times: s = (2000 * s + 2200) % 66600. Give the resulting value of s.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_OZsEv3EbsJVVPNKIbmuyVQZ1",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_OZsEv3EbsJVVPNKIbmuyVQZ1",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 233. For 9 rounds, set X = (2500 * X + 2400) mod 38200. What is X after the final round?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_FdtQD4dSK9URL8EBwQFuA3dE",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_FdtQD4dSK9URL8EBwQFuA3dE",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 980613760. Repeat 14 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_2Zxx1GbF79eC3fF5Xs0RPYWN",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_2Zxx1GbF79eC3fF5Xs0RPYWN",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): Start with the 32-bit value 2154878144. Apply the xorshift step 18 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_ZTPKsdKpoWFQkTmZHHnxyaQd",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_ZTPKsdKpoWFQkTmZHHnxyaQd",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 7 of 60 (put solving logic ONLY in the code argument, not this message): A register starts at X = 146. It is updated 6 times; each update replaces X with ((1000 * X) + 1400) mod 31600. Report the final value of X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_bEWWuen0JebNYyCuHYDIrQYL",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    x = inputs.get('x', inputs.get('X', inputs.get('start', inputs.get('seed', inputs.get('s')))))\\n    a = inputs.get('a', inputs.get('multiplier', inputs.get('mult')))\\n    c = inputs.get('c', inputs.get('increment', inputs.get('addend', inputs.get('b'))))\\n    m = inputs.get('m', inputs.get('modulus', inputs.get('mod')))\\n    rounds = inputs.get('rounds', inputs.get('iterations', inputs.get('times', inputs.get('n'))))\\n    if None in (x, a, c, m, rounds):\\n        raise KeyError('Expected start/seed, multiplier, increment, modulus, and rounds')\\n    x, a, c, m, rounds = map(int, (x, a, c, m, rounds))\\n    if m <= 0 or rounds < 0:\\n        raise ValueError('Modulus must be positive and rounds nonnegative')\\n    x %= m\\n    for _ in range(rounds):\\n        x = (a * x + c) % m\\n    return x\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_bEWWuen0JebNYyCuHYDIrQYL",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.6-sol"
+  ],
+  "actual_cost_usd": 0.064233
+}

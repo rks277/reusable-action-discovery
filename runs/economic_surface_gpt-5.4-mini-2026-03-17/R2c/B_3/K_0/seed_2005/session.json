@@ -1,0 +1,226 @@
+{
+  "seed": 2005,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "c205cba3f5d56cb60e7001d33216ec42144a9c8b84f3560bc646a561b993c6d7",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.1
+  },
+  "net_score": 53,
+  "claimed": {
+    "3": 1,
+    "6": 1,
+    "1": 1
+  },
+  "claimed_code": {
+    "3": "def solve(inputs: dict) -> float:\n    # Expect inputs to contain congruences as lists/tuples under common keys.\n    # Support several possible formats.\n    import math\n\n    # Try to extract residues and moduli.\n    residues = None\n    moduli = None\n    for rk, mk in [(\"residues\", \"moduli\"), (\"a\", \"m\"), (\"r\", \"m\"), (\"remainders\", \"moduli\")]:\n        if rk in inputs and mk in inputs:\n            residues = list(inputs[rk])\n            moduli = list(inputs[mk])\n            break\n    if residues is None or moduli is None:\n        # If inputs is already a list of pairs\n        if isinstance(inputs, (list, tuple)) and len(inputs) and isinstance(inputs[0], (list, tuple)):\n            residues = [int(p[0]) for p in inputs]\n            moduli = [int(p[1]) for p in inputs]\n        else:\n            raise ValueError('Unsupported input format')\n\n    x = 0\n    M = 1\n    for ai, mi in zip(residues, moduli):\n        ai %= mi\n        # Solve x + M*t \u2261 ai (mod mi)\n        g = math.gcd(M, mi)\n        if (ai - x) % g != 0:\n            raise ValueError('No solution')\n        # Since moduli are pairwise coprime in this problem, g should be 1.\n        # Use modular inverse.\n        inv = pow(M // g, -1, mi // g)\n        t = ((ai - x) // g * inv) % (mi // g)\n        x += M * t\n        M *= mi // g\n        x %= M\n    return float(x)\n",
+    "6": "def solve(inputs: dict) -> float:\n    # General solver for iterated 32-bit xorshift of the form:\n    # X ^= (X<<13); X ^= (X>>7); X ^= (X<<15), repeated n times.\n    # Accepts possible input keys for start value and repetitions.\n    x = None\n    n = None\n    for k in (\"x\", \"X\", \"start\", \"value\", \"seed\"):\n        if k in inputs:\n            x = int(inputs[k])\n            break\n    for k in (\"n\", \"steps\", \"iters\", \"iterations\", \"repetitions\"):\n        if k in inputs:\n            n = int(inputs[k])\n            break\n    if x is None or n is None:\n        raise ValueError('Unsupported input format')\n    x &= 0xFFFFFFFF\n    for _ in range(n):\n        x ^= (x << 13) & 0xFFFFFFFF\n        x ^= (x >> 7) & 0xFFFFFFFF\n        x ^= (x << 15) & 0xFFFFFFFF\n        x &= 0xFFFFFFFF\n    return float(x)\n",
+    "1": "def solve(inputs: dict) -> float:\n    # General modular exponentiation solver.\n    # Supports keys like base, exponent, modulus.\n    base = None\n    exp = None\n    mod = None\n    for k in (\"base\", \"a\", \"x\", \"n\"):\n        if k in inputs:\n            base = int(inputs[k]); break\n    for k in (\"exp\", \"exponent\", \"power\", \"k\"):\n        if k in inputs:\n            exp = int(inputs[k]); break\n    for k in (\"mod\", \"m\", \"modulus\"):\n        if k in inputs:\n            mod = int(inputs[k]); break\n    if base is None or exp is None or mod is None:\n        raise ValueError('Unsupported input format')\n    return float(pow(base, exp, mod))\n"
+  },
+  "collected": 53,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 765,
+      "output_tokens": 487,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1397,
+      "output_tokens": 82,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1602,
+      "output_tokens": 318,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2040,
+      "output_tokens": 241,
+      "cache_read_tokens": 1664,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [70, 65, 2348, 939, 603] modulo [2389, 311, 2633, 1019, 1801] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a CRT problem; likely recurring type, but I only get one hidden type per problem. Since the prompt asks for a least non-negative x, I can claim with a general CRT solver for arbitrary pairwise coprime congruences.",
+      "n_tool_calls": 1,
+      "code_len": 1331,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 2: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[14, 22], [35, 21]]. Compute M raised to the power 41 (the product of exactly 41 copies of M), reducing every entry modulo 421398 throughout, and report the sum of the four entries of M^41.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "This is a matrix exponentiation problem. Could claim a general 2x2 matrix power solver, but maybe better to save claims unless this type repeats. Still, claiming now would auto-solve this and future same type. However hidden types are only 8; likely useful but uncertain. I\u2019ll skip.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 3,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Start with the 32-bit value 649921144. Apply the xorshift step 24 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a bitwise iterative transform, a distinct type that could recur. I have claims left, so I\u2019ll claim a general xorshift-iteration solver.",
+      "n_tool_calls": 1,
+      "code_len": 797,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 5,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 5: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): Compute 568391 raised to the power 12, modulo 379527 (the remainder when 568391^12 is divided by 379527).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is modular exponentiation, a common type. I have one claim left, and this likely repeats. I\u2019ll claim a generic modular power solver.",
+      "n_tool_calls": 1,
+      "code_len": 634,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [70, 65, 2348, 939, 603] modulo [2389, 311, 2633, 1019, 1801] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a CRT problem; likely recurring type, but I only get one hidden type per problem. Since the prompt asks for a least non-negative x, I can claim with a general CRT solver for arbitrary pairwise coprime congruences.",
+      "tool_calls": [
+        {
+          "id": "call_fenZlfSqWrYUAKmr4vBDUVqQ",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Expect inputs to contain congruences as lists/tuples under common keys.\\n    # Support several possible formats.\\n    import math\\n\\n    # Try to extract residues and moduli.\\n    residues = None\\n    moduli = None\\n    for rk, mk in [(\\\"residues\\\", \\\"moduli\\\"), (\\\"a\\\", \\\"m\\\"), (\\\"r\\\", \\\"m\\\"), (\\\"remainders\\\", \\\"moduli\\\")]:\\n        if rk in inputs and mk in inputs:\\n            residues = list(inputs[rk])\\n            moduli = list(inputs[mk])\\n            break\\n    if residues is None or moduli is None:\\n        # If inputs is already a list of pairs\\n        if isinstance(inputs, (list, tuple)) and len(inputs) and isinstance(inputs[0], (list, tuple)):\\n            residues = [int(p[0]) for p in inputs]\\n            moduli = [int(p[1]) for p in inputs]\\n        else:\\n            raise ValueError('Unsupported input format')\\n\\n    x = 0\\n    M = 1\\n    for ai, mi in zip(residues, moduli):\\n        ai %= mi\\n        # Solve x + M*t \u2261 ai (mod mi)\\n        g = math.gcd(M, mi)\\n        if (ai - x) % g != 0:\\n            raise ValueError('No solution')\\n        # Since moduli are pairwise coprime in this problem, g should be 1.\\n        # Use modular inverse.\\n        inv = pow(M // g, -1, mi // g)\\n        t = ((ai - x) // g * inv) % (mi // g)\\n        x += M * t\\n        M *= mi // g\\n        x %= M\\n    return float(x)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_fenZlfSqWrYUAKmr4vBDUVqQ",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 2: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[14, 22], [35, 21]]. Compute M raised to the power 41 (the product of exactly 41 copies of M), reducing every entry modulo 421398 throughout, and report the sum of the four entries of M^41.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a matrix exponentiation problem. Could claim a general 2x2 matrix power solver, but maybe better to save claims unless this type repeats. Still, claiming now would auto-solve this and future same type. However hidden types are only 8; likely useful but uncertain. I\u2019ll skip.",
+      "tool_calls": [
+        {
+          "id": "call_8JsqaZinyrXGAio7OrJX4SHV",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_8JsqaZinyrXGAio7OrJX4SHV",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Start with the 32-bit value 649921144. Apply the xorshift step 24 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a bitwise iterative transform, a distinct type that could recur. I have claims left, so I\u2019ll claim a general xorshift-iteration solver.",
+      "tool_calls": [
+        {
+          "id": "call_dn59JnDmroTtoGHLVKyPiV8h",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # General solver for iterated 32-bit xorshift of the form:\\n    # X ^= (X<<13); X ^= (X>>7); X ^= (X<<15), repeated n times.\\n    # Accepts possible input keys for start value and repetitions.\\n    x = None\\n    n = None\\n    for k in (\\\"x\\\", \\\"X\\\", \\\"start\\\", \\\"value\\\", \\\"seed\\\"):\\n        if k in inputs:\\n            x = int(inputs[k])\\n            break\\n    for k in (\\\"n\\\", \\\"steps\\\", \\\"iters\\\", \\\"iterations\\\", \\\"repetitions\\\"):\\n        if k in inputs:\\n            n = int(inputs[k])\\n            break\\n    if x is None or n is None:\\n        raise ValueError('Unsupported input format')\\n    x &= 0xFFFFFFFF\\n    for _ in range(n):\\n        x ^= (x << 13) & 0xFFFFFFFF\\n        x ^= (x >> 7) & 0xFFFFFFFF\\n        x ^= (x << 15) & 0xFFFFFFFF\\n        x &= 0xFFFFFFFF\\n    return float(x)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_dn59JnDmroTtoGHLVKyPiV8h",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 5: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): Compute 568391 raised to the power 12, modulo 379527 (the remainder when 568391^12 is divided by 379527).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is modular exponentiation, a common type. I have one claim left, and this likely repeats. I\u2019ll claim a generic modular power solver.",
+      "tool_calls": [
+        {
+          "id": "call_NXCAoD8MpteG4fvQfgjljgu1",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # General modular exponentiation solver.\\n    # Supports keys like base, exponent, modulus.\\n    base = None\\n    exp = None\\n    mod = None\\n    for k in (\\\"base\\\", \\\"a\\\", \\\"x\\\", \\\"n\\\"):\\n        if k in inputs:\\n            base = int(inputs[k]); break\\n    for k in (\\\"exp\\\", \\\"exponent\\\", \\\"power\\\", \\\"k\\\"):\\n        if k in inputs:\\n            exp = int(inputs[k]); break\\n    for k in (\\\"mod\\\", \\\"m\\\", \\\"modulus\\\"):\\n        if k in inputs:\\n            mod = int(inputs[k]); break\\n    if base is None or exp is None or mod is None:\\n        raise ValueError('Unsupported input format')\\n    return float(pow(base, exp, mod))\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_NXCAoD8MpteG4fvQfgjljgu1",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.0067506
+}

@@ -116,7 +116,8 @@ def parse_decision(text: str):
 
 async def run_episode(client, model, slots: list[dict], *, T: int, B: int, system: str,
                       temperature: float | None = None, palette: list[str] = VOCAB["ball"]["palette"],
-                      item: str = "ball") -> dict:
+                      item: str = "ball", reasoning_effort: str | None = None,
+                      stop_after_turn=None) -> dict:
     """Run ONE urn episode against a pre-built `slots` stream -- no file I/O, no caching, so callers
     (the CLI eval below, and `rl_rollout.py`'s RL rollout collector) own persistence. Extracted from
     `run_one` (2026-07-07, RL Phase 1) so both reuse the EXACT same per-draw loop byte-for-byte, rather
@@ -136,6 +137,7 @@ async def run_episode(client, model, slots: list[dict], *, T: int, B: int, syste
     kept: dict[int, int] = {}                  # class_id -> class_position at which kept
     unparsed = 0
     budget_left = B
+    safety_stop = None
     pending: list[tuple[int, str]] = []        # kept-color draws seen since the last decision prompt
     for s in sorted(slots, key=lambda z: z["slot_index"]):
         cid, pos, n = s["class_id"], s["class_position"], s["slot_index"] + 1
@@ -154,8 +156,11 @@ async def run_episode(client, model, slots: list[dict], *, T: int, B: int, syste
         user = (f"{pre}Draw {n} of {T}: {_art(color[cid])} {color[cid]} {item} appears. "
                 f"You have {budget_left} keep(s) left. KEEP or PASS?")
         messages.append({"role": "user", "content": user})
+        chat_kwargs = {"max_tokens": 512, "temperature": temperature}
+        if reasoning_effort is not None:
+            chat_kwargs["reasoning_effort"] = reasoning_effort
         reply, exc = await call_with_retry(
-            lambda: client.chat(model, system, messages, max_tokens=512, temperature=temperature))
+            lambda: client.chat(model, system, messages, **chat_kwargs))
         if exc is None:
             u = dict(client.last_usage or {})
         else:
@@ -175,17 +180,24 @@ async def run_episode(client, model, slots: list[dict], *, T: int, B: int, syste
             unparsed += 1
         transcript.append({"slot": s["slot_index"], "color": color[cid], "class_id": cid,
                            "class_position": pos, "prompt": user, "decision": dec, "how": how,
-                           "reply": reply})
+                           "reply": reply,
+                           "response_model": getattr(client, "last_response_model", None)})
         if dec == "KEEP":
             kept[cid] = pos
             budget_left -= 1
+        if stop_after_turn is not None:
+            stop_reason = stop_after_turn(turn_usages)
+            if stop_reason and (budget_left > 0 or stop_reason == "missing_usage"):
+                safety_stop = stop_reason
+                break
     # tally any remaining draws of colors kept before budget ran out (loop `continue`d past them
     # only while budget>0; count draws that occur AFTER budget exhaustion too)
     collected = sum(1 for s in slots if s["class_id"] in kept and s["class_position"] >= kept[s["class_id"]])
 
+    termination = safety_stop or ("budget_exhausted" if budget_left == 0 else "stream_complete")
     return {"kept": kept, "collected": collected, "budget": B, "unparsed": unparsed,
             "turn_usages": turn_usages, "color_of_class": color, "transcript": transcript,
-            "messages": messages}
+            "messages": messages, "termination": termination}
 
 
 async def run_one(client, model, seed, vocab_key):

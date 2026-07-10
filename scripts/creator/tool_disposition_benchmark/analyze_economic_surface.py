@@ -174,6 +174,7 @@ def analyze_cell(framing: str, B: int, K: int, seeds=CANONICAL_SEEDS) -> dict:
     return {
         "framing": framing, "B": B, "K": K, "n_seeds": n,
         "model_fs_hazard": _hazard(tot_fs, tot_elig),
+        "model_fs_among_commits": (tot_fs / sum(commits)) if sum(commits) else None,
         "reference_fs_hazard": _hazard(r_tot_fs, r_tot_elig),
         "bayes_fs_hazard": _hazard(bz_tot_fs, bz_tot_elig) if bayes_available else None,
         "model_commits_per_seed": (sum(commits) / n) if n else None,
@@ -192,15 +193,16 @@ def analyze_cell(framing: str, B: int, K: int, seeds=CANONICAL_SEEDS) -> dict:
     }
 
 
-def analyze_all(seeds=CANONICAL_SEEDS, charges=CHARGES) -> dict:
+def analyze_all(seeds=CANONICAL_SEEDS, charges=CHARGES, budgets=BUDGETS,
+                framings=FRAMINGS) -> dict:
     """Analyze every framing x budget x charge cell that has a run directory. `charges` defaults to the
     original run grid; pass a superset (e.g. (0, 10, 20, 24)) to also fold in the K=10 wait cell -- the
     K=10 online-Bayes DP is intractable, so its `bayes_*` fields come back None (spec §7)."""
     out = {}
-    for f in FRAMINGS:
-        for B in BUDGETS:
+    for f in framings:
+        for B in budgets:
             for K in charges:
-                if _cell_dir(f, B, K, CANONICAL_SEEDS[0]).parent.exists() or K in CHARGES:
+                if _cell_dir(f, B, K, CANONICAL_SEEDS[0]).parent.exists():
                     out[f"{f}:B{B}:K{K}"] = analyze_cell(f, B, K, seeds=seeds)
     return out
 
@@ -210,20 +212,31 @@ def _fmt_pct(x: float | None) -> str:
 
 
 def print_report(summary: dict) -> None:
+    if not summary:
+        print("No matching completed cells found.")
+        return
     charges = sorted({int(k.split(":K")[1]) for k in summary})
+    framings = [f for f in FRAMINGS if any(k.startswith(f"{f}:") for k in summary)]
+    budgets = sorted({int(k.split(":B")[1].split(":")[0]) for k in summary})
     print("\n==== ECONOMIC RESPONSE SURFACE: first-sight commitment hazard ====")
     print(f"     model  |  hindsight-optimum (opt*)  |  online-Bayes (bayes)   "
           f"(each block: K={'/'.join(str(k) for k in charges)})")
-    for framing in FRAMINGS:
+    for framing in framings:
         print(f"\n  {framing}:")
         header = ("    B   " + "".join(f"K={K:<6d}" for K in charges) +
                   " | opt* " + "".join(f"K={K:<5d}" for K in charges) +
                   " | bayes " + "".join(f"K={K:<5d}" for K in charges))
         print(header)
-        for B in BUDGETS:
-            mrow = "".join(_fmt_pct(summary[f"{framing}:B{B}:K{K}"]["model_fs_hazard"]) + "  " for K in charges)
-            orow = "".join(_fmt_pct(summary[f"{framing}:B{B}:K{K}"]["reference_fs_hazard"]) + "  " for K in charges)
-            brow = "".join(_fmt_pct(summary[f"{framing}:B{B}:K{K}"]["bayes_fs_hazard"]) + "  " for K in charges)
+        for B in budgets:
+            keys = [f"{framing}:B{B}:K{K}" for K in charges]
+            if not any(k in summary for k in keys):
+                continue
+            mrow = "".join(_fmt_pct(summary[k]["model_fs_hazard"]) + "  "
+                           if k in summary else _fmt_pct(None) + "  " for k in keys)
+            orow = "".join(_fmt_pct(summary[k]["reference_fs_hazard"]) + "  "
+                           if k in summary else _fmt_pct(None) + "  " for k in keys)
+            brow = "".join(_fmt_pct(summary[k]["bayes_fs_hazard"]) + "  "
+                           if k in summary else _fmt_pct(None) + "  " for k in keys)
             print(f"    {B}   {mrow} |    {orow} |     {brow}")
 
     print("\n==== net points and regret vs the hindsight optimum (mean over seeds) ====")
@@ -283,16 +296,23 @@ def _selftest() -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--run-dir", default=str(RUN_DIR),
+                    help="model-specific run directory (default: Haiku surface)")
+    ap.add_argument("--seeds", type=int, nargs="+", default=list(CANONICAL_SEEDS))
+    ap.add_argument("--budgets", type=int, nargs="+", default=list(BUDGETS))
+    ap.add_argument("--framings", nargs="+", choices=list(FRAMINGS), default=list(FRAMINGS))
     ap.add_argument("--charges", type=int, nargs="+", default=[0, 10, 20, 24],
                     help="charges to analyze; default folds in the K=10 wait cell (spec §7)")
-    ap.add_argument("--json-out", default=str(RUN_DIR / "analysis.json"))
+    ap.add_argument("--json-out", default=None)
     args = ap.parse_known_args()[0]
+    RUN_DIR = Path(args.run_dir)
     if args.selftest:
         _selftest()
     else:
-        summary = analyze_all(charges=tuple(args.charges))
+        summary = analyze_all(seeds=tuple(args.seeds), charges=tuple(args.charges),
+                              budgets=tuple(args.budgets), framings=tuple(args.framings))
         print_report(summary)
-        out = Path(args.json_out)
+        out = Path(args.json_out) if args.json_out else RUN_DIR / "analysis.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(summary, indent=2))
         print(f"\nwrote machine-readable summary -> {out}")

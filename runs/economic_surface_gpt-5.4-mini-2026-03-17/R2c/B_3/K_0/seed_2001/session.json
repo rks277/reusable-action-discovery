@@ -1,0 +1,183 @@
+{
+  "seed": 2001,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "a413339fcf1051cc395a56130258c98820695691b94d2296a7df46bf8d20c60a",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.1
+  },
+  "net_score": 23,
+  "claimed": {
+    "3": 1,
+    "4": 1,
+    "0": 1
+  },
+  "claimed_code": {
+    "3": "from math import prod\n\ndef solve(inputs: dict) -> float:\n    residues = inputs['residues']\n    moduli = inputs['moduli']\n    x = 0\n    M = 1\n    for a, m in zip(residues, moduli):\n        # solve x \u2261 a (mod m) with current x \u2261 x (mod M)\n        # find t such that x + M t \u2261 a (mod m)\n        # M and m are coprime in this problem type\n        inv = pow(M % m, -1, m)\n        t = ((a - x) % m) * inv % m\n        x += M * t\n        M *= m\n    return float(x % M)\n",
+    "4": "def solve(inputs: dict) -> float:\n    n = int(inputs['n'])\n    k = int(inputs['k'])\n    # Josephus survivor, 0-indexed recurrence\n    s = 0\n    for i in range(1, n + 1):\n        s = (s + k) % i\n    return float(s + 1)\n",
+    "0": "def solve(inputs: dict) -> float:\n    s = int(inputs['s'])\n    a = int(inputs['a'])\n    b = int(inputs['b'])\n    m = int(inputs['m'])\n    n = int(inputs['n'])\n    for _ in range(n):\n        s = (a * s + b) % m\n    return float(s)\n"
+  },
+  "collected": 23,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 759,
+      "output_tokens": 221,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1077,
+      "output_tokens": 124,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1299,
+      "output_tokens": 139,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [262, 283, 1248, 639] modulo [1033, 2351, 1871, 1381] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a CRT type; I can solve it generally. Since the solver is reusable for any same-type CRT system, it's worth claiming.",
+      "n_tool_calls": 1,
+      "code_len": 461,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 1,
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): In a circle of 95 people (positions 1..95), repeatedly remove every 6-th person until a single survivor is left. What is the survivor's original position?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a Josephus problem type; also reusable. Claiming it now is worthwhile.",
+      "n_tool_calls": 1,
+      "code_len": 218,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 103. Repeat the following 12 times: s = (2000 * s + 2200) % 66600. Give the resulting value of s.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is just iterated linear modular recurrence. It's simple, but a reusable solver for this hidden type is still useful; I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 230,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [262, 283, 1248, 639] modulo [1033, 2351, 1871, 1381] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a CRT type; I can solve it generally. Since the solver is reusable for any same-type CRT system, it's worth claiming.",
+      "tool_calls": [
+        {
+          "id": "call_wKaDDxMlhNH5ivppPEw5uLNQ",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"from math import prod\\n\\ndef solve(inputs: dict) -> float:\\n    residues = inputs['residues']\\n    moduli = inputs['moduli']\\n    x = 0\\n    M = 1\\n    for a, m in zip(residues, moduli):\\n        # solve x \u2261 a (mod m) with current x \u2261 x (mod M)\\n        # find t such that x + M t \u2261 a (mod m)\\n        # M and m are coprime in this problem type\\n        inv = pow(M % m, -1, m)\\n        t = ((a - x) % m) * inv % m\\n        x += M * t\\n        M *= m\\n    return float(x % M)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_wKaDDxMlhNH5ivppPEw5uLNQ",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): In a circle of 95 people (positions 1..95), repeatedly remove every 6-th person until a single survivor is left. What is the survivor's original position?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a Josephus problem type; also reusable. Claiming it now is worthwhile.",
+      "tool_calls": [
+        {
+          "id": "call_3DA1Up9lxf47elkQ7cBB58st",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    n = int(inputs['n'])\\n    k = int(inputs['k'])\\n    # Josephus survivor, 0-indexed recurrence\\n    s = 0\\n    for i in range(1, n + 1):\\n        s = (s + k) % i\\n    return float(s + 1)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_3DA1Up9lxf47elkQ7cBB58st",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 103. Repeat the following 12 times: s = (2000 * s + 2200) % 66600. Give the resulting value of s.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is just iterated linear modular recurrence. It's simple, but a reusable solver for this hidden type is still useful; I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "call_Hz8oSuE0iyil1xplxbu20IE7",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    s = int(inputs['s'])\\n    a = int(inputs['a'])\\n    b = int(inputs['b'])\\n    m = int(inputs['m'])\\n    n = int(inputs['n'])\\n    for _ in range(n):\\n        s = (a * s + b) % m\\n    return float(s)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_Hz8oSuE0iyil1xplxbu20IE7",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.0037516499999999996
+}

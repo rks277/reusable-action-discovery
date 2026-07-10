@@ -1,0 +1,269 @@
+{
+  "seed": 2000,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "61460bfbea72b8a5be2ed7f64a07eb910a9d7f9ecee3bb5e941b8a122372f018",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.5
+  },
+  "net_score": 23,
+  "claimed": {
+    "6": 1,
+    "0": 1,
+    "7": 1
+  },
+  "claimed_code": {
+    "6": "def solve(inputs: dict) -> float:\n    X = int(inputs['X']) & 0xFFFFFFFF\n    n = int(inputs.get('n', 14))\n    for _ in range(n):\n        X ^= (X << 11) & 0xFFFFFFFF\n        X &= 0xFFFFFFFF\n        X ^= (X >> 9)\n        X &= 0xFFFFFFFF\n        X ^= (X << 17) & 0xFFFFFFFF\n        X &= 0xFFFFFFFF\n    return float(X)",
+    "0": "def solve(inputs: dict) -> float:\n    s = int(inputs['s'])\n    a = int(inputs.get('a', 2400))\n    b = int(inputs.get('b', 1200))\n    m = int(inputs.get('m', 62700))\n    n = int(inputs.get('n', 8))\n    for _ in range(n):\n        s = (a * s + b) % m\n    return float(s)",
+    "7": "def solve(inputs: dict) -> float:\n    mod = int(inputs.get('mod', 644219))\n    M = inputs['M']\n    n = int(inputs.get('n', 36))\n    A = [[int(M[0][0]) % mod, int(M[0][1]) % mod], [int(M[1][0]) % mod, int(M[1][1]) % mod]]\n    R = [[1,0],[0,1]]\n    def mul(X,Y):\n        return [[(X[0][0]*Y[0][0] + X[0][1]*Y[1][0]) % mod, (X[0][0]*Y[0][1] + X[0][1]*Y[1][1]) % mod],\n                [(X[1][0]*Y[0][0] + X[1][1]*Y[1][0]) % mod, (X[1][0]*Y[0][1] + X[1][1]*Y[1][1]) % mod]]\n    while n:\n        if n & 1:\n            R = mul(R, A)\n        A = mul(A, A)\n        n >>= 1\n    return float((R[0][0] + R[0][1] + R[1][0] + R[1][1]) % mod)"
+  },
+  "collected": 23,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 764,
+      "output_tokens": 164,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1026,
+      "output_tokens": 147,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1278,
+      "output_tokens": 47,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1430,
+      "output_tokens": 37,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1584,
+      "output_tokens": 350,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 32586213. Repeat 14 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a standalone arithmetic/bitwise recurrence, likely reusable as a general solver for this exact type. I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 313,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 1,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 141. Repeat the following 8 times: s = (2400 * s + 1200) % 62700. Give the resulting value of s.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a different arithmetic recurrence and likely a solvable family. I'll claim it too.",
+      "n_tool_calls": 1,
+      "code_len": 267,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): 168 people stand in a circle numbered 1..168. Counting around the circle, every 6-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "I should save the last claim for a more broadly useful or more frequent type; this is just a Josephus instance. I'll skip.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 3,
+      "class_id": 4,
+      "class_position": 2,
+      "prompt": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): 144 people stand in a circle numbered 1..144. Counting around the circle, every 4-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "Another Josephus variant; still not worth spending the last claim this early. Skip.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 4,
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[4, 18], [5, 3]]. Compute M raised to the power 36 (the product of exactly 36 copies of M), reducing every entry modulo 644219 throughout, and report the sum of the four entries of M^36.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "Matrix-power modular arithmetic is a reusable type; I'll claim the solver now.",
+      "n_tool_calls": 1,
+      "code_len": 627,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 32586213. Repeat 14 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a standalone arithmetic/bitwise recurrence, likely reusable as a general solver for this exact type. I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "call_lao7QPkJVSwKOwE46WKH6iuV",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    X = int(inputs['X']) & 0xFFFFFFFF\\n    n = int(inputs.get('n', 14))\\n    for _ in range(n):\\n        X ^= (X << 11) & 0xFFFFFFFF\\n        X &= 0xFFFFFFFF\\n        X ^= (X >> 9)\\n        X &= 0xFFFFFFFF\\n        X ^= (X << 17) & 0xFFFFFFFF\\n        X &= 0xFFFFFFFF\\n    return float(X)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_lao7QPkJVSwKOwE46WKH6iuV",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 141. Repeat the following 8 times: s = (2400 * s + 1200) % 62700. Give the resulting value of s.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a different arithmetic recurrence and likely a solvable family. I'll claim it too.",
+      "tool_calls": [
+        {
+          "id": "call_QIGltNJ3cGO56iwLBj7yGYHq",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    s = int(inputs['s'])\\n    a = int(inputs.get('a', 2400))\\n    b = int(inputs.get('b', 1200))\\n    m = int(inputs.get('m', 62700))\\n    n = int(inputs.get('n', 8))\\n    for _ in range(n):\\n        s = (a * s + b) % m\\n    return float(s)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_QIGltNJ3cGO56iwLBj7yGYHq",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): 168 people stand in a circle numbered 1..168. Counting around the circle, every 6-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I should save the last claim for a more broadly useful or more frequent type; this is just a Josephus instance. I'll skip.",
+      "tool_calls": [
+        {
+          "id": "call_uAHbTAlir6eGRtj4uCUxNVd7",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_uAHbTAlir6eGRtj4uCUxNVd7",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): 144 people stand in a circle numbered 1..144. Counting around the circle, every 4-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Another Josephus variant; still not worth spending the last claim this early. Skip.",
+      "tool_calls": [
+        {
+          "id": "call_UMIqTb7Hn4lBt6mPcihgtCaT",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_UMIqTb7Hn4lBt6mPcihgtCaT",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[4, 18], [5, 3]]. Compute M raised to the power 36 (the product of exactly 36 copies of M), reducing every entry modulo 644219 throughout, and report the sum of the four entries of M^36.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Matrix-power modular arithmetic is a reusable type; I'll claim the solver now.",
+      "tool_calls": [
+        {
+          "id": "call_kUholsy9EHdAyCr3PrdXKPSq",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    mod = int(inputs.get('mod', 644219))\\n    M = inputs['M']\\n    n = int(inputs.get('n', 36))\\n    A = [[int(M[0][0]) % mod, int(M[0][1]) % mod], [int(M[1][0]) % mod, int(M[1][1]) % mod]]\\n    R = [[1,0],[0,1]]\\n    def mul(X,Y):\\n        return [[(X[0][0]*Y[0][0] + X[0][1]*Y[1][0]) % mod, (X[0][0]*Y[0][1] + X[0][1]*Y[1][1]) % mod],\\n                [(X[1][0]*Y[0][0] + X[1][1]*Y[1][0]) % mod, (X[1][0]*Y[0][1] + X[1][1]*Y[1][1]) % mod]]\\n    while n:\\n        if n & 1:\\n            R = mul(R, A)\\n        A = mul(A, A)\\n        n >>= 1\\n    return float((R[0][0] + R[0][1] + R[1][0] + R[1][1]) % mod)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_kUholsy9EHdAyCr3PrdXKPSq",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.007136400000000001
+}

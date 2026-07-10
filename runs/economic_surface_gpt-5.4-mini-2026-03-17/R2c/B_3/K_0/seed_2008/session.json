@@ -1,0 +1,312 @@
+{
+  "seed": 2008,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "74684270f4153896a043b53f259a20afee7df0d7039fe23d21d3988fb8e308b6",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.1
+  },
+  "net_score": 26,
+  "claimed": {
+    "3": 1,
+    "0": 1,
+    "1": 1
+  },
+  "claimed_code": {
+    "3": "from math import prod\n\ndef solve(inputs: dict) -> float:\n    # Expect inputs with 'residues' and 'moduli', or analogous keys.\n    residues = inputs.get('residues', inputs.get('a', inputs.get('r')))\n    moduli = inputs.get('moduli', inputs.get('m', inputs.get('n')))\n    if residues is None or moduli is None:\n        # Try a few common structured fallbacks\n        if len(inputs) == 2:\n            vals = list(inputs.values())\n            residues, moduli = vals[0], vals[1]\n        else:\n            raise ValueError('Missing residues/moduli')\n    residues = list(map(int, residues))\n    moduli = list(map(int, moduli))\n\n    M = 1\n    for m in moduli:\n        M *= m\n\n    x = 0\n    for a_i, m_i in zip(residues, moduli):\n        M_i = M // m_i\n        inv = pow(M_i, -1, m_i)\n        x = (x + a_i * M_i * inv) % M\n    return float(x)\n",
+    "0": "def solve(inputs: dict) -> float:\n    # Generic solver for affine recurrence iterations modulo m.\n    # Expected keys: s0, a, b, m, n (or close variants).\n    s = inputs.get('s0', inputs.get('s'))\n    a = inputs.get('a')\n    b = inputs.get('b')\n    m = inputs.get('m', inputs.get('mod'))\n    n = inputs.get('n', inputs.get('steps', inputs.get('k')))\n    if None in (s, a, b, m, n):\n        # fallback for positional-like dicts\n        vals = list(inputs.values())\n        if len(vals) >= 5:\n            s, a, b, m, n = vals[:5]\n        else:\n            raise ValueError('Missing parameters')\n    s = int(s); a = int(a); b = int(b); m = int(m); n = int(n)\n    for _ in range(n):\n        s = (a * s + b) % m\n    return float(s)\n",
+    "1": "def solve(inputs: dict) -> float:\n    # Generic modular exponentiation solver.\n    # Expected keys: base/g, exponent/x, modulus/p or mod.\n    base = inputs.get('base', inputs.get('g', inputs.get('a')))\n    exp = inputs.get('exp', inputs.get('x', inputs.get('e')))\n    mod = inputs.get('mod', inputs.get('p', inputs.get('m')))\n    if None in (base, exp, mod):\n        vals = list(inputs.values())\n        if len(vals) >= 3:\n            base, exp, mod = vals[:3]\n        else:\n            raise ValueError('Missing parameters')\n    return float(pow(int(base), int(exp), int(mod)))\n"
+  },
+  "collected": 26,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 756,
+      "output_tokens": 308,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1193,
+      "output_tokens": 37,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1347,
+      "output_tokens": 49,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1525,
+      "output_tokens": 59,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1681,
+      "output_tokens": 294,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2071,
+      "output_tokens": 206,
+      "cache_read_tokens": 1664,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [2565, 387, 866, 105] modulo [2909, 811, 977, 467] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a CRT system; worth claiming because it likely recurs as the same type.",
+      "n_tool_calls": 1,
+      "code_len": 835,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 1,
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Compute the matrix power M^39 mod 900570 for M = [[27, 19], [25, 33]] (i.e. M multiplied together 39 times: M^1 = M, M^2 = M*M, ..., taking mod 900570 throughout); give the sum of the entries of the result.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "Matrix exponentiation is a different type; I'll skip for now to conserve solver claims.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 7,
+      "class_position": 2,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[9, 23], [34, 37]]. Compute M raised to the power 38 (the product of exactly 38 copies of M), reducing every entry modulo 444658 throughout, and report the sum of the four entries of M^38.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "Same matrix-power type as problem 2, but a solver can only be claimed once per type and I don't yet have it. I'll skip.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 3,
+      "class_id": 7,
+      "class_position": 3,
+      "prompt": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Compute the matrix power M^43 mod 859609 for M = [[40, 33], [17, 39]] (i.e. M multiplied together 43 times: M^1 = M, M^2 = M*M, ..., taking mod 859609 throughout); give the sum of the entries of the result.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "Still the same matrix-exponentiation family. Since I already skipped this type before, claiming now wouldn't help future instances if I don't have the type identified as claimable through an example. Skip.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 4,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 98. Repeat the following 9 times: s = (700 * s + 2500) % 112700. Give the resulting value of s.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a linear recurrence modulo type, distinct from the prior ones. I should claim because the hidden type seems computational and likely reusable.",
+      "n_tool_calls": 1,
+      "code_len": 727,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 5,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): A key-exchange step needs g^x mod p with g = 875815, x = 16, and p = 472325. What is the result?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "Modular exponentiation is another recurring numeric type; I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 579,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [2565, 387, 866, 105] modulo [2909, 811, 977, 467] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a CRT system; worth claiming because it likely recurs as the same type.",
+      "tool_calls": [
+        {
+          "id": "call_rlb74M1KRGqVRhdJ5jzgxruK",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"from math import prod\\n\\ndef solve(inputs: dict) -> float:\\n    # Expect inputs with 'residues' and 'moduli', or analogous keys.\\n    residues = inputs.get('residues', inputs.get('a', inputs.get('r')))\\n    moduli = inputs.get('moduli', inputs.get('m', inputs.get('n')))\\n    if residues is None or moduli is None:\\n        # Try a few common structured fallbacks\\n        if len(inputs) == 2:\\n            vals = list(inputs.values())\\n            residues, moduli = vals[0], vals[1]\\n        else:\\n            raise ValueError('Missing residues/moduli')\\n    residues = list(map(int, residues))\\n    moduli = list(map(int, moduli))\\n\\n    M = 1\\n    for m in moduli:\\n        M *= m\\n\\n    x = 0\\n    for a_i, m_i in zip(residues, moduli):\\n        M_i = M // m_i\\n        inv = pow(M_i, -1, m_i)\\n        x = (x + a_i * M_i * inv) % M\\n    return float(x)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_rlb74M1KRGqVRhdJ5jzgxruK",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Compute the matrix power M^39 mod 900570 for M = [[27, 19], [25, 33]] (i.e. M multiplied together 39 times: M^1 = M, M^2 = M*M, ..., taking mod 900570 throughout); give the sum of the entries of the result.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Matrix exponentiation is a different type; I'll skip for now to conserve solver claims.",
+      "tool_calls": [
+        {
+          "id": "call_fhQZ3ghxkLOpkRyZDqECrXKl",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_fhQZ3ghxkLOpkRyZDqECrXKl",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[9, 23], [34, 37]]. Compute M raised to the power 38 (the product of exactly 38 copies of M), reducing every entry modulo 444658 throughout, and report the sum of the four entries of M^38.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Same matrix-power type as problem 2, but a solver can only be claimed once per type and I don't yet have it. I'll skip.",
+      "tool_calls": [
+        {
+          "id": "call_CxpepYF5f1BLRttgZAUETjb7",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_CxpepYF5f1BLRttgZAUETjb7",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Compute the matrix power M^43 mod 859609 for M = [[40, 33], [17, 39]] (i.e. M multiplied together 43 times: M^1 = M, M^2 = M*M, ..., taking mod 859609 throughout); give the sum of the entries of the result.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Still the same matrix-exponentiation family. Since I already skipped this type before, claiming now wouldn't help future instances if I don't have the type identified as claimable through an example. Skip.",
+      "tool_calls": [
+        {
+          "id": "call_Di5vXddliSPH5DOqlYMOxDmi",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_Di5vXddliSPH5DOqlYMOxDmi",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): Initialize s = 98. Repeat the following 9 times: s = (700 * s + 2500) % 112700. Give the resulting value of s.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a linear recurrence modulo type, distinct from the prior ones. I should claim because the hidden type seems computational and likely reusable.",
+      "tool_calls": [
+        {
+          "id": "call_znDz9Uxctx5Z2Wu3eWxzCpE6",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Generic solver for affine recurrence iterations modulo m.\\n    # Expected keys: s0, a, b, m, n (or close variants).\\n    s = inputs.get('s0', inputs.get('s'))\\n    a = inputs.get('a')\\n    b = inputs.get('b')\\n    m = inputs.get('m', inputs.get('mod'))\\n    n = inputs.get('n', inputs.get('steps', inputs.get('k')))\\n    if None in (s, a, b, m, n):\\n        # fallback for positional-like dicts\\n        vals = list(inputs.values())\\n        if len(vals) >= 5:\\n            s, a, b, m, n = vals[:5]\\n        else:\\n            raise ValueError('Missing parameters')\\n    s = int(s); a = int(a); b = int(b); m = int(m); n = int(n)\\n    for _ in range(n):\\n        s = (a * s + b) % m\\n    return float(s)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_znDz9Uxctx5Z2Wu3eWxzCpE6",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): A key-exchange step needs g^x mod p with g = 875815, x = 16, and p = 472325. What is the result?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Modular exponentiation is another recurring numeric type; I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "call_xj1JbJurRG0yCqRuUbKWFFsF",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Generic modular exponentiation solver.\\n    # Expected keys: base/g, exponent/x, modulus/p or mod.\\n    base = inputs.get('base', inputs.get('g', inputs.get('a')))\\n    exp = inputs.get('exp', inputs.get('x', inputs.get('e')))\\n    mod = inputs.get('mod', inputs.get('p', inputs.get('m')))\\n    if None in (base, exp, mod):\\n        vals = list(inputs.values())\\n        if len(vals) >= 3:\\n            base, exp, mod = vals[:3]\\n        else:\\n            raise ValueError('Missing parameters')\\n    return float(pow(int(base), int(exp), int(mod)))\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_xj1JbJurRG0yCqRuUbKWFFsF",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.0072622500000000005
+}

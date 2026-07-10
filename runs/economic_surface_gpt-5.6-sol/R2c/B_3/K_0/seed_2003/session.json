@@ -1,0 +1,312 @@
+{
+  "seed": 2003,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.6-sol",
+  "resolved_model": "gpt-5.6-sol",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.6-sol",
+    "resolved_model": "gpt-5.6-sol",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "673eab5734ac03f019726bb81ce510998268ca572dedeb00da4a875654dbf6b2",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 5.0,
+    "unit_cap_usd": 0.5
+  },
+  "net_score": 48,
+  "claimed": {
+    "7": 1,
+    "0": 1,
+    "3": 2
+  },
+  "claimed_code": {
+    "7": "def solve(inputs: dict) -> float:\n    # Expected inputs contain a 2x2 matrix, an exponent, and a modulus.\n    def pick(*names):\n        for name in names:\n            if name in inputs:\n                return inputs[name]\n        return None\n\n    M = pick('M', 'matrix', 'mat', 'A')\n    exponent = pick('power', 'exponent', 'exp', 'n', 'p')\n    modulus = pick('modulus', 'mod', 'm')\n\n    if M is None:\n        # Also support separate scalar matrix entries.\n        a = pick('a', 'm00')\n        b = pick('b', 'm01')\n        c = pick('c', 'm10')\n        d = pick('d', 'm11')\n        M = [[a, b], [c, d]]\n    if exponent is None or modulus is None:\n        raise ValueError('Missing exponent or modulus')\n\n    modulus = int(modulus)\n    exponent = int(exponent)\n    base = [[int(M[0][0]) % modulus, int(M[0][1]) % modulus],\n            [int(M[1][0]) % modulus, int(M[1][1]) % modulus]]\n    result = [[1 % modulus, 0], [0, 1 % modulus]]\n\n    def mul(X, Y):\n        return [[(X[0][0] * Y[0][0] + X[0][1] * Y[1][0]) % modulus,\n                 (X[0][0] * Y[0][1] + X[0][1] * Y[1][1]) % modulus],\n                [(X[1][0] * Y[0][0] + X[1][1] * Y[1][0]) % modulus,\n                 (X[1][0] * Y[0][1] + X[1][1] * Y[1][1]) % modulus]]\n\n    while exponent:\n        if exponent & 1:\n            result = mul(result, base)\n        base = mul(base, base)\n        exponent >>= 1\n\n    return float(sum(result[0]) + sum(result[1]))",
+    "0": "def solve(inputs: dict) -> float:\n    # Iterated affine congruential update: X <- (a*X + c) mod m, repeated n times.\n    def pick(*names):\n        for name in names:\n            if name in inputs:\n                return inputs[name]\n        return None\n\n    x = pick('X', 'x', 'initial', 'start', 'x0')\n    a = pick('a', 'multiplier', 'mult')\n    c = pick('c', 'increment', 'addend', 'b')\n    m = pick('m', 'mod', 'modulus')\n    n = pick('n', 'times', 'iterations', 'updates', 'count')\n    if any(v is None for v in (x, a, c, m, n)):\n        raise ValueError('Missing affine recurrence parameter')\n\n    x, a, c, m, n = map(int, (x, a, c, m, n))\n    x %= m\n    a %= m\n    c %= m\n\n    # Compose affine maps. A pair (u, v) denotes z -> u*z + v (mod m).\n    result_u, result_v = 1 % m, 0\n    base_u, base_v = a, c\n    while n:\n        if n & 1:\n            result_u, result_v = (base_u * result_u) % m, (base_u * result_v + base_v) % m\n        base_u, base_v = (base_u * base_u) % m, (base_u * base_v + base_v) % m\n        n >>= 1\n    return float((result_u * x + result_v) % m)",
+    "3": "def solve(inputs: dict) -> float:\n    # Chinese remainder theorem for pairwise-coprime moduli.\n    def pick(*names):\n        for name in names:\n            if name in inputs:\n                return inputs[name]\n        return None\n\n    residues = pick('residues', 'remainders', 'a', 'r', 'values')\n    moduli = pick('moduli', 'mods', 'm')\n    if residues is None or moduli is None:\n        # Optionally accept a list of (residue, modulus) congruences.\n        pairs = pick('congruences', 'pairs')\n        if pairs is None:\n            raise ValueError('Missing residues or moduli')\n        residues = [p[0] for p in pairs]\n        moduli = [p[1] for p in pairs]\n\n    if len(residues) != len(moduli):\n        raise ValueError('Mismatched residue and modulus counts')\n\n    x, combined_modulus = 0, 1\n    for residue, modulus in zip(residues, moduli):\n        residue, modulus = int(residue), int(modulus)\n        if modulus <= 0:\n            raise ValueError('Moduli must be positive')\n        # Solve x + combined_modulus*k == residue (mod modulus).\n        k = ((residue - x) * pow(combined_modulus, -1, modulus)) % modulus\n        x += combined_modulus * k\n        combined_modulus *= modulus\n        x %= combined_modulus\n    return float(x)"
+  },
+  "collected": 48,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 753,
+      "output_tokens": 530,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1440,
+      "output_tokens": 13,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1440,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1558,
+      "output_tokens": 403,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2081,
+      "output_tokens": 13,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1202,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2242,
+      "output_tokens": 13,
+      "cache_read_tokens": 1703,
+      "cache_write_tokens": 161,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2404,
+      "output_tokens": 372,
+      "cache_read_tokens": 1703,
+      "cache_write_tokens": 162,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[3, 14], [12, 13]]. Compute M raised to the power 29 (the product of exactly 29 copies of M), reducing every entry modulo 695754 throughout, and report the sum of the four entries of M^29.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 1416,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 2,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 2: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 4048929619. Repeat 14 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 3,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): A register starts at X = 290. It is updated 9 times; each update replaces X with ((1200 * X) + 1200) mod 111300. Report the final value of X.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 1074,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 5,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 5: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): Compute 298606 raised to the power 30, modulo 178291 (the remainder when 298606^30 is divided by 178291).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 7,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 7: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 8 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [406, 140, 19, 165] modulo [1777, 157, 1871, 193] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 9,
+      "class_id": 3,
+      "class_position": 2,
+      "prompt": "(Since your last choice: problem 9: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 10 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [1530, 111, 184, 970] modulo [1801, 193, 853, 1871] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 1243,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[3, 14], [12, 13]]. Compute M raised to the power 29 (the product of exactly 29 copies of M), reducing every entry modulo 695754 throughout, and report the sum of the four entries of M^29.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_ysdjMpioPObbrnnOJxh15i7m",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Expected inputs contain a 2x2 matrix, an exponent, and a modulus.\\n    def pick(*names):\\n        for name in names:\\n            if name in inputs:\\n                return inputs[name]\\n        return None\\n\\n    M = pick('M', 'matrix', 'mat', 'A')\\n    exponent = pick('power', 'exponent', 'exp', 'n', 'p')\\n    modulus = pick('modulus', 'mod', 'm')\\n\\n    if M is None:\\n        # Also support separate scalar matrix entries.\\n        a = pick('a', 'm00')\\n        b = pick('b', 'm01')\\n        c = pick('c', 'm10')\\n        d = pick('d', 'm11')\\n        M = [[a, b], [c, d]]\\n    if exponent is None or modulus is None:\\n        raise ValueError('Missing exponent or modulus')\\n\\n    modulus = int(modulus)\\n    exponent = int(exponent)\\n    base = [[int(M[0][0]) % modulus, int(M[0][1]) % modulus],\\n            [int(M[1][0]) % modulus, int(M[1][1]) % modulus]]\\n    result = [[1 % modulus, 0], [0, 1 % modulus]]\\n\\n    def mul(X, Y):\\n        return [[(X[0][0] * Y[0][0] + X[0][1] * Y[1][0]) % modulus,\\n                 (X[0][0] * Y[0][1] + X[0][1] * Y[1][1]) % modulus],\\n                [(X[1][0] * Y[0][0] + X[1][1] * Y[1][0]) % modulus,\\n                 (X[1][0] * Y[0][1] + X[1][1] * Y[1][1]) % modulus]]\\n\\n    while exponent:\\n        if exponent & 1:\\n            result = mul(result, base)\\n        base = mul(base, base)\\n        exponent >>= 1\\n\\n    return float(sum(result[0]) + sum(result[1]))\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_ysdjMpioPObbrnnOJxh15i7m",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 2: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 4048929619. Repeat 14 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_lAHU21KQEIMypZZxouX4inth",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_lAHU21KQEIMypZZxouX4inth",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): A register starts at X = 290. It is updated 9 times; each update replaces X with ((1200 * X) + 1200) mod 111300. Report the final value of X.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_Ooxm51gzhFzRGo1sKLTldQUH",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Iterated affine congruential update: X <- (a*X + c) mod m, repeated n times.\\n    def pick(*names):\\n        for name in names:\\n            if name in inputs:\\n                return inputs[name]\\n        return None\\n\\n    x = pick('X', 'x', 'initial', 'start', 'x0')\\n    a = pick('a', 'multiplier', 'mult')\\n    c = pick('c', 'increment', 'addend', 'b')\\n    m = pick('m', 'mod', 'modulus')\\n    n = pick('n', 'times', 'iterations', 'updates', 'count')\\n    if any(v is None for v in (x, a, c, m, n)):\\n        raise ValueError('Missing affine recurrence parameter')\\n\\n    x, a, c, m, n = map(int, (x, a, c, m, n))\\n    x %= m\\n    a %= m\\n    c %= m\\n\\n    # Compose affine maps. A pair (u, v) denotes z -> u*z + v (mod m).\\n    result_u, result_v = 1 % m, 0\\n    base_u, base_v = a, c\\n    while n:\\n        if n & 1:\\n            result_u, result_v = (base_u * result_u) % m, (base_u * result_v + base_v) % m\\n        base_u, base_v = (base_u * base_u) % m, (base_u * base_v + base_v) % m\\n        n >>= 1\\n    return float((result_u * x + result_v) % m)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_Ooxm51gzhFzRGo1sKLTldQUH",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 5: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 6 of 60 (put solving logic ONLY in the code argument, not this message): Compute 298606 raised to the power 30, modulo 178291 (the remainder when 298606^30 is divided by 178291).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_IFXrGoXRALaYb15oeHrM1eXG",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_IFXrGoXRALaYb15oeHrM1eXG",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 7: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 8 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [406, 140, 19, 165] modulo [1777, 157, 1871, 193] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_BcedwKrd7bzfUNFXAvQOWMsq",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_BcedwKrd7bzfUNFXAvQOWMsq",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 9: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 10 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [1530, 111, 184, 970] modulo [1801, 193, 853, 1871] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_LXZb05aejkT7jzrluvx0RM04",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Chinese remainder theorem for pairwise-coprime moduli.\\n    def pick(*names):\\n        for name in names:\\n            if name in inputs:\\n                return inputs[name]\\n        return None\\n\\n    residues = pick('residues', 'remainders', 'a', 'r', 'values')\\n    moduli = pick('moduli', 'mods', 'm')\\n    if residues is None or moduli is None:\\n        # Optionally accept a list of (residue, modulus) congruences.\\n        pairs = pick('congruences', 'pairs')\\n        if pairs is None:\\n            raise ValueError('Missing residues or moduli')\\n        residues = [p[0] for p in pairs]\\n        moduli = [p[1] for p in pairs]\\n\\n    if len(residues) != len(moduli):\\n        raise ValueError('Mismatched residue and modulus counts')\\n\\n    x, combined_modulus = 0, 1\\n    for residue, modulus in zip(residues, moduli):\\n        residue, modulus = int(residue), int(modulus)\\n        if modulus <= 0:\\n            raise ValueError('Moduli must be positive')\\n        # Solve x + combined_modulus*k == residue (mod modulus).\\n        k = ((residue - x) * pow(combined_modulus, -1, modulus)) % modulus\\n        x += combined_modulus * k\\n        combined_modulus *= modulus\\n        x %= combined_modulus\\n    return float(x)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_LXZb05aejkT7jzrluvx0RM04",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.6-sol"
+  ],
+  "actual_cost_usd": 0.08108924999999999
+}

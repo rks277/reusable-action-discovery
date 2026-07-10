@@ -17,11 +17,11 @@ forcing `"required"` on Anthropic was already found to suppress all of Haiku's d
   PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.run_economic_surface --selftest
 """
 from __future__ import annotations
-import argparse, asyncio, json
+import argparse, asyncio, hashlib, json
 from pathlib import Path
 from dotenv import load_dotenv
 
-from lomekwi.raw_chat import RawChat
+from lomekwi.raw_chat import RawChat, provider_for
 from scripts.creator.tool_disposition_benchmark.urn_common import N, T, VOCAB, render_system
 from scripts.creator.tool_disposition_benchmark.urn_session import run_episode
 from scripts.creator.tool_disposition_benchmark.claim_solver_code_session import (
@@ -39,28 +39,57 @@ _ap.add_argument("--model", default="haiku")
 _ap.add_argument("--conc", type=int, default=None, help="override concurrency")
 _ap.add_argument("--seeds", type=int, nargs="+", default=None, help="override seed list")
 _ap.add_argument("--temp", type=float, default=None)
-_ap.add_argument("--cap-usd", type=float, default=15.0, help="hard global spend cap (spec doc §5)")
+_ap.add_argument("--cap-usd", type=float, default=None,
+                 help="hard global spend cap; required explicitly for paid OpenAI runs")
+_ap.add_argument("--unit-cap-usd", type=float, default=None,
+                 help="per-session circuit breaker; required explicitly for paid OpenAI runs")
+_ap.add_argument("--expected-unit-usd", type=float, default=None,
+                 help="calibrated expected session cost; stop after a completed unit exceeds 1.5x")
+_ap.add_argument("--reasoning-effort", default="none",
+                 choices=["none", "low", "medium", "high", "xhigh"],
+                 help="fixed OpenAI reasoning effort, applied identically to R0 and R2c")
+_ap.add_argument("--tool-choice-r2c", default="auto", choices=["auto", "required"],
+                 help="R2c tool policy; GPT replication locks this to auto for Claude parity")
 _ap.add_argument("--cells", nargs="+", default=None,
                  help="restrict to specific cells, e.g. --cells R0:1:0 R2c:5:24 (framing:B:K)")
+_ap.add_argument("--dry-run", action="store_true",
+                 help="validate and print the resolved run plan without loading API clients or writing")
 _ap.add_argument("--selftest", action="store_true",
                  help="run deterministic mechanics/resume/stream-hash self-tests, no network calls.")
 _ARGS = _ap.parse_known_args()[0]
 MODEL_KEY = _ARGS.model
 MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)
-IS_LOCAL = MODEL_KEY not in CLAUDE
-TOOL_CHOICE_R2C = "required" if IS_LOCAL else "auto"     # same provider-conditional rule as every
-                                                          # other rung -- see module docstring.
+PROVIDER = provider_for(MODEL_STR)
+IS_LOCAL = PROVIDER in ("ollama", "vllm")
+TOOL_CHOICE_R2C = _ARGS.tool_choice_r2c
 _safe = MODEL_KEY.replace(":", "_").replace("/", "_")
+RUN_ROOT = Path(f"runs/economic_surface_{_safe}")
 
 SEEDS = tuple(_ARGS.seeds) if _ARGS.seeds else CANONICAL_SEEDS
-CAP_USD = _ARGS.cap_usd
+CAP_USD = _ARGS.cap_usd if _ARGS.cap_usd is not None else 15.0
+UNIT_CAP_USD = _ARGS.unit_cap_usd
+EXPECTED_UNIT_USD = _ARGS.expected_unit_usd
 EST = 0.10           # per-session spend-guard estimate; wait/never cells run closer to the full
                     # T=60 turns (budget never exhausts early), so this is deliberately higher than
                     # any single rung's own EST (`docs/framing-ladder-spec.md`'s cost-note history).
-CONC = _ARGS.conc if _ARGS.conc else (3 if IS_LOCAL else 6)
+CONC = _ARGS.conc if _ARGS.conc else (3 if IS_LOCAL else (1 if PROVIDER == "openai" else 6))
 _PRICES = {"haiku": (1.0, 5.0, 0.10, 1.25), "sonnet": (3.0, 15.0, 0.30, 3.75),
            "opus": (5.0, 25.0, 0.50, 6.25)}
-IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))
+_OPENAI_PRICES = {
+    # Official OpenAI prices on 2026-07-10, USD / 1M tokens.
+    "gpt-5.4-mini": {"input": 0.75, "cached": 0.075, "cache_write": 0.75,
+                     "output": 4.50},
+    "gpt-5.4-mini-2026-03-17": {"input": 0.75, "cached": 0.075,
+                                "cache_write": 0.75, "output": 4.50},
+    # >272K input tokens: 2x input and 1.5x output for the full request.
+    "gpt-5.6": {"input": 5.0, "cached": 0.50, "cache_write": 6.25, "output": 30.0,
+                "threshold": 272_000, "high_input": 10.0, "high_cached": 1.0,
+                "high_cache_write": 12.5, "high_output": 45.0},
+    "gpt-5.6-sol": {"input": 5.0, "cached": 0.50, "cache_write": 6.25,
+                    "output": 30.0,
+                    "threshold": 272_000, "high_input": 10.0, "high_cached": 1.0,
+                    "high_cache_write": 12.5, "high_output": 45.0},
+}
 
 
 def _parse_cells(specs: list[str] | None) -> tuple:
@@ -79,14 +108,79 @@ CELLS_TO_RUN = _parse_cells(_ARGS.cells)
 def base_dir(framing: str, B: int, K: int) -> Path:
     """`runs/economic_surface_<model>/<frame>/B_<B>/K_<K>/` -- matches
     `docs/economic-response-surface-spec.md` §3's artifact convention."""
-    return Path(f"runs/economic_surface_{_safe}") / framing / f"B_{B}" / f"K_{K}"
+    return RUN_ROOT / framing / f"B_{B}" / f"K_{K}"
+
+
+def _openai_cost(model: str, turn_usages) -> float:
+    price = _OPENAI_PRICES.get(model)
+    if price is None:
+        raise ValueError(f"no verified OpenAI pricing for {model!r}; refusing to report $0")
+    total = 0.0
+    for usage in turn_usages:
+        input_tokens = int(usage.get("input_tokens", 0))
+        cached_tokens = min(input_tokens, int(usage.get("cache_read_tokens", 0)))
+        cache_write_tokens = min(input_tokens - cached_tokens,
+                                 int(usage.get("cache_write_tokens", 0)))
+        uncached_tokens = input_tokens - cached_tokens - cache_write_tokens
+        output_tokens = int(usage.get("output_tokens", 0))
+        high = input_tokens > price.get("threshold", 10**30)
+        input_rate = price.get("high_input", price["input"]) if high else price["input"]
+        cached_rate = price.get("high_cached", price["cached"]) if high else price["cached"]
+        write_rate = (price.get("high_cache_write", price["cache_write"])
+                      if high else price["cache_write"])
+        output_rate = price.get("high_output", price["output"]) if high else price["output"]
+        # OpenAI input_tokens includes its cached subset; do not double-count it.
+        total += (uncached_tokens * input_rate + cached_tokens * cached_rate
+                  + cache_write_tokens * write_rate + output_tokens * output_rate) / 1e6
+    return total
 
 
 def cost_of(turn_usages):
-    return (sum(t.get("input_tokens", 0) for t in turn_usages) * IN
-            + sum(t.get("output_tokens", 0) for t in turn_usages) * OUT
-            + sum(t.get("cache_read_tokens", 0) for t in turn_usages) * CR
-            + sum(t.get("cache_write_tokens", 0) for t in turn_usages) * CW) / 1e6
+    if PROVIDER == "openai":
+        return _openai_cost(MODEL_STR, turn_usages)
+    if MODEL_KEY in _PRICES:
+        in_rate, out_rate, cache_read_rate, cache_write_rate = _PRICES[MODEL_KEY]
+        return (sum(t.get("input_tokens", 0) for t in turn_usages) * in_rate
+                + sum(t.get("output_tokens", 0) for t in turn_usages) * out_rate
+                + sum(t.get("cache_read_tokens", 0) for t in turn_usages) * cache_read_rate
+                + sum(t.get("cache_write_tokens", 0) for t in turn_usages) * cache_write_rate) / 1e6
+    if IS_LOCAL:
+        return 0.0
+    raise ValueError(f"no verified pricing for paid provider model {MODEL_STR!r}")
+
+
+def _validate_run_config() -> None:
+    if PROVIDER == "openai":
+        if MODEL_STR not in _OPENAI_PRICES:
+            raise ValueError(f"unknown OpenAI model/pricing {MODEL_STR!r}")
+        if _ARGS.cap_usd is None or UNIT_CAP_USD is None:
+            raise ValueError("paid OpenAI runs require explicit --cap-usd and --unit-cap-usd")
+        if CONC != 1:
+            raise ValueError("paid OpenAI runs are locked to --conc 1")
+        if TOOL_CHOICE_R2C != "auto":
+            raise ValueError("GPT R0/R2c preregistration locks --tool-choice-r2c auto")
+        if MODEL_STR in _OPENAI_PRICES and _ARGS.reasoning_effort != "none":
+            raise ValueError("GPT R0/R2c preregistration locks --reasoning-effort none so function "
+                             "tools work in Chat Completions and both arms share one setting")
+    if CAP_USD <= 0 or (UNIT_CAP_USD is not None and UNIT_CAP_USD <= 0):
+        raise ValueError("spend caps must be positive")
+    if UNIT_CAP_USD is not None and UNIT_CAP_USD > CAP_USD:
+        raise ValueError("--unit-cap-usd cannot exceed --cap-usd")
+
+
+def _sha256_json(value) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _stop_after_turn(turn_usages):
+    latest = turn_usages[-1] if turn_usages else {}
+    if not latest or sum(int(latest.get(k, 0)) for k in
+                         ("input_tokens", "output_tokens", "cache_read_tokens",
+                          "cache_write_tokens", "reasoning_tokens")) <= 0:
+        return "missing_usage"
+    if UNIT_CAP_USD is not None and cost_of(turn_usages) >= UNIT_CAP_USD:
+        return "unit_cap_usd"
+    return None
 
 
 def load_canonical_stream(seed: int) -> list[dict]:
@@ -116,23 +210,57 @@ async def run_one(client, model, framing: str, B: int, K: int, seed: int):
         vocab = VOCAB["ball"]
         system = render_system(T, B, N, ANNOUNCE_N, vocab=vocab, charge=K)
         row = await run_episode(client, model, slots, T=T, B=B, system=system,
-                                temperature=_ARGS.temp, palette=vocab["palette"], item=vocab["item"])
+                                temperature=_ARGS.temp, palette=vocab["palette"], item=vocab["item"],
+                                reasoning_effort=_ARGS.reasoning_effort,
+                                stop_after_turn=_stop_after_turn)
         row["tool_choice"] = None
     elif framing == "R2c":
         system = render_system_code_claim(T, B, N, ANNOUNCE_N, charge=K)
         row = await run_episode_code_claim(client, model, slots, T=T, B=B, system=system,
-                                           temperature=_ARGS.temp, tool_choice=TOOL_CHOICE_R2C)
+                                           temperature=_ARGS.temp, tool_choice=TOOL_CHOICE_R2C,
+                                           max_tokens=4000,
+                                           reasoning_effort=_ARGS.reasoning_effort,
+                                           stop_after_turn=_stop_after_turn)
         row["tool_choice"] = TOOL_CHOICE_R2C
     else:
         raise ValueError(f"unknown framing {framing!r}")
 
+    config = {
+        "requested_model": MODEL_KEY, "resolved_model": MODEL_STR, "provider": PROVIDER,
+        "framing": framing, "B": B, "K": K, "N": N, "T": T, "announce_n": ANNOUNCE_N,
+        "temperature": _ARGS.temp, "reasoning_effort": _ARGS.reasoning_effort,
+        "tool_choice": row["tool_choice"], "max_completion_tokens": 4000,
+        "stream_sha256": _sha256_json(slots), "system_prompt_sha256": _sha256_json(system),
+        "global_cap_usd": CAP_USD, "unit_cap_usd": UNIT_CAP_USD,
+    }
     row = {"seed": seed, "framing": framing, "B": B, "K": K, "model_key": MODEL_KEY,
-          "net_score": net_score(row, K), **row}
-    (d / "session.json").write_text(json.dumps(row, indent=2))
-    return cost_of(row["turn_usages"]), "ran"
+           "resolved_model": MODEL_STR, "provider": PROVIDER, "config": config,
+           "net_score": net_score(row, K), **row}
+    row["provider_response_models"] = sorted({
+        t["response_model"] for t in row["transcript"] if t.get("response_model")
+    })
+    cost = cost_of(row["turn_usages"])
+    row["actual_cost_usd"] = cost
+    (d / "config.json").write_text(json.dumps(config, indent=2))
+    if row["termination"] in ("budget_exhausted", "stream_complete"):
+        (d / "session.json").write_text(json.dumps(row, indent=2))
+        return cost, "ran"
+    (d / "partial_session.json").write_text(json.dumps(row, indent=2))
+    return cost, f"INVALID:{row['termination']}"
 
 
 async def main():
+    _validate_run_config()
+    if _ARGS.dry_run:
+        print(json.dumps({
+            "model": MODEL_KEY, "resolved_model": MODEL_STR, "provider": PROVIDER,
+            "cells": CELLS_TO_RUN, "seeds": SEEDS, "concurrency": CONC,
+            "cap_usd": CAP_USD, "unit_cap_usd": UNIT_CAP_USD,
+            "expected_unit_usd": EXPECTED_UNIT_USD,
+            "reasoning_effort": _ARGS.reasoning_effort,
+            "tool_choice_r2c": TOOL_CHOICE_R2C, "network_calls": 0,
+        }, indent=2))
+        return
     load_dotenv()
     model = MODEL_STR
     client = RawChat()
@@ -150,7 +278,8 @@ async def main():
                 framing, B, K, seed = UNITS[idx]
                 d = base_dir(framing, B, K) / f"seed_{seed}"
                 will_run = not (d / "session.json").exists()
-                if will_run and cumulative + (inflight + 1) * EST > CAP_USD:
+                reserve = UNIT_CAP_USD if UNIT_CAP_USD is not None else EST
+                if will_run and cumulative + (inflight + 1) * reserve > CAP_USD:
                     paused = True; return
                 idx += 1; inflight += 1
             try:
@@ -161,6 +290,19 @@ async def main():
                 inflight -= 1; cumulative += cost
                 print(f"  [{framing} B={B} K={K} seed={seed}] {status:>6}  ${cost:.3f}  "
                       f"cumulative=${cumulative:.2f}", flush=True)
+                if status.startswith("INVALID:"):
+                    paused = True
+                    print(f"  CIRCUIT BREAKER: seed {seed} ended {status}; no further units start",
+                          flush=True)
+                if status.startswith("ERR:"):
+                    paused = True
+                    print(f"  CIRCUIT BREAKER: seed {seed} raised {status}; charged usage may be "
+                          "incomplete, so no further units start", flush=True)
+                if (EXPECTED_UNIT_USD is not None and status == "ran"
+                        and cost > 1.5 * EXPECTED_UNIT_USD):
+                    paused = True
+                    print(f"  CIRCUIT BREAKER: ${cost:.3f} exceeds 1.5x calibrated "
+                          f"${EXPECTED_UNIT_USD:.3f}; no further units start", flush=True)
 
     print(f"ECONOMIC RESPONSE SURFACE: {MODEL_KEY}, {len(CELLS_TO_RUN)} cells x {len(SEEDS)} seeds "
           f"(cap=${CAP_USD}) ...", flush=True)
@@ -191,16 +333,32 @@ def _selftest():
     assert _parse_cells(None) == CELLS
     assert _parse_cells(["R0:1:0", "R2c:5:24"]) == (("R0", 1, 0), ("R2c", 5, 24))
 
-    # 4. resume: a fake completed session.json makes run_one report "cached" without touching the
-    #    client (pass None as client/model -- would raise AttributeError if it tried to call it).
+    # 4. OpenAI cached tokens are a subset of input, not an additive category.
+    usage = [{"input_tokens": 1_000_000, "cache_read_tokens": 500_000,
+              "output_tokens": 100_000}]
+    assert abs(_openai_cost("gpt-5.4-mini", usage) - 0.8625) < 1e-12
+    # GPT-5.6's >272K request breakpoint applies to the full request.
+    assert abs(_openai_cost("gpt-5.6-sol", usage) - 10.0) < 1e-12
+    write_usage = [{"input_tokens": 1_000_000, "cache_write_tokens": 500_000}]
+    assert abs(_openai_cost("gpt-5.6-sol", write_usage) - 11.25) < 1e-12
+    assert _stop_after_turn([{}]) == "missing_usage"
+
+    # 5. resume: isolate the fake artifact in a temporary directory. This must never write into or
+    #    delete the real runs/economic_surface_<model> directory.
     async def _check_resume():
-        d = base_dir("R0", 1, 0) / f"seed_{CANONICAL_SEEDS[0]}"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "session.json").write_text("{}")
-        cost, status = await run_one(None, None, "R0", 1, 0, CANONICAL_SEEDS[0])
-        assert (cost, status) == (0.0, "cached"), (cost, status)
-        import shutil
-        shutil.rmtree(Path(f"runs/economic_surface_{_safe}"), ignore_errors=True)
+        import tempfile
+        global RUN_ROOT
+        original_root = RUN_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                RUN_ROOT = Path(tmp) / "economic_surface_selftest"
+                d = base_dir("R0", 1, 0) / f"seed_{CANONICAL_SEEDS[0]}"
+                d.mkdir(parents=True, exist_ok=True)
+                (d / "session.json").write_text("{}")
+                cost, status = await run_one(None, None, "R0", 1, 0, CANONICAL_SEEDS[0])
+                assert (cost, status) == (0.0, "cached"), (cost, status)
+        finally:
+            RUN_ROOT = original_root
 
     asyncio.run(_check_resume())
 

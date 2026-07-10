@@ -55,6 +55,11 @@ def _provider_for(model: str) -> str:
     raise ValueError(f"cannot route model {model!r}")
 
 
+def provider_for(model: str) -> str:
+    """Public provider lookup for harness configuration and accounting."""
+    return _provider_for(model)
+
+
 class RawChat:
     """Lazily constructs one client per provider; reusable across calls."""
 
@@ -71,6 +76,7 @@ class RawChat:
         self._clients: dict[str, Any] = {}
         self.last_usage: dict | None = None  # set per chat() call; None on failure
         self.last_debug: dict | None = None  # set when a call returns empty text
+        self.last_response_model: str | None = None
 
     def _anthropic(self):
         if "anthropic" not in self._clients:
@@ -123,10 +129,12 @@ class RawChat:
             self.last_usage = None
 
     async def chat(self, model: str, system: str, messages: list[dict], max_tokens: int = 1200,
-                   temperature: float | None = None) -> str:
+                   temperature: float | None = None,
+                   reasoning_effort: str | None = None) -> str:
         prov = _provider_for(model)
         self.last_usage = None  # reset; stays None if the call/extraction fails
         self.last_debug = None
+        self.last_response_model = None
         # Reasoning models burn the budget on hidden reasoning -> empty visible
         # text at low caps. Give them headroom; keep reasoning "low" so they stay
         # comparable to the no-extended-thinking Anthropic runs.
@@ -153,6 +161,7 @@ class RawChat:
                 model=model, max_tokens=max_tokens, system=system, messages=cached,
             )
             u = getattr(resp, "usage", None)
+            self.last_response_model = getattr(resp, "model", None)
             self._set_usage(
                 input_tokens=getattr(u, "input_tokens", 0),
                 output_tokens=getattr(u, "output_tokens", 0),
@@ -186,8 +195,11 @@ class RawChat:
                 # accept this arg (400, not TypeError), so its branch omits it.
                 kwargs["reasoning_effort"] = "none"
             elif reasoning:
-                # default "low"; override per-run via OPENAI_REASONING_EFFORT (e.g. "minimal").
-                kwargs["reasoning_effort"] = os.environ.get("OPENAI_REASONING_EFFORT", "low")
+                # An explicit per-run value takes precedence; the environment remains the
+                # backwards-compatible default for existing callers.
+                kwargs["reasoning_effort"] = (
+                    reasoning_effort or os.environ.get("OPENAI_REASONING_EFFORT", "low")
+                )
             # GPT-5 family uses max_completion_tokens; be tolerant.
             try:
                 resp = await client.chat.completions.create(max_completion_tokens=max_tokens, **kwargs)
@@ -195,13 +207,17 @@ class RawChat:
                 kwargs.pop("reasoning_effort", None)
                 resp = await client.chat.completions.create(max_tokens=max_tokens, **kwargs)
             u = getattr(resp, "usage", None)
+            self.last_response_model = getattr(resp, "model", None)
             ptd = getattr(u, "prompt_tokens_details", None)
             ctd = getattr(u, "completion_tokens_details", None)
-            # OpenAI prompt_tokens INCLUDES cached_tokens; cache_write n/a (auto-cache).
+            # OpenAI prompt_tokens includes cached/read and cache-write subsets. Older SDKs omit
+            # cache-write detail; normalize that case to zero and price the remainder as uncached.
             self._set_usage(
                 input_tokens=getattr(u, "prompt_tokens", 0),
                 output_tokens=getattr(u, "completion_tokens", 0),
                 cache_read_tokens=getattr(ptd, "cached_tokens", 0),
+                cache_write_tokens=(getattr(ptd, "cache_write_tokens", 0)
+                                    or getattr(ptd, "cache_creation_tokens", 0)),
                 reasoning_tokens=getattr(ctd, "reasoning_tokens", 0),
             )
             return resp.choices[0].message.content or ""
@@ -245,7 +261,8 @@ class RawChat:
     async def chat_tools(self, model: str, system: str, messages: list[dict],
                          tools: list[dict], max_tokens: int = 1200,
                          tool_choice: str = "auto",
-                         temperature: float | None = None) -> ChatTurn:
+                         temperature: float | None = None,
+                         reasoning_effort: str | None = None) -> ChatTurn:
         """Tool-calling chat. `messages` are OpenAI-format (incl. assistant tool_calls and
         role="tool" results); translated to Anthropic blocks when needed. Sets last_usage
         identically to chat(). Returns a ChatTurn (.content, .tool_calls, .finish_reason).
@@ -255,6 +272,7 @@ class RawChat:
         prov = _provider_for(model)
         self.last_usage = None
         self.last_debug = None
+        self.last_response_model = None
 
         if prov in ("openai", "ollama", "vllm"):
             client = {"openai": self._openai, "ollama": self._ollama,
@@ -263,17 +281,28 @@ class RawChat:
             kwargs = dict(model=model, messages=oai_msgs, tools=tools, tool_choice=tool_choice)
             if temperature is not None:
                 kwargs["temperature"] = temperature
+            if prov == "openai" and _is_reasoning(model):
+                # Keep tool and text arms symmetric: GPT-5 reasoning consumes the completion
+                # budget before emitting a tool call, just as it does before visible text.
+                max_tokens = max(max_tokens, 4000)
+                kwargs["reasoning_effort"] = (
+                    reasoning_effort or os.environ.get("OPENAI_REASONING_EFFORT", "low")
+                )
             try:
                 resp = await client.chat.completions.create(max_completion_tokens=max_tokens, **kwargs)
             except TypeError:
+                kwargs.pop("reasoning_effort", None)
                 resp = await client.chat.completions.create(max_tokens=max_tokens, **kwargs)
             u = getattr(resp, "usage", None)
+            self.last_response_model = getattr(resp, "model", None)
             ptd = getattr(u, "prompt_tokens_details", None)
             ctd = getattr(u, "completion_tokens_details", None)
             self._set_usage(
                 input_tokens=getattr(u, "prompt_tokens", 0),
                 output_tokens=getattr(u, "completion_tokens", 0),
                 cache_read_tokens=getattr(ptd, "cached_tokens", 0),
+                cache_write_tokens=(getattr(ptd, "cache_write_tokens", 0)
+                                    or getattr(ptd, "cache_creation_tokens", 0)),
                 reasoning_tokens=getattr(ctd, "reasoning_tokens", 0),
             )
             choice = resp.choices[0]

@@ -225,7 +225,8 @@ def cost_of(turn_usages):
 
 async def run_episode_code_claim(client, model, slots: list[dict], *, T: int, B: int, system: str,
                                  temperature: float | None = None, tool_choice: str = "auto",
-                                 max_tokens: int = 2500) -> dict:
+                                 max_tokens: int = 2500, reasoning_effort: str | None = None,
+                                 stop_after_turn=None) -> dict:
     """Code-required analogue of `claim_solver_session.run_episode_claim` -- same per-draw loop
     shape (pending/auto-solve, budget decrement, transport retry-then-error), `resolve_code_claim_decision`
     instead of the shared zero-arg resolver, and an extra `claimed_code` return field (`class_id ->
@@ -237,6 +238,7 @@ async def run_episode_code_claim(client, model, slots: list[dict], *, T: int, B:
     claimed_code: dict[int, str] = {}
     unparsed = 0
     budget_left = B
+    safety_stop = None
     pending: list[int] = []
     for s in sorted(slots, key=lambda z: z["slot_index"]):
         cid, pos, n = s["class_id"], s["class_position"], s["slot_index"] + 1
@@ -256,14 +258,17 @@ async def run_episode_code_claim(client, model, slots: list[dict], *, T: int, B:
                 f"You have {budget_left} solver claim(s) left. Call claim_solver (with code) or "
                 f"skip_solver.")
         messages.append({"role": "user", "content": user})
+        chat_kwargs = {"max_tokens": max_tokens, "temperature": temperature,
+                       "tool_choice": tool_choice}
+        if reasoning_effort is not None:
+            chat_kwargs["reasoning_effort"] = reasoning_effort
         turn, exc = await call_with_retry(
-            lambda: client.chat_tools(model, system, messages, tools, max_tokens=max_tokens,
-                                      temperature=temperature, tool_choice=tool_choice))
+            lambda: client.chat_tools(model, system, messages, tools, **chat_kwargs))
         if exc is None:
             u = dict(client.last_usage or {})
         else:
             from lomekwi.raw_chat import ChatTurn
-            turn, u = ChatTurn(content=f"[error {type(exc).__name__}, retries exhausted]",
+            turn, u = ChatTurn(content=f"[error {type(exc).__name__}: {exc}, retries exhausted]",
                                tool_calls=[]), {}
         turn_usages.append(u)
 
@@ -285,16 +290,24 @@ async def run_episode_code_claim(client, model, slots: list[dict], *, T: int, B:
         transcript.append({"slot": s["slot_index"], "class_id": cid, "class_position": pos,
                            "prompt": user, "decision": dec, "how": how,
                            "reply": turn.content or "", "n_tool_calls": len(turn.tool_calls),
-                           "code_len": len(code) if code else 0})
+                           "code_len": len(code) if code else 0,
+                           "error_detail": str(exc) if exc is not None else None,
+                           "response_model": getattr(client, "last_response_model", None)})
         if dec == "CLAIM_SOLVER":
             claimed[cid] = pos
             claimed_code[cid] = code
             budget_left -= 1
+        if stop_after_turn is not None:
+            stop_reason = stop_after_turn(turn_usages)
+            if stop_reason and (budget_left > 0 or stop_reason == "missing_usage"):
+                safety_stop = stop_reason
+                break
     collected = _balls_collected(slots, claimed)
 
+    termination = safety_stop or ("budget_exhausted" if budget_left == 0 else "stream_complete")
     return {"claimed": claimed, "claimed_code": claimed_code, "collected": collected, "budget": B,
             "unparsed": unparsed, "turn_usages": turn_usages, "transcript": transcript,
-            "messages": messages}
+            "messages": messages, "termination": termination}
 
 
 def grade_claimed_code(slots: list[dict], claimed_code: dict[int, str]) -> dict[int, dict]:

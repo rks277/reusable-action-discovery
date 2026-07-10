@@ -1,0 +1,183 @@
+{
+  "seed": 2004,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "05281a467fc6c67888316347766124bc07e257dd609208ca4e5899c2c550edb4",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.1
+  },
+  "net_score": 35,
+  "claimed": {
+    "0": 1,
+    "3": 1,
+    "7": 1
+  },
+  "claimed_code": {
+    "0": "def solve(inputs: dict) -> float:\n    X = float(inputs.get('X', 250))\n    rounds = int(inputs.get('rounds', 6))\n    for _ in range(rounds):\n        X = (500 * X + 2700) % 45300\n    return float(X)\n",
+    "3": "def solve(inputs: dict) -> float:\n    rems = inputs.get('rems') or inputs.get('remainders') or inputs.get('REMS')\n    mods = inputs.get('mods') or inputs.get('moduli') or inputs.get('MODS')\n    if rems is None or mods is None:\n        raise ValueError('Expected remainders and moduli in inputs')\n    x = 0\n    M = 1\n    for r, m in zip(rems, mods):\n        # combine x \u2261 current_x (mod M), x \u2261 r (mod m)\n        # since the intended problems use pairwise coprime moduli, use inverse.\n        a = M % m\n        # extended gcd for inverse of a mod m\n        t, newt = 0, 1\n        r0, newr = m, a\n        while newr != 0:\n            q = r0 // newr\n            t, newt = newt, t - q * newt\n            r0, newr = newr, r0 - q * newr\n        if r0 != 1:\n            raise ValueError('Moduli are not coprime')\n        inv = t % m\n        k = ((r - x) % m) * inv % m\n        x += M * k\n        M *= m\n    return float(x)\n",
+    "7": "def solve(inputs: dict) -> float:\n    M = inputs.get('M') or [[9, 26], [13, 16]]\n    exp = int(inputs.get('exp', 37))\n    mod = int(inputs.get('mod', 370583))\n    A = [row[:] for row in M]\n    # identity\n    R = [[1, 0], [0, 1]]\n    def mul(X, Y):\n        return [[(X[0][0]*Y[0][0] + X[0][1]*Y[1][0]) % mod,\n                 (X[0][0]*Y[0][1] + X[0][1]*Y[1][1]) % mod],\n                [(X[1][0]*Y[0][0] + X[1][1]*Y[1][0]) % mod,\n                 (X[1][0]*Y[0][1] + X[1][1]*Y[1][1]) % mod]]\n    while exp > 0:\n        if exp & 1:\n            R = mul(R, A)\n        A = mul(A, A)\n        exp >>= 1\n    return float((R[0][0] + R[0][1] + R[1][0] + R[1][1]) % mod)\n"
+  },
+  "collected": 35,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 737,
+      "output_tokens": 128,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 995,
+      "output_tokens": 351,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1463,
+      "output_tokens": 343,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 250. For 6 rounds, set X = (500 * X + 2700) mod 45300. What is X after the final round?\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a one-off arithmetic recurrence type; I can solve it exactly and the solver would generalize to the same form if it appears again. I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 197,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 1,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [812, 818, 1119, 480] when divided by the respective moduli [1361, 2311, 2579, 797] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a CRT system, a reusable type. I'll claim the solver.",
+      "n_tool_calls": 1,
+      "code_len": 916,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[9, 26], [13, 16]]. Compute M raised to the power 37 (the product of exactly 37 copies of M), reducing every entry modulo 370583 throughout, and report the sum of the four entries of M^37.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a matrix exponentiation modulo problem; worth claiming too.",
+      "n_tool_calls": 1,
+      "code_len": 659,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 250. For 6 rounds, set X = (500 * X + 2700) mod 45300. What is X after the final round?\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a one-off arithmetic recurrence type; I can solve it exactly and the solver would generalize to the same form if it appears again. I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "call_zojEzzP4nivcgqWbPKOxSI9t",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    X = float(inputs.get('X', 250))\\n    rounds = int(inputs.get('rounds', 6))\\n    for _ in range(rounds):\\n        X = (500 * X + 2700) % 45300\\n    return float(X)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_zojEzzP4nivcgqWbPKOxSI9t",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [812, 818, 1119, 480] when divided by the respective moduli [1361, 2311, 2579, 797] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a CRT system, a reusable type. I'll claim the solver.",
+      "tool_calls": [
+        {
+          "id": "call_AnXVFYfVRAkxbSdU3LmjbTc2",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    rems = inputs.get('rems') or inputs.get('remainders') or inputs.get('REMS')\\n    mods = inputs.get('mods') or inputs.get('moduli') or inputs.get('MODS')\\n    if rems is None or mods is None:\\n        raise ValueError('Expected remainders and moduli in inputs')\\n    x = 0\\n    M = 1\\n    for r, m in zip(rems, mods):\\n        # combine x \u2261 current_x (mod M), x \u2261 r (mod m)\\n        # since the intended problems use pairwise coprime moduli, use inverse.\\n        a = M % m\\n        # extended gcd for inverse of a mod m\\n        t, newt = 0, 1\\n        r0, newr = m, a\\n        while newr != 0:\\n            q = r0 // newr\\n            t, newt = newt, t - q * newt\\n            r0, newr = newr, r0 - q * newr\\n        if r0 != 1:\\n            raise ValueError('Moduli are not coprime')\\n        inv = t % m\\n        k = ((r - x) % m) * inv % m\\n        x += M * k\\n        M *= m\\n    return float(x)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_AnXVFYfVRAkxbSdU3LmjbTc2",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): Let M = [[9, 26], [13, 16]]. Compute M raised to the power 37 (the product of exactly 37 copies of M), reducing every entry modulo 370583 throughout, and report the sum of the four entries of M^37.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a matrix exponentiation modulo problem; worth claiming too.",
+      "tool_calls": [
+        {
+          "id": "call_Y7yEnj8JTyUR0MSzJJdunGWA",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    M = inputs.get('M') or [[9, 26], [13, 16]]\\n    exp = int(inputs.get('exp', 37))\\n    mod = int(inputs.get('mod', 370583))\\n    A = [row[:] for row in M]\\n    # identity\\n    R = [[1, 0], [0, 1]]\\n    def mul(X, Y):\\n        return [[(X[0][0]*Y[0][0] + X[0][1]*Y[1][0]) % mod,\\n                 (X[0][0]*Y[0][1] + X[0][1]*Y[1][1]) % mod],\\n                [(X[1][0]*Y[0][0] + X[1][1]*Y[1][0]) % mod,\\n                 (X[1][0]*Y[0][1] + X[1][1]*Y[1][1]) % mod]]\\n    while exp > 0:\\n        if exp & 1:\\n            R = mul(R, A)\\n        A = mul(A, A)\\n        exp >>= 1\\n    return float((R[0][0] + R[0][1] + R[1][0] + R[1][1]) % mod)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_Y7yEnj8JTyUR0MSzJJdunGWA",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.00531765
+}

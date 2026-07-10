@@ -39,6 +39,30 @@ Aces the urn under both. **Do NOT headline "beats π\*"** — only ~1.75 SE at n
 
 The 9 newly run truncated sessions (including the one-seed calibration) cost **$0.58 total**; each stopped immediately after budget exhaustion, with per-seed cost $0.048–$0.095. The 3 earlier full-stream sessions are behaviorally comparable for first-sight/lateness because all build decisions preceded budget exhaustion. Tool regret is **432±324**, model traps/seed 1.25 vs π\* 0.92, but remains secondary/provisional because the harness still scores Claude with assumed `a_script=1.0`; headline the directly measured timing dissociation.
 
+### GPT cross-family replication and within-family boundary — DONE (2026-07-10)
+
+Preregistered paired R0/R2c test on canonical seeds 2000–2011, `B=3`, `K=0`, exact snapshot
+`gpt-5.4-mini-2026-03-17`, reasoning effort `none`, serial and budget-truncated. The model passed the
+R0 competence gate: 3.0 commitments/seed, **16.7% first-sight among commitments**, mean lateness
+2.08, and 35.58 balls/seed (**92.6%** of the same-information online-Bayesian comparator).
+
+In R2c, first-sight rose to **87.9%** (29/33 realized commitments), mean lateness fell to 0.42, and
+the paired seed-level difference was **+75.8 points**, bootstrap 95% CI **[+54.5, +93.9]**. The
+preregistered replication criterion passed. Preserve the heterogeneity: seed 2007 waited (0/3
+first-sight, lateness 4.33), while seed 2010 made zero commitments and validly ran all 60 turns.
+Thus this is a strong distributional framing shift, not an absolute per-seed law. All 24 sessions
+had 0 unresolved decisions and returned the exact snapshot. Final-config API cost was **$0.254**;
+full record: `docs/gpt-cross-family-r0-r2c-spec.md` and
+`runs/economic_surface_gpt-5.4-mini-2026-03-17/analysis.json`.
+
+The matched GPT-5.6 Sol panels produce a competence-qualified **non-replication**. R0 passes the
+gate (19.4% first-sight, lateness 1.14, 98.5% of Bayesian-comparator balls), but R2c remains
+similarly reserved (27.8%, lateness 1.11). The paired R2c−R0 difference is only **+8.3 points**,
+95% CI **[−11.1, +27.8]**; the preregistered criterion fails. All 24 sessions are mechanically
+clean. This is a real within-GPT boundary: do not infer a monotonic capability trend from two GPT
+points. Final-config GPT-5.6 cost: **$1.477**. Analysis:
+`runs/economic_surface_gpt-5.6-sol/analysis.json`.
+
 **Interpretable urn metric (added 2026-07-04):** `urn_session.report()` now also prints **balls collected** (the urn's literal objective) — model / π\* / clairvoyant per seed, plus balls-regret vs π\* and % of π\*'s balls. Balls-regret = the reuse-deficit ΔM and equals the utility regret / (100·a_script+78.7) = **/178.7** exactly (a_script=1 in the urn, budget fully used) — verified per-seed on Opus A2 (all 12 seeds match to the decimal). More readable than the utility number and it's what the model was told to maximize; still NOT magnitude-comparable to the tool game (different currency), so keep leading with lateness cross-framing. Haiku A2: model 38.4 = π\* 38.4 balls/seed (100%, balls-regret 0.0±1.9); clairvoyant 49.5 (the hindsight gap is irreducible uncertainty — why we regret vs π\*, not clairvoyant).
 
 ### Cross-model urn — plateau holds under A2; N-disclosure doesn't rescue Qwen
@@ -87,7 +111,12 @@ Haiku's tool rationale is per-problem; never reserves; "budget" only retrospecti
 2. **RL intervention — DONE (2026-07-08).** From the untouched Qwen-14b base, per-decision PPO with a privileged critic learned to reserve from balls reward alone. Held-out urn eval (n=24): first-sight 75%→32%, lateness 0.375→0.903, balls 87%→101% of π\*. Paired tool A2 eval (n=12): RL-final remained eager (95% first-sight) over a clean tool channel (0 malformed / 0 unknown). Full results and caveats: `docs/rl-phase1-results.md`.
 3. **Framing-generalization probes — DONE (2026-07-09).** The learned policy transfers across three held-out free-text vocabularies (pooled 19% vs base 89% first-sight) but only partly through isomorphic `keep`/`pass` tool calls (62% vs 99%), with strong vocabulary dependence.
 4. **Paired Opus tool A2 cell — DONE (2026-07-10).** Measured 12-seed frontier dissociation: urn A2 0% first-sight / lateness 1.28; tool A2 100% / 0.000.
-5. **Priority follow-ups:** publication-grade Qwen tool rerun; RL directly in the tool framing; fair-critic ablation; 32b subject; mechanism probe for vocabulary-sensitive tool-call transfer; cross-family breadth replication.
+5. **GPT cross-family replication — DONE (2026-07-10).** GPT-5.4-mini passed the R0 competence gate
+   and the preregistered R0→R2c first-sight shift criterion.
+6. **GPT-5.6 within-family boundary — DONE (2026-07-10).** Competence-qualified non-replication:
+   R0 19.4% vs R2c 27.8%, paired CI crosses zero.
+7. **Optional follow-ups:** naturalistic task streams; RL directly in the tool framing; fair-critic
+   ablation; 32b subject; mechanism probe for vocabulary-sensitive tool-call transfer.
 
 ## Open items
 - Re-verify π\*'s α-insensitivity under A2.
