@@ -25,7 +25,7 @@ Companion to `online-tool-investment-plan.md` (headline + positioning; **read it
 
 Told N, Haiku is **optimal in the urn** (regret 0) and **fully eager in the tool task** (100% first-sight, regret 1633, N gave zero benefit). Clean same-information dissociation → framing failure, not N-ignorance. The old nonzero urn regret (640) was urn-side N-ignorance; A2 removes it.
 
-### Opus urn — robust
+### Opus 2×2 — measured frontier dissociation
 | | no-N | A2 |
 |---|---|---|
 | first-sight | 8% | 0% |
@@ -33,7 +33,11 @@ Told N, Haiku is **optimal in the urn** (regret 0) and **fully eager in the tool
 | regret vs π\* | −655±389 | −685±390 (beats π\*) |
 | traps/seed | 0.33 | 0.33 |
 
-Aces the urn under both. **Do NOT headline "beats π\*"** — only ~1.75 SE at n=12, and π\* is optimal only vs its mis-specified symmetric-Dirichlet prior (real generator has fixed hot-count + trap-early structure); report as "reaches the optimum within noise + more trap-averse (0.33 vs 0.75)." Paired Opus *tool* cell ASSUMED eager (prior constructed-design bait 20/20; shelved pre-pub).
+Aces the urn under both. **Do NOT headline "beats π\*"** — only ~1.75 SE at n=12, and π\* is optimal only vs its mis-specified symmetric-Dirichlet prior (real generator has fixed hot-count + trap-early structure); report as "reaches the optimum within noise + more trap-averse (0.33 vs 0.75)."
+
+**Paired Opus tool A2 cell — DONE (2026-07-10):** same seeds 2000–2011, hardened MAG=1000 pool, N disclosed. Opus built **36/36 at first sight (100%)**, mean lateness **0.000**, spent all 3 writes in every seed, and its built set was exactly the first three distinct arrivals in **12/12** seeds. This completes the measured frontier 2×2: **urn A2 0% first-sight / lateness 1.28 versus tool A2 100% / 0.000** under matched N information. Raw sessions: `runs/arm_a1_announce_opus_n-announced/`.
+
+The 9 newly run truncated sessions (including the one-seed calibration) cost **$0.58 total**; each stopped immediately after budget exhaustion, with per-seed cost $0.048–$0.095. The 3 earlier full-stream sessions are behaviorally comparable for first-sight/lateness because all build decisions preceded budget exhaustion. Tool regret is **432±324**, model traps/seed 1.25 vs π\* 0.92, but remains secondary/provisional because the harness still scores Claude with assumed `a_script=1.0`; headline the directly measured timing dissociation.
 
 **Interpretable urn metric (added 2026-07-04):** `urn_session.report()` now also prints **balls collected** (the urn's literal objective) — model / π\* / clairvoyant per seed, plus balls-regret vs π\* and % of π\*'s balls. Balls-regret = the reuse-deficit ΔM and equals the utility regret / (100·a_script+78.7) = **/178.7** exactly (a_script=1 in the urn, budget fully used) — verified per-seed on Opus A2 (all 12 seeds match to the decimal). More readable than the utility number and it's what the model was told to maximize; still NOT magnitude-comparable to the tool game (different currency), so keep leading with lateness cross-framing. Haiku A2: model 38.4 = π\* 38.4 balls/seed (100%, balls-regret 0.0±1.9); clairvoyant 49.5 (the hindsight gap is irreducible uncertainty — why we regret vs π\*, not clairvoyant).
 
@@ -82,7 +86,8 @@ Haiku's tool rationale is per-problem; never reserves; "budget" only retrospecti
 1. ~~Qwen A2 reruns~~ **DONE (2026-07-03)** — urn ladder + 14b tool (raw dirs were on the now-down ephemeral box; only aggregates above survive — see plan §0).
 2. **RL intervention — DONE (2026-07-08).** From the untouched Qwen-14b base, per-decision PPO with a privileged critic learned to reserve from balls reward alone. Held-out urn eval (n=24): first-sight 75%→32%, lateness 0.375→0.903, balls 87%→101% of π\*. Paired tool A2 eval (n=12): RL-final remained eager (95% first-sight) over a clean tool channel (0 malformed / 0 unknown). Full results and caveats: `docs/rl-phase1-results.md`.
 3. **Framing-generalization probes — DONE (2026-07-09).** The learned policy transfers across three held-out free-text vocabularies (pooled 19% vs base 89% first-sight) but only partly through isomorphic `keep`/`pass` tool calls (62% vs 99%), with strong vocabulary dependence.
-4. **Priority follow-ups:** publication-grade tool rerun; RL directly in the tool framing; fair-critic ablation; paired Opus tool cell; 32b subject; mechanism probe for vocabulary-sensitive tool-call transfer.
+4. **Paired Opus tool A2 cell — DONE (2026-07-10).** Measured 12-seed frontier dissociation: urn A2 0% first-sight / lateness 1.28; tool A2 100% / 0.000.
+5. **Priority follow-ups:** publication-grade Qwen tool rerun; RL directly in the tool framing; fair-critic ablation; 32b subject; mechanism probe for vocabulary-sensitive tool-call transfer; cross-family breadth replication.
 
 ## Open items
 - Re-verify π\*'s α-insensitivity under A2.

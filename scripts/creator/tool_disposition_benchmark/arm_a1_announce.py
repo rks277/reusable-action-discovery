@@ -44,6 +44,9 @@ _ap.add_argument("--empty-fence-retry", type=int, default=0, metavar="N",
 _ap.add_argument("--cap", type=float, default=None,
                  help="override the USD spend guard (default: haiku/opus $12). Needed for multi-seed "
                       "Opus batches where 12*EST exceeds the default ceiling.")
+_ap.add_argument("--unit-cap", type=float, default=None,
+                 help="pause the batch after any completed seed exceeds this USD amount; the seed is "
+                      "allowed to finish so its transcript is preserved")
 _ap.add_argument("--full-stream", action="store_true",
                  help="run the ENTIRE T-problem stream even after the write budget is exhausted (the "
                       "old API-model behavior). Default now truncates the session once budget is spent "
@@ -56,6 +59,7 @@ MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)      # Claude key -> id; else pass 
 IS_LOCAL = MODEL_KEY not in CLAUDE                # non-Claude => Ollama/vLLM, free, stop-on-budget
 ANNOUNCE_N = _ARGS.announce_n
 EMPTY_FENCE_RETRY = _ARGS.empty_fence_retry
+UNIT_CAP_USD = _ARGS.unit_cap
 _safe = MODEL_KEY.replace(":", "_").replace("/", "_")
 BASE = Path("runs/arm_a1_announce" if MODEL_KEY == "haiku" else f"runs/arm_a1_announce_{_safe}")
 if ANNOUNCE_N:
@@ -149,6 +153,10 @@ async def main():
             async with lock:
                 inflight -= 1; cumulative += cost
                 print(f"  [seed {seed}] {status:>6}  ${cost:.3f}  cumulative=${cumulative:.2f}", flush=True)
+                if UNIT_CAP_USD is not None and status == "ran" and cost > UNIT_CAP_USD:
+                    paused = True
+                    print(f"  CIRCUIT BREAKER: seed {seed} exceeded ${UNIT_CAP_USD:.2f}; "
+                          "no further seeds will start", flush=True)
 
     print(f"A1 announce arm: {MODEL_KEY}, uniform-hard N={N}, MAG={MAG}, pinned_trap={PINNED_TRAP}, "
           f"g={G}, {len(SEEDS)} seeds (cap=${CAP_USD}) ...", flush=True)
