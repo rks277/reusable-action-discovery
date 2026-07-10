@@ -189,7 +189,9 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
 
         if progress_cb is not None:
             progress_cb(n_turns=n_turns, problem=min(state.cur + 1, state.n), n=state.n,
-                       spent=spent, elapsed=time.time() - t0)
+                       spent=spent, elapsed=time.time() - t0,
+                       tools=[tc["name"] for tc in turn.tool_calls],
+                       writes_remaining=state.writes_remaining)
 
     score = state.score()
     return {

@@ -1,0 +1,2058 @@
+[
+  {
+    "family": "modpow",
+    "magnitude": 1000,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 5713440,
+      "EXP": 154,
+      "MOD": 2126915
+    },
+    "vals_order": [
+      5713440,
+      154,
+      2126915
+    ],
+    "gold": 959240,
+    "question": "A key-exchange step needs g^x mod p with g = 5713440, x = 154, and p = 2126915. What is the result?",
+    "slot_index": 0,
+    "class_id": 1,
+    "class_size": 4,
+    "class_position": 1,
+    "members_remaining_after": 3,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3299757417,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 23
+    },
+    "vals_order": [
+      3299757417,
+      13,
+      7,
+      17,
+      23
+    ],
+    "gold": 15457247,
+    "question": "A 32-bit register holds X = 3299757417. Repeat 23 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 1,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 1,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1666239524,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 13
+    },
+    "vals_order": [
+      1666239524,
+      13,
+      7,
+      15,
+      13
+    ],
+    "gold": 4214944406,
+    "question": "Start with the 32-bit value 1666239524. Apply the xorshift step 13 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 2,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 2,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1144197396,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 21
+    },
+    "vals_order": [
+      1144197396,
+      11,
+      7,
+      15,
+      21
+    ],
+    "gold": 2111525540,
+    "question": "Start with the 32-bit value 1144197396. Apply the xorshift step 21 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 3,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 3,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 149,
+      "A": 861000,
+      "B": 146000,
+      "M": 364766000,
+      "K": 26
+    },
+    "vals_order": [
+      149,
+      861000,
+      146000,
+      364766000,
+      26
+    ],
+    "gold": 341980000,
+    "question": "A register starts at X = 149. It is updated 26 times; each update replaces X with ((861000 * X) + 146000) mod 364766000. Report the final value of X.",
+    "slot_index": 4,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 1,
+    "members_remaining_after": 18,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 1000,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        695919,
+        1134157,
+        1906059,
+        1056396,
+        1413931,
+        1714190,
+        1681038,
+        751093,
+        553586
+      ]
+    },
+    "vals_order": [
+      [
+        695919,
+        1134157,
+        1906059,
+        1056396,
+        1413931,
+        1714190,
+        1681038,
+        751093,
+        553586
+      ]
+    ],
+    "gold": 2692393146703494195292790270347446722410476816254760633,
+    "question": "For the continued fraction with terms [695919, 1134157, 1906059, 1056396, 1413931, 1714190, 1681038, 751093, 553586], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 5,
+    "class_id": 2,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 4668891,
+      "C": 7653670,
+      "MOD": 7562254,
+      "K": 21
+    },
+    "vals_order": [
+      4668891,
+      7653670,
+      7562254,
+      21
+    ],
+    "gold": 7190669,
+    "question": "Iterate the map x -> (x^2 + 7653670) mod 7562254 for 21 steps, starting from x = 4668891. What is the resulting value?",
+    "slot_index": 6,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 1,
+    "members_remaining_after": 17,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 171,
+      "A": 502000,
+      "B": 54000,
+      "M": 190002000,
+      "K": 31
+    },
+    "vals_order": [
+      171,
+      502000,
+      54000,
+      190002000,
+      31
+    ],
+    "gold": 144618000,
+    "question": "Initialize s = 171. Repeat the following 31 times: s = (502000 * s + 54000) % 190002000. Give the resulting value of s.",
+    "slot_index": 7,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 2,
+    "members_remaining_after": 17,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 105,
+      "A": 568000,
+      "B": 894000,
+      "M": 212305000,
+      "K": 25
+    },
+    "vals_order": [
+      105,
+      568000,
+      894000,
+      212305000,
+      25
+    ],
+    "gold": 50429000,
+    "question": "A register starts at X = 105. It is updated 25 times; each update replaces X with ((568000 * X) + 894000) mod 212305000. Report the final value of X.",
+    "slot_index": 8,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 3,
+    "members_remaining_after": 16,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 8739764,
+      "C": 5105804,
+      "MOD": 9662221,
+      "K": 19
+    },
+    "vals_order": [
+      8739764,
+      5105804,
+      9662221,
+      19
+    ],
+    "gold": 1675063,
+    "question": "Start with x = 8739764. Repeat 19 times: replace x with (x*x + 5105804) mod 9662221. Report the final x.",
+    "slot_index": 9,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 2,
+    "members_remaining_after": 16,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 6019690,
+      "C": 8848776,
+      "MOD": 8797903,
+      "K": 21
+    },
+    "vals_order": [
+      6019690,
+      8848776,
+      8797903,
+      21
+    ],
+    "gold": 8523613,
+    "question": "Iterate the map x -> (x^2 + 8848776) mod 8797903 for 21 steps, starting from x = 6019690. What is the resulting value?",
+    "slot_index": 10,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 3,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 138,
+      "A": 814000,
+      "B": 198000,
+      "M": 134836000,
+      "K": 24
+    },
+    "vals_order": [
+      138,
+      814000,
+      198000,
+      134836000,
+      24
+    ],
+    "gold": 28722000,
+    "question": "Initialize s = 138. Repeat the following 24 times: s = (814000 * s + 198000) % 134836000. Give the resulting value of s.",
+    "slot_index": 11,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 4,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 5508891,
+      "C": 7414458,
+      "MOD": 2075029,
+      "K": 18
+    },
+    "vals_order": [
+      5508891,
+      7414458,
+      2075029,
+      18
+    ],
+    "gold": 1980041,
+    "question": "Start with x = 5508891. Repeat 18 times: replace x with (x*x + 7414458) mod 2075029. Report the final x.",
+    "slot_index": 12,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 4,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 189,
+      "A": 104000,
+      "B": 537000,
+      "M": 90952000,
+      "K": 24
+    },
+    "vals_order": [
+      189,
+      104000,
+      537000,
+      90952000,
+      24
+    ],
+    "gold": 31345000,
+    "question": "A pseudorandom counter begins at 189. For 24 rounds, set X = (104000 * X + 537000) mod 90952000. What is X after the final round?",
+    "slot_index": 13,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 5,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 1000,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 9019637,
+      "EXP": 140,
+      "MOD": 4990191
+    },
+    "vals_order": [
+      9019637,
+      140,
+      4990191
+    ],
+    "gold": 3763708,
+    "question": "Find the remainder when 9019637 to the 140th power is divided by 4990191.",
+    "slot_index": 14,
+    "class_id": 1,
+    "class_size": 4,
+    "class_position": 2,
+    "members_remaining_after": 2,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 6820256,
+      "C": 5828956,
+      "MOD": 2365382,
+      "K": 21
+    },
+    "vals_order": [
+      6820256,
+      5828956,
+      2365382,
+      21
+    ],
+    "gold": 799104,
+    "question": "Iterate the map x -> (x^2 + 5828956) mod 2365382 for 21 steps, starting from x = 6820256. What is the resulting value?",
+    "slot_index": 15,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 5,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3306430526,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 18
+    },
+    "vals_order": [
+      3306430526,
+      11,
+      9,
+      17,
+      18
+    ],
+    "gold": 699685159,
+    "question": "Start with the 32-bit value 3306430526. Apply the xorshift step 18 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 16,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 4,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 149,
+      "A": 706000,
+      "B": 533000,
+      "M": 121474000,
+      "K": 23
+    },
+    "vals_order": [
+      149,
+      706000,
+      533000,
+      121474000,
+      23
+    ],
+    "gold": 75349000,
+    "question": "Initialize s = 149. Repeat the following 23 times: s = (706000 * s + 533000) % 121474000. Give the resulting value of s.",
+    "slot_index": 17,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 6,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1845474551,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 12
+    },
+    "vals_order": [
+      1845474551,
+      11,
+      7,
+      15,
+      12
+    ],
+    "gold": 4204647177,
+    "question": "Start with the 32-bit value 1845474551. Apply the xorshift step 12 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 18,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 5,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 5338610,
+      "C": 9345288,
+      "MOD": 9933910,
+      "K": 22
+    },
+    "vals_order": [
+      5338610,
+      9345288,
+      9933910,
+      22
+    ],
+    "gold": 9836452,
+    "question": "Start with x = 5338610. Repeat 22 times: replace x with (x*x + 9345288) mod 9933910. Report the final x.",
+    "slot_index": 19,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 6,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 144,
+      "A": 533000,
+      "B": 177000,
+      "M": 304271000,
+      "K": 32
+    },
+    "vals_order": [
+      144,
+      533000,
+      177000,
+      304271000,
+      32
+    ],
+    "gold": 270054000,
+    "question": "A register starts at X = 144. It is updated 32 times; each update replaces X with ((533000 * X) + 177000) mod 304271000. Report the final value of X.",
+    "slot_index": 20,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 7,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 202,
+      "A": 705000,
+      "B": 94000,
+      "M": 111235000,
+      "K": 23
+    },
+    "vals_order": [
+      202,
+      705000,
+      94000,
+      111235000,
+      23
+    ],
+    "gold": 53179000,
+    "question": "Initialize s = 202. Repeat the following 23 times: s = (705000 * s + 94000) % 111235000. Give the resulting value of s.",
+    "slot_index": 21,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 8,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "continued_frac",
+    "magnitude": 1000,
+    "keys": [
+      "TERMS"
+    ],
+    "inputs": {
+      "TERMS": [
+        757763,
+        1596850,
+        520172,
+        562476,
+        1123434,
+        1287325,
+        1079708,
+        546585,
+        1014711
+      ]
+    },
+    "vals_order": [
+      [
+        757763,
+        1596850,
+        520172,
+        562476,
+        1123434,
+        1287325,
+        1079708,
+        546585,
+        1014711
+      ]
+    ],
+    "gold": 306613060074549800569401079356499740099342670070794788,
+    "question": "For the continued fraction with terms [757763, 1596850, 520172, 562476, 1123434, 1287325, 1079708, 546585, 1014711], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).",
+    "slot_index": 22,
+    "class_id": 2,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 437743090,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 16
+    },
+    "vals_order": [
+      437743090,
+      11,
+      9,
+      15,
+      16
+    ],
+    "gold": 56034019,
+    "question": "Start with the 32-bit value 437743090. Apply the xorshift step 16 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 23,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 6,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 152,
+      "A": 706000,
+      "B": 333000,
+      "M": 311877000,
+      "K": 27
+    },
+    "vals_order": [
+      152,
+      706000,
+      333000,
+      311877000,
+      27
+    ],
+    "gold": 63629000,
+    "question": "A pseudorandom counter begins at 152. For 27 rounds, set X = (706000 * X + 333000) mod 311877000. What is X after the final round?",
+    "slot_index": 24,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 9,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 7775402,
+      "C": 8636513,
+      "MOD": 1223039,
+      "K": 27
+    },
+    "vals_order": [
+      7775402,
+      8636513,
+      1223039,
+      27
+    ],
+    "gold": 865255,
+    "question": "Iterate the map x -> (x^2 + 8636513) mod 1223039 for 27 steps, starting from x = 7775402. What is the resulting value?",
+    "slot_index": 25,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 7,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3041455892,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 18
+    },
+    "vals_order": [
+      3041455892,
+      11,
+      7,
+      15,
+      18
+    ],
+    "gold": 3605702035,
+    "question": "A 32-bit register holds X = 3041455892. Repeat 18 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 26,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 7,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 7244544,
+      "C": 8929212,
+      "MOD": 4097733,
+      "K": 21
+    },
+    "vals_order": [
+      7244544,
+      8929212,
+      4097733,
+      21
+    ],
+    "gold": 619683,
+    "question": "Start with x = 7244544. Repeat 21 times: replace x with (x*x + 8929212) mod 4097733. Report the final x.",
+    "slot_index": 27,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 8,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 776093772,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 14
+    },
+    "vals_order": [
+      776093772,
+      11,
+      7,
+      17,
+      14
+    ],
+    "gold": 1539798509,
+    "question": "Start with the 32-bit value 776093772. Apply the xorshift step 14 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 28,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 8,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 227,
+      "A": 4000,
+      "B": 108000,
+      "M": 154066000,
+      "K": 26
+    },
+    "vals_order": [
+      227,
+      4000,
+      108000,
+      154066000,
+      26
+    ],
+    "gold": 60284000,
+    "question": "A register starts at X = 227. It is updated 26 times; each update replaces X with ((4000 * X) + 108000) mod 154066000. Report the final value of X.",
+    "slot_index": 29,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 10,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 133,
+      "A": 560000,
+      "B": 182000,
+      "M": 209470000,
+      "K": 23
+    },
+    "vals_order": [
+      133,
+      560000,
+      182000,
+      209470000,
+      23
+    ],
+    "gold": 162312000,
+    "question": "A register starts at X = 133. It is updated 23 times; each update replaces X with ((560000 * X) + 182000) mod 209470000. Report the final value of X.",
+    "slot_index": 30,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 11,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 241,
+      "A": 437000,
+      "B": 152000,
+      "M": 155493000,
+      "K": 32
+    },
+    "vals_order": [
+      241,
+      437000,
+      152000,
+      155493000,
+      32
+    ],
+    "gold": 8638000,
+    "question": "A pseudorandom counter begins at 241. For 32 rounds, set X = (437000 * X + 152000) mod 155493000. What is X after the final round?",
+    "slot_index": 31,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 12,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 292,
+      "A": 753000,
+      "B": 564000,
+      "M": 53897000,
+      "K": 32
+    },
+    "vals_order": [
+      292,
+      753000,
+      564000,
+      53897000,
+      32
+    ],
+    "gold": 10874000,
+    "question": "A register starts at X = 292. It is updated 32 times; each update replaces X with ((753000 * X) + 564000) mod 53897000. Report the final value of X.",
+    "slot_index": 32,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 13,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 2207965,
+      "C": 3282869,
+      "MOD": 6662828,
+      "K": 21
+    },
+    "vals_order": [
+      2207965,
+      3282869,
+      6662828,
+      21
+    ],
+    "gold": 1836986,
+    "question": "Start with x = 2207965. Repeat 21 times: replace x with (x*x + 3282869) mod 6662828. Report the final x.",
+    "slot_index": 33,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 9,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 447964,
+      "C": 4936662,
+      "MOD": 6538322,
+      "K": 16
+    },
+    "vals_order": [
+      447964,
+      4936662,
+      6538322,
+      16
+    ],
+    "gold": 4479576,
+    "question": "Start with x = 447964. Repeat 16 times: replace x with (x*x + 4936662) mod 6538322. Report the final x.",
+    "slot_index": 34,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 10,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 1000,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        83,
+        2004,
+        76,
+        108,
+        626,
+        109,
+        1087,
+        400
+      ],
+      "MODULI": [
+        2393,
+        2141,
+        103,
+        1973,
+        1109,
+        1433,
+        1459,
+        2243
+      ]
+    },
+    "vals_order": [
+      [
+        83,
+        2004,
+        76,
+        108,
+        626,
+        109,
+        1087,
+        400
+      ],
+      [
+        2393,
+        2141,
+        103,
+        1973,
+        1109,
+        1433,
+        1459,
+        2243
+      ]
+    ],
+    "gold": 4406632527577328148363859,
+    "question": "Solve the system of congruences: x is congruent to [83, 2004, 76, 108, 626, 109, 1087, 400] modulo [2393, 2141, 103, 1973, 1109, 1433, 1459, 2243] respectively (the moduli are pairwise coprime). Give the least non-negative x.",
+    "slot_index": 35,
+    "class_id": 3,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 217,
+      "A": 419000,
+      "B": 808000,
+      "M": 177234000,
+      "K": 29
+    },
+    "vals_order": [
+      217,
+      419000,
+      808000,
+      177234000,
+      29
+    ],
+    "gold": 37500000,
+    "question": "A register starts at X = 217. It is updated 29 times; each update replaces X with ((419000 * X) + 808000) mod 177234000. Report the final value of X.",
+    "slot_index": 36,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 14,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3047242526,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 19
+    },
+    "vals_order": [
+      3047242526,
+      11,
+      7,
+      15,
+      19
+    ],
+    "gold": 1963099139,
+    "question": "Start with the 32-bit value 3047242526. Apply the xorshift step 19 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 37,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 9,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 1000,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 8669225,
+      "EXP": 222,
+      "MOD": 9752953
+    },
+    "vals_order": [
+      8669225,
+      222,
+      9752953
+    ],
+    "gold": 3452786,
+    "question": "Compute 8669225 raised to the power 222, modulo 9752953 (the remainder when 8669225^222 is divided by 9752953).",
+    "slot_index": 38,
+    "class_id": 1,
+    "class_size": 4,
+    "class_position": 3,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 170,
+      "A": 777000,
+      "B": 810000,
+      "M": 389815000,
+      "K": 22
+    },
+    "vals_order": [
+      170,
+      777000,
+      810000,
+      389815000,
+      22
+    ],
+    "gold": 7415000,
+    "question": "Initialize s = 170. Repeat the following 22 times: s = (777000 * s + 810000) % 389815000. Give the resulting value of s.",
+    "slot_index": 39,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 15,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 3251340,
+      "C": 2491207,
+      "MOD": 8831085,
+      "K": 28
+    },
+    "vals_order": [
+      3251340,
+      2491207,
+      8831085,
+      28
+    ],
+    "gold": 404051,
+    "question": "Start with x = 3251340. Repeat 28 times: replace x with (x*x + 2491207) mod 8831085. Report the final x.",
+    "slot_index": 40,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 11,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 231,
+      "A": 727000,
+      "B": 635000,
+      "M": 154461000,
+      "K": 27
+    },
+    "vals_order": [
+      231,
+      727000,
+      635000,
+      154461000,
+      27
+    ],
+    "gold": 119115000,
+    "question": "Initialize s = 231. Repeat the following 27 times: s = (727000 * s + 635000) % 154461000. Give the resulting value of s.",
+    "slot_index": 41,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 16,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 1082622,
+      "C": 6866944,
+      "MOD": 7408771,
+      "K": 24
+    },
+    "vals_order": [
+      1082622,
+      6866944,
+      7408771,
+      24
+    ],
+    "gold": 6122695,
+    "question": "Start with x = 1082622. Repeat 24 times: replace x with (x*x + 6866944) mod 7408771. Report the final x.",
+    "slot_index": 42,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 12,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 1000,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 1298234,
+      "EXP": 281,
+      "MOD": 5378152
+    },
+    "vals_order": [
+      1298234,
+      281,
+      5378152
+    ],
+    "gold": 2007024,
+    "question": "Find the remainder when 1298234 to the 281th power is divided by 5378152.",
+    "slot_index": 43,
+    "class_id": 1,
+    "class_size": 4,
+    "class_position": 4,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.0375
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 2704335,
+      "C": 3518502,
+      "MOD": 8316325,
+      "K": 24
+    },
+    "vals_order": [
+      2704335,
+      3518502,
+      8316325,
+      24
+    ],
+    "gold": 1289061,
+    "question": "Start with x = 2704335. Repeat 24 times: replace x with (x*x + 3518502) mod 8316325. Report the final x.",
+    "slot_index": 44,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 13,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 3660926,
+      "C": 987672,
+      "MOD": 8245975,
+      "K": 29
+    },
+    "vals_order": [
+      3660926,
+      987672,
+      8245975,
+      29
+    ],
+    "gold": 5207023,
+    "question": "Start with x = 3660926. Repeat 29 times: replace x with (x*x + 987672) mod 8245975. Report the final x.",
+    "slot_index": 45,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 14,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3159588966,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 20
+    },
+    "vals_order": [
+      3159588966,
+      13,
+      7,
+      15,
+      20
+    ],
+    "gold": 1308471374,
+    "question": "A 32-bit register holds X = 3159588966. Repeat 20 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 46,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 10,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 96,
+      "A": 601000,
+      "B": 814000,
+      "M": 60650000,
+      "K": 31
+    },
+    "vals_order": [
+      96,
+      601000,
+      814000,
+      60650000,
+      31
+    ],
+    "gold": 48014000,
+    "question": "Initialize s = 96. Repeat the following 31 times: s = (601000 * s + 814000) % 60650000. Give the resulting value of s.",
+    "slot_index": 47,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 17,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 5966367,
+      "C": 9147936,
+      "MOD": 7867418,
+      "K": 30
+    },
+    "vals_order": [
+      5966367,
+      9147936,
+      7867418,
+      30
+    ],
+    "gold": 2853205,
+    "question": "Iterate the map x -> (x^2 + 9147936) mod 7867418 for 30 steps, starting from x = 5966367. What is the resulting value?",
+    "slot_index": 48,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 15,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1308238885,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 25
+    },
+    "vals_order": [
+      1308238885,
+      13,
+      9,
+      15,
+      25
+    ],
+    "gold": 3817288048,
+    "question": "Start with the 32-bit value 1308238885. Apply the xorshift step 25 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 49,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 11,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 628944705,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 17
+    },
+    "vals_order": [
+      628944705,
+      11,
+      7,
+      15,
+      17
+    ],
+    "gold": 1994475585,
+    "question": "Start with the 32-bit value 628944705. Apply the xorshift step 17 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 50,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 12,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 143,
+      "A": 865000,
+      "B": 50000,
+      "M": 291410000,
+      "K": 26
+    },
+    "vals_order": [
+      143,
+      865000,
+      50000,
+      291410000,
+      26
+    ],
+    "gold": 125900000,
+    "question": "A register starts at X = 143. It is updated 26 times; each update replaces X with ((865000 * X) + 50000) mod 291410000. Report the final value of X.",
+    "slot_index": 51,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 18,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 3887735,
+      "C": 982025,
+      "MOD": 8356069,
+      "K": 27
+    },
+    "vals_order": [
+      3887735,
+      982025,
+      8356069,
+      27
+    ],
+    "gold": 6873062,
+    "question": "Iterate the map x -> (x^2 + 982025) mod 8356069 for 27 steps, starting from x = 3887735. What is the resulting value?",
+    "slot_index": 52,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 16,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 1000,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 207,
+      "A": 693000,
+      "B": 68000,
+      "M": 148834000,
+      "K": 24
+    },
+    "vals_order": [
+      207,
+      693000,
+      68000,
+      148834000,
+      24
+    ],
+    "gold": 125060000,
+    "question": "A register starts at X = 207. It is updated 24 times; each update replaces X with ((693000 * X) + 68000) mod 148834000. Report the final value of X.",
+    "slot_index": 53,
+    "class_id": 0,
+    "class_size": 19,
+    "class_position": 19,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 4044040908,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 19
+    },
+    "vals_order": [
+      4044040908,
+      13,
+      7,
+      17,
+      19
+    ],
+    "gold": 3285866642,
+    "question": "A 32-bit register holds X = 4044040908. Repeat 19 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 54,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 13,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1296667093,
+      "A": 13,
+      "B": 9,
+      "C": 17,
+      "K": 14
+    },
+    "vals_order": [
+      1296667093,
+      13,
+      9,
+      17,
+      14
+    ],
+    "gold": 1851044561,
+    "question": "A 32-bit register holds X = 1296667093. Repeat 14 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 55,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 14,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3689625616,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 16
+    },
+    "vals_order": [
+      3689625616,
+      13,
+      7,
+      15,
+      16
+    ],
+    "gold": 2645622549,
+    "question": "A 32-bit register holds X = 3689625616. Repeat 16 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 56,
+    "class_id": 5,
+    "class_size": 15,
+    "class_position": 15,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 371765,
+      "C": 4842287,
+      "MOD": 2767114,
+      "K": 28
+    },
+    "vals_order": [
+      371765,
+      4842287,
+      2767114,
+      28
+    ],
+    "gold": 333253,
+    "question": "Start with x = 371765. Repeat 28 times: replace x with (x*x + 4842287) mod 2767114. Report the final x.",
+    "slot_index": 57,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 17,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 1000,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 699779,
+      "C": 2185568,
+      "MOD": 9726859,
+      "K": 18
+    },
+    "vals_order": [
+      699779,
+      2185568,
+      9726859,
+      18
+    ],
+    "gold": 577288,
+    "question": "Iterate the map x -> (x^2 + 2185568) mod 9726859 for 18 steps, starting from x = 699779. What is the resulting value?",
+    "slot_index": 58,
+    "class_id": 4,
+    "class_size": 18,
+    "class_position": 18,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "josephus",
+    "magnitude": 1000,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 1812,
+      "K": 5
+    },
+    "vals_order": [
+      1812,
+      5
+    ],
+    "gold": 782,
+    "question": "1812 people stand in a circle numbered 1..1812. Counting around the circle, every 5-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 59,
+    "class_id": 7,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  }
+]

@@ -151,5 +151,42 @@ def _selftest():
     asyncio.run(main())
 
 
+def _selftest_economic_surface_parity():
+    """Extends the above to the economic response surface (`docs/economic-response-surface-spec.md`):
+    R0 and R2c, fed the SAME scripted commit/decline pattern and stream, at several (B,K) combinations,
+    must produce identical commitment positions, budgets, and NET SCORES (`economic_surface.net_score`)
+    -- charge only changes prompt text (`render_system`/`render_system_code_claim`'s `charge` param),
+    never the mechanics, so parity here is a check on `economic_surface.py`'s scoring layer, not on
+    the run_episode* loops (already covered above)."""
+    from scripts.creator.tool_disposition_benchmark.economic_surface import net_score
+
+    async def main():
+        for B, K in [(2, 0), (2, 5), (1, 24)]:
+            pattern = COMMIT_PATTERN if B == 2 else [True, False, False, False, False, False, False, False, False]
+            slots = _slots()
+            row0 = await run_episode(ScriptedTextClient(pattern), "fake", slots, T=len(slots), B=B,
+                                     system="irrelevant", temperature=0.0,
+                                     palette=VOCAB["ball"]["palette"], item=VOCAB["ball"]["item"])
+            row2c = await run_episode_code_claim(
+                ScriptedCodeToolClient(pattern, ("claim_solver", "skip_solver")), "fake", slots,
+                T=len(slots), B=B, system=render_system_code_claim(len(slots), B, 4, True, charge=K),
+                temperature=0.0, tool_choice="required")
+
+            assert row0["kept"] == row2c["claimed"], (B, K, row0["kept"], row2c["claimed"])
+            assert row0["collected"] == row2c["collected"], (B, K, row0["collected"], row2c["collected"])
+            assert row0["budget"] == row2c["budget"] == B
+
+            s0, s2c = net_score(row0, K), net_score(row2c, K)
+            assert s0 == s2c, (B, K, s0, s2c)
+            # sanity: net score matches the raw formula directly, not just "R0 == R2c".
+            assert s0 == row0["collected"] - K * len(row0["kept"]), (B, K, s0, row0["collected"])
+        print("ladder_parity_selftest (economic surface) OK -- R0/R2c net scores match exactly "
+              "across (B,K) in {(2,0), (2,5), (1,24)}: charge only changes prompt text, never "
+              "commitment positions, budgets, or the resulting net score.")
+
+    asyncio.run(main())
+
+
 if __name__ == "__main__":
     _selftest()
+    _selftest_economic_surface_parity()

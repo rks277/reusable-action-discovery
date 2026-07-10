@@ -1,0 +1,157 @@
+{
+  "seed": 2011,
+  "framing": "R0",
+  "B": 3,
+  "K": 0,
+  "model_key": "haiku",
+  "net_score": 31,
+  "kept": {
+    "5": 1,
+    "3": 1,
+    "4": 2
+  },
+  "collected": 31,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 465,
+      "output_tokens": 62,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 560,
+      "output_tokens": 68,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 661,
+      "output_tokens": 83,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 777,
+      "output_tokens": 72,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 882,
+      "output_tokens": 71,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "5": "red",
+    "3": "blue",
+    "2": "green",
+    "4": "yellow",
+    "7": "purple",
+    "6": "orange",
+    "0": "black"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I'm starting with no information about color frequencies. Since I can keep 3 balls total and there are 8 colors, I should be selective but not overly cautious early on. A red ball is a reasonable first choice to establish a baseline.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I've seen one red and one blue so far - each appears once. I have 2 keeps remaining and 58 draws left, so I have flexibility. Blue could be common or rare; keeping it now locks in all future blues. I'll keep it to secure another color.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've now seen red (1), blue (1), and green (1) - all singletons so far. I have only 1 keep left and 57 draws remaining. I should be very cautious and wait to see if any color appears multiple times before using my final keep, as that would be a signal of a more common color.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 3,
+      "color": "yellow",
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've now seen red, blue, green, and yellow - all appearing once so far. With only 1 keep left and 56 draws remaining, I should continue passing and observing. I need to see which color appears again to identify a potentially more frequent color before committing my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "yellow",
+      "class_id": 4,
+      "class_position": 2,
+      "prompt": "Draw 5 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Yellow has now appeared twice (draws 4 and 5), while red, blue, and green have each appeared only once. This is a strong signal that yellow is more frequent than the others I've seen. I should use my final keep on yellow to lock in all its future occurrences.\n\nDECISION: KEEP"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm starting with no information about color frequencies. Since I can keep 3 balls total and there are 8 colors, I should be selective but not overly cautious early on. A red ball is a reasonable first choice to establish a baseline.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've seen one red and one blue so far - each appears once. I have 2 keeps remaining and 58 draws left, so I have flexibility. Blue could be common or rare; keeping it now locks in all future blues. I'll keep it to secure another color.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 3 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've now seen red (1), blue (1), and green (1) - all singletons so far. I have only 1 keep left and 57 draws remaining. I should be very cautious and wait to see if any color appears multiple times before using my final keep, as that would be a signal of a more common color.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 4 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've now seen red, blue, green, and yellow - all appearing once so far. With only 1 keep left and 56 draws remaining, I should continue passing and observing. I need to see which color appears again to identify a potentially more frequent color before committing my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 5 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Yellow has now appeared twice (draws 4 and 5), while red, blue, and green have each appeared only once. This is a strong signal that yellow is more frequent than the others I've seen. I should use my final keep on yellow to lock in all its future occurrences.\n\nDECISION: KEEP"
+    }
+  ],
+  "tool_choice": null
+}

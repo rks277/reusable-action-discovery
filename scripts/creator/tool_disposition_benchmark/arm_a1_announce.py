@@ -41,6 +41,15 @@ _ap.add_argument("--empty-fence-retry", type=int, default=0, metavar="N",
                       "and hard-retry the SAME problem up to N attempts before force-advancing "
                       "(default 0 = off, prior force-advance-after-2 behavior). Writes to a "
                       "_efrN-suffixed dir so it doesn't collide with baseline runs.")
+_ap.add_argument("--cap", type=float, default=None,
+                 help="override the USD spend guard (default: haiku/opus $12). Needed for multi-seed "
+                      "Opus batches where 12*EST exceeds the default ceiling.")
+_ap.add_argument("--full-stream", action="store_true",
+                 help="run the ENTIRE T-problem stream even after the write budget is exhausted (the "
+                      "old API-model behavior). Default now truncates the session once budget is spent "
+                      "-- no build decisions remain past that point, so first-sight/lateness are "
+                      "unchanged and the tail is valued analytically (value_of_builds). Truncating "
+                      "avoids paying for ~57 post-budget problems of debugging on an eager model.")
 _ARGS = _ap.parse_known_args()[0]
 MODEL_KEY = _ARGS.model
 MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)      # Claude key -> id; else pass the raw tag through
@@ -58,6 +67,11 @@ CAP_USD, EST, CONC = (12.0, 1.0, 12) if MODEL_KEY == "haiku" else (12.0, 2.5, 12
 if IS_LOCAL:
     CAP_USD, EST = 1e9, 0.0                        # free -> spend-guard never binds
 CONC = _ARGS.conc if _ARGS.conc else (CONC if not IS_LOCAL else 4)
+if _ARGS.cap is not None:
+    CAP_USD = _ARGS.cap
+# Truncate at budget exhaustion by default (local models always did). --full-stream restores the old
+# API behavior. No build decisions occur past exhaustion, so the disposition metric is identical.
+STOP_ON_BUDGET = not _ARGS.full_stream
 _PRICES = {"haiku": (1.0, 5.0, 0.10, 1.25), "sonnet": (3.0, 15.0, 0.30, 3.75),
            "opus": (5.0, 25.0, 0.50, 6.25)}       # $/1e6 (in, out, cache_read, cache_write)
 IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))   # local models: no cost
@@ -96,16 +110,14 @@ async def run_one(client, model, seed):
     state.announce_recurrence = True          # A1: disclose recurrence structure (non-prescriptive)
     if ANNOUNCE_N:
         state.announce_n_types = N            # A2: also disclose exact N (matches pi*'s own info)
-    t_last = [0.0]
-
-    def _progress(n_turns, problem, n, spent, elapsed):
-        if elapsed - t_last[0] >= 60 or problem == n:      # throttle: once/minute/seed, + on the last
-            t_last[0] = elapsed
-            print(f"    [seed {seed}] turn {n_turns:>3}  problem {problem:>2}/{n}  "
-                  f"{spent/1000:.0f}k tok  {elapsed:.0f}s", flush=True)
+    def _progress(n_turns, problem, n, spent, elapsed, tools, writes_remaining):
+        actions = ",".join(tools) if tools else "NO_TOOL"
+        print(f"    [seed {seed}] turn {n_turns:>3}  problem {problem:>2}/{n}  "
+              f"actions={actions}  writes_left={writes_remaining}  "
+              f"{spent/1000:.1f}k tok  {elapsed:.0f}s", flush=True)
 
     row = await run_session(client, model, state, token_cap=300_000, max_tokens=4096,
-                            announce_cap=True, stop_on_budget_exhausted=IS_LOCAL, progress_cb=_progress,
+                            announce_cap=True, stop_on_budget_exhausted=STOP_ON_BUDGET, progress_cb=_progress,
                             prune_no_tool=bool(EMPTY_FENCE_RETRY),
                             max_no_tool_retries=EMPTY_FENCE_RETRY or 2)
     row["model_key"] = MODEL_KEY

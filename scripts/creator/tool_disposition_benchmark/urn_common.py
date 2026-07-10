@@ -84,7 +84,7 @@ DECISION: PASS"""
 
 
 def render_system(T: int, B: int, N: int, announce_n: bool, vocab: dict = VOCAB["ball"],
-                  response_instruction: str | None = None) -> str:
+                  response_instruction: str | None = None, charge: int | None = None) -> str:
     """Parameterized system prompt (extracted 2026-07-07 so `rl_rollout.py` can reuse it byte-for-byte
     instead of re-deriving/paraphrasing it -- this project's standing lesson is that a near-miss format
     is as bad as no fix at all). `vocab` generalizes the surface form (2026-07-09): with the default
@@ -96,7 +96,13 @@ def render_system(T: int, B: int, N: int, announce_n: bool, vocab: dict = VOCAB[
     text is a direct, explicit competing instruction that overrides tool use even under
     `tool_choice="required"` (verified: Ollama's shim does not enforce it as a hard grammar
     constraint -- the model's own conditional distribution, driven by whatever the system prompt
-    literally says, decides whether a tool gets called at all)."""
+    literally says, decides whether a tool gets called at all). `charge` (2026-07-09, economic
+    response surface) discloses a one-time point cost for KEEPing, on top of the usual +1-per-item
+    collection value -- `None` (the default) omits the sentence entirely and reproduces every
+    existing caller's prompt byte-for-byte (all locked framing-ladder artifacts stay untouched); `0`
+    is a distinct, valid economic-surface value (the eager/K=0 cell) that DOES emit the sentence
+    ("costs 0 points"), so prompt structure stays comparable across all charge conditions in the
+    surface rather than silently shortening the K=0 cell's prompt relative to K>0 cells."""
     vessel, item, attr, adj = vocab["vessel"], vocab["item"], vocab["attr"], vocab.get("adj", "")
     item_cap = item[:1].upper() + item[1:]
     vessel_a, item_a, attr_a = _art(vessel), _art(item), _art(attr)
@@ -105,6 +111,10 @@ def render_system(T: int, B: int, N: int, announce_n: bool, vocab: dict = VOCAB[
               "the rates only from the draws you have seen.") if announce_n else (
               f"You do not know in advance how many {attr}s there are or how many {item}s of each "
               f"{attr} are in the {vessel}; you learn only from the draws you have seen.")
+    charge_note = "" if charge is None else (
+        f"\n\nKEEPing {item_a} {item} also costs {charge} point(s), deducted once at the moment you "
+        f"KEEP it -- on top of that, collecting it (and any of its future auto-collections) is still "
+        f"worth 1 point each, as usual. PASSing costs nothing.")
     return f"""You are playing a game with {vessel_a} {vessel} of {adj}{item}s.
 
 {item_cap}s are drawn from the {vessel} one at a time; there will be {T} draws in total. Each {item} \
@@ -126,7 +136,7 @@ KEEP/PASS choice on {item_a} {item} whose {attr} you have not yet kept.
 If you PASS {item_a} {item} it is gone and scores nothing. {item_cap}s of {attr_a} {attr} you never keep \
 score nothing.
 
-Your goal is to MAXIMIZE the total number of {item}s you collect by the end of the game.
+Your goal is to MAXIMIZE the total number of {item}s you collect by the end of the game.{charge_note}
 
 {n_note} Decide as each {item} appears -- decisions are final.
 

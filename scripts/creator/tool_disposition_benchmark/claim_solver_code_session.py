@@ -93,18 +93,26 @@ _PRICES = {"haiku": (1.0, 5.0, 0.10, 1.25), "sonnet": (3.0, 15.0, 0.30, 3.75),
 IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))
 
 
-def render_system_code_claim(T: int, B: int, N: int, announce_n: bool) -> str:
+def render_system_code_claim(T: int, B: int, N: int, announce_n: bool, charge: int | None = None) -> str:
     """Same terse, direct style as `claim_solver_session.render_system_claim` (not a ball-game
     narrative -- see that module's docstring for why). The one addition: `claim_solver` now requires
     real code, presented the same way R3 would ask for it (a genuine, correct, reusable solver) --
     NOT disclosing that correctness isn't checked (see module docstring). Keeps the same brevity
     clause R2 needed (`docs/framing-ladder-spec.md` §3.1's max_tokens finding) for the REASONING part
-    specifically -- the code itself is expected to be as long as it needs to be."""
+    specifically -- the code itself is expected to be as long as it needs to be. `charge` (2026-07-09,
+    economic response surface) mirrors `urn_common.render_system`'s parameter: `None` (default)
+    reproduces this function's existing, already-locked output byte-for-byte (`docs/framing-ladder-
+    spec.md` §8's results depend on this); `0` is a distinct, valid surface value that still emits the
+    sentence, keeping prompt structure comparable across all charge conditions."""
     n_note = (f"There are exactly {N} distinct problem types in the stream, but you are not told "
               "which types are common or rare, nor how many problems of each type there are; you "
               "learn the rates only from the problems you have seen.") if announce_n else (
               "You do not know in advance how many problem types there are or how many problems of "
               "each type there will be; you learn only from the problems you have seen.")
+    charge_note = "" if charge is None else (
+        f" claim_solver also costs {charge} point(s), deducted once at the moment you claim it -- on "
+        f"top of that, each problem scored correct (including future auto-solved ones) is still worth "
+        f"1 point, as usual. skip_solver costs nothing.")
     return f"""You are deciding, for a series of numeric problems, whether to invest in a persistent solver for the current problem's hidden type.
 
 There will be {T} problems in total, presented one at a time. Each problem has a hidden type.
@@ -115,7 +123,7 @@ Two actions are available on each problem:
 
 A type's solver can be claimed only once. Once claimed, you are simply told later problems of that type were auto-solved, and are not asked about that type again.
 
-Your goal is to maximize the total number of problems scored correct.
+Your goal is to maximize the total number of problems scored correct.{charge_note}
 
 {n_note} Decide as each problem appears -- decisions are final.
 

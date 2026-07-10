@@ -1,0 +1,208 @@
+{
+  "seed": 2001,
+  "framing": "R0",
+  "B": 5,
+  "K": 0,
+  "model_key": "haiku",
+  "net_score": 56,
+  "kept": {
+    "3": 1,
+    "4": 1,
+    "0": 1,
+    "6": 1,
+    "7": 2
+  },
+  "collected": 56,
+  "budget": 5,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 465,
+      "output_tokens": 62,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 560,
+      "output_tokens": 58,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 651,
+      "output_tokens": 58,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 767,
+      "output_tokens": 86,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 965,
+      "output_tokens": 140,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1163,
+      "output_tokens": 88,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1309,
+      "output_tokens": 80,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "3": "red",
+    "4": "blue",
+    "0": "green",
+    "6": "yellow",
+    "1": "purple",
+    "7": "orange"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 5 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I see the first ball is red. Since I have no information about the distribution of colors yet, and I can keep up to 5 balls, I should start building a collection. Keeping this red ball locks in all future red balls I'll see.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 4 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I see a blue ball. I've now seen 2 different colors (red and blue). With 4 keeps remaining and no information about which colors are common, I should keep this blue ball to lock in all future blue balls.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I see a green ball. I've now seen 3 different colors (red, blue, green). With 3 keeps remaining and 57 draws left, I should keep this green ball to lock in all future green balls.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 4,
+      "color": "yellow",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 4: another green ball (already kept -> auto-collected, +1).) Draw 5 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I see a yellow ball. Good - the green ball I kept already auto-collected another green ball, confirming that keeping was worthwhile. I've now seen 4 colors. With only 2 keeps left and 55 draws remaining, I should be more selective. Yellow is a new color, so I'll keep it to lock in all future yellow balls.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 9,
+      "color": "purple",
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 6: another yellow ball (already kept -> auto-collected, +1); draw 7: another green ball (already kept -> auto-collected, +1); draw 8: another yellow ball (already kept -> auto-collected, +1); draw 9: another green ball (already kept -> auto-collected, +1).) Draw 10 of 60: a purple ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I see a purple ball. The auto-collections confirm that red, blue, green, and yellow are all appearing multiple times - my keeps are paying off. I have only 1 keep left and 50 draws remaining. With so few keeps left, I should be strategic. Purple is a new 5th color. I'll pass on purple to save my last keep for a color that might appear more frequently later, or I could use it now. Since I can only keep one more color and have seen 5 distinct colors already, I'll pass and observe more to see which remaining colors (if any) appear most frequently.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 11,
+      "color": "orange",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 11: another yellow ball (already kept -> auto-collected, +1).) Draw 12 of 60: an orange ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I see an orange ball. This is a new 6th color. I have 1 keep left and 48 draws remaining. I've seen purple and orange as new colors, and there are likely more colors to come (8 total exist). I should pass on orange and wait to see if I get better information about which colors are most frequent before using my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 13,
+      "color": "orange",
+      "class_id": 7,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 13: another green ball (already kept -> auto-collected, +1).) Draw 14 of 60: an orange ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I see another orange ball. Orange has now appeared twice, suggesting it may be moderately common. I have 1 keep left and 46 draws remaining. Since I need to use my last keep strategically, and orange is showing up more frequently than purple or other new colors, I should keep it to lock in all future orange balls.\n\nDECISION: KEEP"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 5 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see the first ball is red. Since I have no information about the distribution of colors yet, and I can keep up to 5 balls, I should start building a collection. Keeping this red ball locks in all future red balls I'll see.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 2 of 60: a blue ball appears. You have 4 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see a blue ball. I've now seen 2 different colors (red and blue). With 4 keeps remaining and no information about which colors are common, I should keep this blue ball to lock in all future blue balls.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 3 of 60: a green ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see a green ball. I've now seen 3 different colors (red, blue, green). With 3 keeps remaining and 57 draws left, I should keep this green ball to lock in all future green balls.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 4: another green ball (already kept -> auto-collected, +1).) Draw 5 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see a yellow ball. Good - the green ball I kept already auto-collected another green ball, confirming that keeping was worthwhile. I've now seen 4 colors. With only 2 keeps left and 55 draws remaining, I should be more selective. Yellow is a new color, so I'll keep it to lock in all future yellow balls.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 6: another yellow ball (already kept -> auto-collected, +1); draw 7: another green ball (already kept -> auto-collected, +1); draw 8: another yellow ball (already kept -> auto-collected, +1); draw 9: another green ball (already kept -> auto-collected, +1).) Draw 10 of 60: a purple ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see a purple ball. The auto-collections confirm that red, blue, green, and yellow are all appearing multiple times - my keeps are paying off. I have only 1 keep left and 50 draws remaining. With so few keeps left, I should be strategic. Purple is a new 5th color. I'll pass on purple to save my last keep for a color that might appear more frequently later, or I could use it now. Since I can only keep one more color and have seen 5 distinct colors already, I'll pass and observe more to see which remaining colors (if any) appear most frequently.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 11: another yellow ball (already kept -> auto-collected, +1).) Draw 12 of 60: an orange ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see an orange ball. This is a new 6th color. I have 1 keep left and 48 draws remaining. I've seen purple and orange as new colors, and there are likely more colors to come (8 total exist). I should pass on orange and wait to see if I get better information about which colors are most frequent before using my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 13: another green ball (already kept -> auto-collected, +1).) Draw 14 of 60: an orange ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I see another orange ball. Orange has now appeared twice, suggesting it may be moderately common. I have 1 keep left and 46 draws remaining. Since I need to use my last keep strategically, and orange is showing up more frequently than purple or other new colors, I should keep it to lock in all future orange balls.\n\nDECISION: KEEP"
+    }
+  ],
+  "tool_choice": null
+}

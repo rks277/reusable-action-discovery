@@ -1,0 +1,208 @@
+{
+  "seed": 2010,
+  "framing": "R0",
+  "B": 3,
+  "K": 0,
+  "model_key": "haiku",
+  "net_score": 35,
+  "kept": {
+    "2": 1,
+    "7": 2,
+    "0": 3
+  },
+  "collected": 35,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 465,
+      "output_tokens": 96,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 594,
+      "output_tokens": 78,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 705,
+      "output_tokens": 68,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 806,
+      "output_tokens": 73,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 912,
+      "output_tokens": 65,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1035,
+      "output_tokens": 89,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1157,
+      "output_tokens": 84,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "2": "red",
+    "5": "blue",
+    "0": "green",
+    "7": "yellow",
+    "4": "purple",
+    "3": "orange",
+    "1": "black",
+    "6": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I need to think strategically about this game. Since I can keep only 3 balls total and can lock in entire colors, I want to keep colors that appear frequently. Early on, I have no information about the distribution, so I should be conservative but gather data.\n\nKeeping the first ball of any color is a reasonable strategy since it locks in that color's future draws. Red is now my first data point.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've seen red and blue so far, each appearing once. With 58 draws remaining and 2 keeps left, I should pass on this blue ball to gather more information about which colors are actually common before committing my remaining keeps. I want to identify the 2-3 most frequent colors before locking them in.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've now seen three different colors (red, blue, green), each appearing once so far. With 57 draws remaining and only 2 keeps left, I should continue gathering information before using my remaining keeps. Passing on green will help me identify which colors appear more frequently.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 3,
+      "color": "yellow",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've now seen four different colors (red, blue, green, yellow), each appearing once. With 56 draws remaining and 2 keeps left, I should continue passing to gather more data about frequency distributions. I want to identify which colors are actually common before committing my last 2 keeps.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "yellow",
+      "class_id": 7,
+      "class_position": 2,
+      "prompt": "Draw 5 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Yellow is appearing for the second time now, making it the first color to show up twice. This suggests yellow might be one of the more common colors. With 55 draws remaining and 2 keeps left, I should keep yellow to lock in this seemingly frequent color.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 6,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 6: another yellow ball (already kept -> auto-collected, +1).) Draw 7 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Good - yellow is already showing its value with multiple draws. I've now seen green twice (draws 3 and 7) and it's appearing again. With 53 draws remaining and only 1 keep left, I need to decide carefully. Green has appeared twice, but I should wait a bit longer to see if other colors show up more frequently before using my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 7,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 3,
+      "prompt": "Draw 8 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Green has now appeared 3 times (draws 3, 7, 8). This is the second most frequent color I've seen after yellow. With 52 draws remaining and only 1 keep left, I should lock in green now since it's clearly showing a pattern of frequency. Using my last keep strategically on a common color is important.\n\nDECISION: KEEP"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I need to think strategically about this game. Since I can keep only 3 balls total and can lock in entire colors, I want to keep colors that appear frequently. Early on, I have no information about the distribution, so I should be conservative but gather data.\n\nKeeping the first ball of any color is a reasonable strategy since it locks in that color's future draws. Red is now my first data point.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've seen red and blue so far, each appearing once. With 58 draws remaining and 2 keeps left, I should pass on this blue ball to gather more information about which colors are actually common before committing my remaining keeps. I want to identify the 2-3 most frequent colors before locking them in.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 3 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've now seen three different colors (red, blue, green), each appearing once so far. With 57 draws remaining and only 2 keeps left, I should continue gathering information before using my remaining keeps. Passing on green will help me identify which colors appear more frequently.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 4 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've now seen four different colors (red, blue, green, yellow), each appearing once. With 56 draws remaining and 2 keeps left, I should continue passing to gather more data about frequency distributions. I want to identify which colors are actually common before committing my last 2 keeps.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 5 of 60: a yellow ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Yellow is appearing for the second time now, making it the first color to show up twice. This suggests yellow might be one of the more common colors. With 55 draws remaining and 2 keeps left, I should keep yellow to lock in this seemingly frequent color.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 6: another yellow ball (already kept -> auto-collected, +1).) Draw 7 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Good - yellow is already showing its value with multiple draws. I've now seen green twice (draws 3 and 7) and it's appearing again. With 53 draws remaining and only 1 keep left, I need to decide carefully. Green has appeared twice, but I should wait a bit longer to see if other colors show up more frequently before using my final keep.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 8 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Green has now appeared 3 times (draws 3, 7, 8). This is the second most frequent color I've seen after yellow. With 52 draws remaining and only 1 keep left, I should lock in green now since it's clearly showing a pattern of frequency. Using my last keep strategically on a common color is important.\n\nDECISION: KEEP"
+    }
+  ],
+  "tool_choice": null
+}

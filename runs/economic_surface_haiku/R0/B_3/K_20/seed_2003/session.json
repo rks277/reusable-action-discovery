@@ -1,0 +1,133 @@
+{
+  "seed": 2003,
+  "framing": "R0",
+  "B": 3,
+  "K": 20,
+  "model_key": "haiku",
+  "net_score": -30,
+  "kept": {
+    "7": 1,
+    "6": 1,
+    "0": 2
+  },
+  "collected": 30,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 465,
+      "output_tokens": 57,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 580,
+      "output_tokens": 68,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 681,
+      "output_tokens": 79,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 793,
+      "output_tokens": 68,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "7": "red",
+    "6": "blue",
+    "0": "green",
+    "1": "yellow",
+    "3": "purple",
+    "4": "orange",
+    "2": "black",
+    "5": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "I'm starting the game with no information about color frequencies. A red ball is a reasonable first draw to keep, as it gives me data and locks in all future red balls. The -20 cost is a one-time investment.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 2,
+      "color": "blue",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 2: another red ball (already kept -> auto-collected, +1).) Draw 3 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Good sign - red appeared twice in the first 3 draws, suggesting it might be reasonably common. Blue is new. I have 2 keeps left and 57 draws remaining, so I can afford to be selective. I'll keep blue to gather information about another color.\n\nDECISION: KEEP"
+    },
+    {
+      "slot": 3,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 4 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "I've now seen red (appears common), and blue (1 so far). Green is new. I only have 1 keep left for the remaining 57 draws, so I need to be very strategic. I should pass on green for now and wait to see if a color emerges as particularly frequent before using my last keep.\n\nDECISION: PASS"
+    },
+    {
+      "slot": 4,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 2,
+      "prompt": "Draw 5 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Green has now appeared twice in 4 draws (excluding the auto-collected red). This suggests green might be quite common. With only 1 keep left and 55 draws remaining, I should lock in green now before I see other colors that might compete for my last keep.\n\nDECISION: KEEP"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm starting the game with no information about color frequencies. A red ball is a reasonable first draw to keep, as it gives me data and locks in all future red balls. The -20 cost is a one-time investment.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 2: another red ball (already kept -> auto-collected, +1).) Draw 3 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Good sign - red appeared twice in the first 3 draws, suggesting it might be reasonably common. Blue is new. I have 2 keeps left and 57 draws remaining, so I can afford to be selective. I'll keep blue to gather information about another color.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 4 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "I've now seen red (appears common), and blue (1 so far). Green is new. I only have 1 keep left for the remaining 57 draws, so I need to be very strategic. I should pass on green for now and wait to see if a color emerges as particularly frequent before using my last keep.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 5 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Green has now appeared twice in 4 draws (excluding the auto-collected red). This suggests green might be quite common. With only 1 keep left and 55 draws remaining, I should lock in green now before I see other colors that might compete for my last keep.\n\nDECISION: KEEP"
+    }
+  ],
+  "tool_choice": null
+}
