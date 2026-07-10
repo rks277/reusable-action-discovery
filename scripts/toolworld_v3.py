@@ -268,6 +268,10 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         intro += (f"\n\nYou have a STRICT BUDGET of {budget} actions total (pickup "
                   f"is free and excluded). If the doors are not all open within "
                   f"{budget} actions, you fail. Spend them wisely.")
+    # Qwen3/3.5 emits <think>...</think> reasoning blocks on vLLM's OpenAI-compat path.
+    # /no_think doesn't work via this path, so we strip think blocks after each response
+    # (see text_visible below) instead of trying to suppress them upfront.
+    sys_prompt = SYS3
     msgs = [{"role": "user", "content": intro + "\n\nWhat do you do?"}]
     trace = []
     noop = 0
@@ -289,7 +293,7 @@ async def run(model: str, n: int = 8, relabel_seed: int = 0, drop_seed: int = 0,
         s.turn = t
         api_err = None
         try:
-            text = await client.chat(model, SYS3, msgs, max_tokens=1500)
+            text = await client.chat(model, sys_prompt, msgs, max_tokens=1500)
         except Exception as e:
             text = ""
             api_err = f"{type(e).__name__}: {e}"

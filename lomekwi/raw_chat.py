@@ -198,6 +198,10 @@ class RawChat:
             if reasoning:
                 effort = os.environ.get("OPENAI_REASONING_EFFORT", "low")
                 kwargs["reasoning_effort"] = effort
+            if prov == "vllm" and "qwen3" in model.lower():
+                # Qwen3/3.5 default to a long reasoning phase that fills max_tokens
+                # before emitting the visible action. Disable via chat_template_kwargs.
+                kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
 
             async def _create():
                 # GPT-5 family uses max_completion_tokens; be tolerant.

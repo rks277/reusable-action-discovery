@@ -75,11 +75,9 @@ def build_intro(problem, n: int, budget: int) -> str:
                        "submit_answer with it. You get ONE submission: correct = win, "
                        "wrong = lose.")
     return head + (
-        f"You have {n} tools available (plus submit_answer). Exactly one of the {n} "
-        f"tools can solve this problem and return the answer directly -- but you do not "
-        f"know which one, and the rest return nothing useful. You may also work the "
-        f"problem out yourself. When you have the answer, call submit_answer with it. "
-        f"You get ONE submission: correct = win, wrong = lose."
+        f"You have {n} tools available (plus submit_answer). You may call any of them, "
+        f"and you may also work the problem out yourself. When you have the answer, call "
+        f"submit_answer with it. You get ONE submission: correct = win, wrong = lose."
     )
 
 

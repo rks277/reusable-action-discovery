@@ -55,6 +55,9 @@ async def main():
     if "--qwen3dense" in sys.argv:
         from scripts.oracle_qwen3_dense_config import QWEN3_DENSE_MODELS
         base = [("vllm", m) for m in QWEN3_DENSE_MODELS]
+    elif "--qwen25" in sys.argv:
+        from scripts.oracle_qwen25_config import QWEN25_MODELS
+        base = [("vllm", m) for m in QWEN25_MODELS]
     elif "--qwen" in sys.argv:
         base = QWEN3_MODELS
     else:
