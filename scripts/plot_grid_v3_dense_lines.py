@@ -39,9 +39,15 @@ CLASSIFY = [
     ("Qwen2-5-7B",   ("Qwen2.5", 7.0, "7B")),
     ("Qwen2-5-14B",  ("Qwen2.5", 14.0, "14B")),
     ("Qwen2-5-72B",  ("Qwen2.5", 72.0, "72B")),
+    ("Qwen3-5-2B",   ("Qwen3.5", 2.0, "2B")),
+    ("Qwen3-5-4B",   ("Qwen3.5", 4.0, "4B")),
     ("Qwen3-5-9B",   ("Qwen3.5", 9.0, "9B")),
     ("Qwen3-5-27B",  ("Qwen3.5", 27.0, "27B")),
+    # OpenAI sizes are SUPPOSED (unpublished), only for placement on the log axis.
+    # Order matters: match the specific -mini/-nano BEFORE bare gpt-5 (substring).
+    ("gpt-5-nano",   ("OpenAI", 4.0, "gpt-5-nano")),
     ("gpt-5-mini",   ("OpenAI", 8.0, "gpt-5-mini")),
+    ("gpt-5",        ("OpenAI", 200.0, "gpt-5")),
 ]
 FAMILY_STYLE = {  # colour + marker per family
     "Anthropic": dict(color="#C44E52", marker="o"),
@@ -101,9 +107,12 @@ def main():
                 lo, hi = wilson(k, n)
                 xs.append(size); ys.append(p)
                 los.append(p - lo); his.append(hi - p); labels.append(label)
-            ax.errorbar(xs, ys, yerr=[los, his], capsize=7, capthick=2.0,
-                        elinewidth=2.0, lw=2, markersize=9, markeredgecolor="black",
-                        markeredgewidth=0.6, label=fam, **style)
+            # small-capped whiskers: readable but lighter than the line so CIs don't shout
+            ax.errorbar(xs, ys, yerr=[los, his], capsize=3, capthick=1.0,
+                        elinewidth=1.2, ecolor=style["color"], alpha=0.6, zorder=1,
+                        lw=0, marker="none")
+            ax.plot(xs, ys, lw=2, markersize=9, markeredgecolor="black",
+                    markeredgewidth=0.6, label=fam, zorder=2, **style)
             for x, y, lab in zip(xs, ys, labels):
                 if not math.isnan(y):
                     ax.annotate(lab, (x, y), textcoords="offset points",
@@ -111,9 +120,10 @@ def main():
                                 color=style["color"])
         ax.set_title(title, fontsize=12, fontweight="bold")
         ax.set_xscale("log")
-        ax.set_xlim(5, 800); ax.set_ylim(0, 1.08)
+        ax.set_xlim(1.5, 800); ax.set_ylim(0, 1.08)
         ax.set_xticks(all_sizes)
-        ax.set_xticklabels([f"{int(s)}B" for s in all_sizes], fontsize=8)
+        ax.set_xticklabels([f"{int(s)}B" for s in all_sizes], fontsize=8,
+                           rotation=45, ha="right", rotation_mode="anchor")
         ax.tick_params(axis="x", which="minor", bottom=False)
         ax.set_xlabel("model size (B params; Anthropic = supposed)")
         ax.set_ylabel("probability")

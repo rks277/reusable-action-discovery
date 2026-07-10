@@ -35,18 +35,21 @@ def _draw_panel(ax, fams, title, denom, outcome, all_sizes):
             xs.append(size); ys.append(p)
             los.append(p - lo); his.append(hi - p); labels.append(label)
             print(f"  {fam:<10} {label:<11} {title[:12]}: {k:>3}/{n:<3} = {p:.3f}")
-        ax.errorbar(xs, ys, yerr=[los, his], capsize=7, capthick=2.0, elinewidth=2.0,
-                    lw=2, markersize=9, markeredgecolor="black", markeredgewidth=0.6,
-                    label=fam, **style)
+        # small-capped whiskers: readable but lighter than the line so CIs don't shout
+        ax.errorbar(xs, ys, yerr=[los, his], capsize=3, capthick=1.0, elinewidth=1.2,
+                    ecolor=style["color"], alpha=0.6, zorder=1, lw=0, marker="none")
+        ax.plot(xs, ys, lw=2, markersize=9, markeredgecolor="black",
+                markeredgewidth=0.6, label=fam, zorder=2, **style)
         for x, y, lab in zip(xs, ys, labels):
             if not math.isnan(y):
                 ax.annotate(lab, (x, y), textcoords="offset points", xytext=(0, 9),
                             ha="center", fontsize=8, color=style["color"])
     ax.set_title(title, fontsize=12, fontweight="bold")
     ax.set_xscale("log")
-    ax.set_xlim(5, 800); ax.set_ylim(0, 1.0)
+    ax.set_xlim(1.5, 800); ax.set_ylim(0, 1.0)
     ax.set_xticks(all_sizes)
-    ax.set_xticklabels([f"{int(s)}B" for s in all_sizes], fontsize=8)
+    ax.set_xticklabels([f"{int(s)}B" for s in all_sizes], fontsize=8,
+                       rotation=45, ha="right", rotation_mode="anchor")
     ax.tick_params(axis="x", which="minor", bottom=False)
     ax.set_xlabel("model size (B params; Anthropic = supposed)")
     ax.set_ylabel("probability")
