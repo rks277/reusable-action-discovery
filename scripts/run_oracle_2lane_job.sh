@@ -19,7 +19,11 @@ PYTHON="$REPO/.venv/bin/python"; VLLM="$REPO/.venv/bin/vllm"
 mkdir -p "$REPO/logs"
 log() { echo "[$(date '+%H:%M:%S')] [$1] ${*:2}"; }
 
-TOOL_PARSER="${TOOL_PARSER:-hermes}"   # Qwen2.5/3/3.5 all use hermes-style tool calls in vLLM
+# Tool-call format is per-family (validated by smoke test 2026-07-10):
+#   Qwen2.5 + Qwen3-dense -> hermes JSON (<tool_call>{...}</tool_call>)
+#   Qwen3.5               -> qwen3_xml   (<tool_call><function=..><parameter=..>)
+# Using the wrong parser => tool calls fall through as text => silent NO-OPs (garbage data).
+parser_for() { [ "$1" = "--qwen" ] && echo "qwen3_xml" || echo "hermes"; }
 
 # Roster split across the two GPUs, balanced so each lane carries one of the biggest models.
 # Fields: family_flag | HF_id | extra_vllm_flags | episode_concurrency
@@ -53,11 +57,12 @@ run_lane() {
         local ID="${HF//\//_}"
         local DONE="$REPO/logs/done_${ID}.flag"
         if [ -f "$DONE" ]; then log "gpu$GPU" "SKIP $HF (done flag present)"; continue; fi
-        log "gpu$GPU" "======== $HF  (conc=$CONC, parser=$TOOL_PARSER) ========"
+        local PARSER; PARSER="$(parser_for "$FAM")"
+        log "gpu$GPU" "======== $HF  (conc=$CONC, parser=$PARSER) ========"
 
         # --- serve on this GPU only ---
         CUDA_VISIBLE_DEVICES="$GPU" setsid nohup "$VLLM" serve "$HF" \
-            --port "$PORT" --enable-auto-tool-choice --tool-call-parser "$TOOL_PARSER" \
+            --port "$PORT" --enable-auto-tool-choice --tool-call-parser "$PARSER" \
             --no-enable-log-requests --enforce-eager --gpu-memory-utilization 0.90 \
             $FLAGS > "$REPO/logs/vllm_${ID}.log" 2>&1 < /dev/null &
         local PID=$!
