@@ -17,9 +17,11 @@ including the caveats we found by reading the raw transcripts. Broader project f
    policy from the balls reward alone** and reached π\* parity: paired held-out eval 75%→**32%**
    first-sight, 87%→**101%** of π\* balls.
 2. **It does NOT transfer to the tool framing — the framing wall holds for RL too.** Zero-shot tool eval
-   of the same checkpoint: it stays essentially eager in the tool task (95% first-sight, lateness 0.238)
+   of the same checkpoint: it stays essentially eager in the tool task (95% first-sight, lateness 0.131)
    despite reserving in the urn (32% / 0.903), over a **verifiably legible** tool channel (0 malformed /
-   0 unknown calls). Its tool-frame behavior is nearly **indistinguishable from base**.
+   0 unknown calls). Its tool-frame behavior is **indistinguishable from base** (95% vs 95% first-sight).
+   *Confirmed publication-grade (2026-07-10): matched q8_0, n=24 paired seeds, EFR4, calibrated `a_script`
+   — see §2.*
 3. **Interpretation (the payoff):** a policy discovered from reward in the abstract task remains
    context-bound: it does not activate in reusable script creation, even though the tool channel is
    legible and the model retains ordinary script-writing and tool-use competence.
@@ -65,20 +67,31 @@ falls to 32% while balls collected reaches 101% of π\*.
 
 ## 2. Tool-transfer result (the headline experiment): no transfer
 
-**Setup.** Paired tool eval, `arm_a1_announce.py`, **A2 / `--announce-n`** (N disclosed, to match the
-historical reference baseline), seeds 2000–2011 (the same 12 as that baseline). Both tags served at
-**`num_ctx 8192`** with the stock qwen tool template, so the paired delta is weights, not context or
-template: base control `qwen-rl-base-ctx8k` (Q4) vs `qwen-rl-urn-final` (q8_0) — the same Q4-vs-q8_0
-quant wrinkle knowingly accepted in the urn eval.
+**Setup (publication-grade rerun, 2026-07-10 — `docs/qwen-tool-transfer-rerun-spec.md`).** Paired tool
+eval, `arm_a1_announce.py`, **A2 / `--announce-n`**, **24 paired seeds 2000–2023** (up from the original
+12; disjoint from the 9000+ training seeds). Both tags served at **`num_ctx 8192`** and now at **matched
+q8_0** through the identical merge→GGUF path, so the paired delta is weights alone, not quantization:
+base control `qwen-rl-base-q8` (q8_0, no adapter, same `Qwen/Qwen2.5-Coder-14B-Instruct` base) vs
+`qwen-rl-urn-final` (q8_0). Run with **`--empty-fence-retry 4`** (de-biases build-count/regret by breaking
+the idle-tail loop) and **per-tag calibrated `a_script`** (base 0.89, RL-final 0.94; measured q8_0,
+`a0_oracle_gap` MAG=100 k=8, a_hand=0). This supersedes the original confounded cell (base Q4 vs RL q8_0,
+n=12, `a_script=1.0`, no EFR) whose numbers are archived in the run logs.
 
-| metric (tool A2) | base (Q4) | RL-final (q8_0) | *RL-final in the urn, for contrast* |
+| metric (tool A2, n=24, matched q8_0, EFR4) | base-q8 (a_script 0.89) | RL-final (a_script 0.94) | *RL-final in the urn, for contrast* |
 |---|---|---|---|
-| first-sight % | 100% (23/23) | **95% (20/21)** | *32%* |
-| mean lateness | 0.000 | **0.238** (one build, occ. #6) | *0.903* |
-| n_malformed / n_unknown | 0 / 0 | **0 / 0** | — |
-| valid tool calls / correct answers | 95 / 15 | 75 / 16 | — |
-| builds/seed | 1.92 | 1.75 | — |
-| regret vs π\* (a_script=1.0) | 3377±717 | 3729±534 | *−0.4 balls-regret* |
+| first-sight % | 95% (59/62) | **95% (58/61)** | *32%* |
+| mean lateness | 0.048 | **0.131** (max 5; one derailed-tail late build) | *0.903* |
+| n_malformed / n_unknown / n_refused | 0 / 0 / 0 | **0 / 0 / 0** | — |
+| builds/seed | 2.58 | 2.54 | — |
+| hit token cap | 0/24 | **0/24** | — |
+| regret vs π\* (calibrated a_script) | 1909±417 | 1821±396 | *−0.4 balls-regret* |
+
+The verdict is unchanged and now confounder-clean: under matched q8_0, n=24, EFR4, and calibrated
+`a_script`, RL-final stays **95% first-sight in the tool frame** while reserving at **32% in the urn** — a
+~63-point within-model, same-quant, same-information dissociation — and is **indistinguishable from base**
+(95% vs 95%) in the tool frame. EFR4 also cured the truncation pathology (0/24 token-cap hits vs the
+original run's cap-bound tails), so builds/seed (2.5–2.6, up from ~1.8) and regret (~1.8–1.9k, roughly
+half the old ~3.7k) are now citable, not truncation-biased.
 
 **Stage 1 — legibility: PASS.** Both models emitted **0 malformed / 0 unknown / 0 refused** tool calls.
 Urn-only QLoRA did **not** damage the shared tool-calling weights. Verified, not assumed (§1 of the spec
@@ -308,6 +321,14 @@ greedy-decoding attractor or persists under sampling variance.
 
 ## 6. Caveats / threats to validity (read before citing any number)
 
+**Publication-grade rerun (2026-07-10) resolves the tool-cell caveats below.** The §2 headline is now the
+matched-q8_0, n=24, EFR4, per-tag-calibrated-`a_script` run (`docs/qwen-tool-transfer-rerun-spec.md`):
+the quant-mismatch, `a_script=1.0`, and n=12 caveats are **retired**, and the idle-tail caveat is
+**downgraded** — EFR4 gave 0/24 token-cap hits and 0 malformed/unknown/refused across all 48 sessions, so
+builds/seed and regret are no longer truncation-biased (though engagement on 14B is still shallow; a fully
+non-degenerate long-session tool eval still points to 32B). The bullets below describe the **original
+n=12** run and are kept for provenance.
+
 - **`a_script` defaulted to 1.0** in the tool eval because the `qwen-rl-*` tags aren't in
   `arm_a1_announce`'s calibration dict (the historical 2934±324 baseline used the measured 0.83 for
   `qwen2.5-coder:14b`). So the **absolute** regret here is **not comparable** to 2934. base-vs-final *is*
@@ -367,9 +388,16 @@ policy generalizes across free-text vocabularies but remains strongly context- a
 - **Urn checkpoint (local):** `runs/rl_urn_pilot/checkpoint/` (adapter + optimizer + critic + manifest);
   logs `runs/rl_urn_pilot/{paired_eval.log, pilot_resume_full.log}`. `merged/` (~28GB bf16) not pulled
   (regenerable).
-- **Tool-transfer eval (local):** `runs/arm_a1_announce_qwen-rl-base-ctx8k_latest_n-announced/` and
-  `runs/arm_a1_announce_qwen-rl-urn-final_latest_n-announced/` (per-seed `sessions.jsonl` = full
+- **Tool-transfer eval — original n=12 (local):** `runs/arm_a1_announce_qwen-rl-base-ctx8k_latest_n-announced/`
+  and `runs/arm_a1_announce_qwen-rl-urn-final_latest_n-announced/` (per-seed `sessions.jsonl` = full
   transcripts); consolidated log `runs/rl_urn_pilot/tool_transfer_eval.log`.
+- **Tool-transfer eval — publication-grade rerun n=24 (local, 2026-07-10):**
+  `runs/arm_a1_announce_qwen-rl-base-q8_latest_n-announced_efr4/` and
+  `runs/arm_a1_announce_qwen-rl-urn-final_latest_n-announced_efr4/` (24 seeds each, matched q8_0, EFR4).
+  Box: A100-40GB `ubuntu@158.101.121.179`. Both tags built via `scripts/box_make_q8_tags{,_resume}.sh`
+  (adapter merge → q8_0 GGUF at num_ctx 8192; the resume script drops the redundant `extra_special_tokens`
+  list that transformers 4.57.6 rejects). Per-tag `a_script` (base 0.89 / RL-final 0.94) from
+  `runs/a0_oracle_gap_20260710_15*/`, registered in `arm_a1_announce._A_SCRIPT`.
 - **Idle-tail diagnostic (local, §4.1, seeds 2000–2003):** config-lever arm
   `runs/arm_a1_announce_qwen-rl-{base,urn}-diag_latest_n-announced/` (num_ctx 16384 + temp 0.2 tags);
   harness-retry arm `runs/arm_a1_announce_qwen-rl-{base-ctx8k,urn-final}_latest_n-announced_efr4/`.

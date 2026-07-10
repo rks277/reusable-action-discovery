@@ -89,7 +89,11 @@ PINNED_TRAP = "josephus" if MODEL_KEY == "opus" else None
 # measured pooled a_script from the 2026-07-03 Qwen-Coder calibration (a0_oracle_gap); Claude models
 # assumed ~1 (never separately measured -- their scripts are ~always correct in these transcripts).
 _A_SCRIPT = {"qwen2.5-coder:0.5b": 0.21, "qwen2.5-coder:1.5b": 0.35, "qwen2.5-coder:3b": 0.50,
-             "qwen2.5-coder:7b": 0.75, "qwen2.5-coder:14b": 0.83, "qwen2.5-coder:32b": 0.96}
+             "qwen2.5-coder:7b": 0.75, "qwen2.5-coder:14b": 0.83, "qwen2.5-coder:32b": 0.96,
+             # publication-grade tool-transfer rerun (2026-07-10, q8_0, MAG=100, a0_oracle_gap k=8
+             # over the 8 uniform-hard families; a_hand=0 everywhere). q8_0 reads a bit higher than
+             # the historical Q4 0.83 (closer to bf16); per-tag because base vs RL-final differ.
+             "qwen-rl-base-q8:latest": 0.89, "qwen-rl-urn-final:latest": 0.94}
 A_SCRIPT = _A_SCRIPT.get(MODEL_KEY, 1.0)
 
 

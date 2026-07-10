@@ -465,9 +465,16 @@ Use the publication-grade rerun here:
 - At least 24 paired seeds.
 - Report first-sight and lateness as primary; sustained engagement and regret as diagnostics.
 
-Current placeholder:
+Final result (publication-grade rerun, 2026-07-10; matched q8_0, n=24 paired seeds, EFR4, per-tag
+calibrated `a_script`):
 
-> In the existing run, the same checkpoint remains 95% first-sight in the tool frame despite 32% in the urn, with zero malformed or unknown tool calls. Replace these values and caveats with the final rerun.
+> The same checkpoint remains **95% first-sight in the tool frame** (58/61 builds, lateness 0.131) despite
+> **32%** in the urn, and is indistinguishable from the base control (95%, 59/62). Across all 48 sessions
+> the tool channel is clean (0 malformed / 0 unknown / 0 refused, 0/24 token-cap hits), so build-count
+> (2.5/seed) and regret (RL-final 1821±396, base 1909±417, at calibrated `a_script` 0.94/0.89) are
+> reported as de-biased diagnostics; first-sight and lateness remain the lead. This is the confounder-clean
+> version of the transfer boundary: same model, same quant, same disclosed information, opposite behavior
+> across frames.
 
 ## 8.5 Boundary tests: vocabulary versus action modality
 
@@ -503,6 +510,8 @@ Publication minimum:
 - One additional model family with demonstrated abstract allocation competence.
 - Matched R0 and R2c conditions on paired streams.
 - Report both abstract competence and code-frame behavior; a model that fails both does not test suppression.
+- Locked implementation: `gpt-cross-family-r0-r2c-spec.md` tests GPT-5.4-mini and GPT-5.6 at
+  `B=3, K=0`, with a full-panel R0 competence gate before each paid R2c panel.
 
 Scope-widening target:
 

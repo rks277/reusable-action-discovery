@@ -1,9 +1,14 @@
 # Publication-grade Qwen tool-transfer rerun — Preregistration + Implementation Plan
 
-**Status (2026-07-10): SPECCED + READY TO RUN. Decisions locked; awaiting the A100 box.** This is the
-plan to convert the RL tool-transfer result (`docs/rl-phase1-results.md` §2) from a *behavioral timing
-signal* into a fully citable cell — matched quantization, calibrated `a_script`, robust empty-fence
-handling, and 24 paired seeds. It is one of the three inference-only publication gates in the project
+**Status (2026-07-10): COMPLETE.** Run on A100-40GB `ubuntu@158.101.121.179`. Both arms at matched q8_0,
+n=24 paired seeds (2000–2023), EFR4, per-tag calibrated `a_script` (base 0.89 / RL-final 0.94).
+**Result: RL-final 95% first-sight in the tool frame (58/61) vs 32% in the urn, indistinguishable from
+base (95%, 59/62); 0 malformed/unknown/refused and 0/24 token-cap hits across all 48 sessions; regret
+1821±396 (RL) / 1909±417 (base), ~halved and de-biased vs the original run.** The transfer-failure verdict
+holds confounder-clean. Record updated: `rl-phase1-results.md` §2/§6/§8, `paper-structure-outline.md` §8.4,
+project-review canvas. This section is the plan that produced that result — converting the RL tool-transfer
+result (`docs/rl-phase1-results.md` §2) from a *behavioral timing signal* into a fully citable cell via
+matched quantization, calibrated `a_script`, robust empty-fence handling, and 24 paired seeds. It is one of the three inference-only publication gates in the project
 review canvas (alongside the paired Opus tool cell and the cross-family breadth replication) and is
 required by `docs/paper-structure-outline.md` §8.4.
 
@@ -112,9 +117,10 @@ re-running RL-final and reinject a cross-frame quant difference.
    families, e.g. `--models qwen-rl-urn-final:latest qwen-rl-base-q8:latest --magnitudes 100 --k 8`
    (run one model per grid per its own warning). Record pooled `a_script` per tag.
 2. Register the measured values in `arm_a1_announce._A_SCRIPT` keyed on the exact served model strings, so
-   the regret block (L183–206) uses the per-tag measured `a_script` instead of the 1.0 default. Expect
-   both near the historical 0.83; if the q8_0 base diverges from 0.83, use the freshly measured number and
-   note it.
+   the regret block (L183–206) uses the per-tag measured `a_script` instead of the 1.0 default.
+   **Measured 2026-07-10 (q8_0, MAG=100, k=8, a_hand=0 everywhere): `qwen-rl-base-q8:latest` = 0.89,
+   `qwen-rl-urn-final:latest` = 0.94** — both above the historical Q4 0.83 (q8 is closer to bf16), and
+   RL-final > base, so per-tag pricing matters. Registered in `_A_SCRIPT` and verified on the box.
 3. Re-derive regret for both models against the same exact-DP π\* (shared utility function, so the
    same-info reference is priced with the same `a_script`).
 
