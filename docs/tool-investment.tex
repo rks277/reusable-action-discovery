@@ -40,13 +40,15 @@ whether language-model agents preserve online allocation behavior when the same
 investment decision moves from an abstract keep/pass frame to reusable code
 construction. Claude Haiku reserves budget in the abstract frame but makes
 100\% of its script builds on first sight, compared with 28\% abstract
-first-sight commitment. A preregistered framing ladder localizes this shift to
-required code emission: a declarative solver claim yields 39\% first-sight
-commitment, while requiring code---without correctness-dependent reward or a
-hand-solving option---raises it to 100\%. Across build charges spanning eager,
-selective, and never-build regimes, Haiku's abstract choices adjust to the
-economics, whereas its code-required choices remain at 98--100\% first sight,
-including when never building is optimal. The shift also appears in Claude
+first-sight commitment (paired difference $+72.2$ percentage points, 95\%
+seed-bootstrap interval $[+61.1,+83.3]$). A preregistered framing ladder
+localizes this shift to required code emission: a declarative solver claim
+yields 39\% first-sight commitment, while requiring code---without
+correctness-dependent reward or a hand-solving option---raises it to 100\%
+(paired difference $+61.1$ points, $[+38.9,+83.3]$). Across build charges
+spanning eager, selective, and never-build regimes, Haiku's abstract choices
+adjust to the economics, whereas its code-required choices remain at
+98--100\% first sight, including when never building is optimal. The shift also appears in Claude
 Opus and, after a preregistered competence gate, in GPT-5.4-mini (16.7\%
 abstract versus 87.9\% code-required). In contrast, competence-qualified
 GPT-5.6 Sol preserves reserve across the same comparison (19.4\% versus
@@ -95,12 +97,12 @@ framing ladder and a construction-only control isolate required code emission
 as sufficient to reproduce the full shift within this benchmark. Third, the
 affected code-required policy is economically inelastic: it remains almost
 fully eager as visible build charges move from zero to a level at which every
-build is net-negative. Fourth, a Qwen-14B policy can acquire reserve from reward
-and preserve it when balls and urns are replaced by unseen abstract vocabularies,
-yet remains as eager as its base model during script construction. Fifth, the
-benchmark is difficult but passable. Opus and
+build is net-negative. Fourth, the benchmark is difficult but passable. Opus and
 GPT-5.4-mini exhibit the framing shift, whereas GPT-5.6 Sol preserves reserve
-after code becomes required.
+after code becomes required. Fifth, as a convergent case study, a Qwen-14B
+policy can acquire reserve from reward and preserve it when balls and urns are
+replaced by unseen abstract vocabularies, yet remains as eager as its base model
+during script construction.
 
 The paper contributes:
 \begin{enumerate}
@@ -111,10 +113,10 @@ The paper contributes:
     from framing-dependent non-expression;
     \item a causal study combining a preregistered framing ladder, a
     code-required control, and an economic response surface;
-    \item a proof-of-possibility reward-learning case study distinguishing
-    policy acquisition from cross-context activation; and
     \item a preregistered, competence-gated model panel that contains both a
-    large cross-frame shift and successful cross-frame preservation.
+    large cross-frame shift and successful cross-frame preservation; and
+    \item a proof-of-possibility reward-learning case study distinguishing
+    policy acquisition from cross-context activation.
 \end{enumerate}
 
 \section{Related Work}
@@ -187,7 +189,9 @@ sequence. In the abstract urn frame, the model observes a colored item and
 chooses \textsc{keep} or \textsc{pass}. Keeping a class commits budget and
 collects its occurrences. In the reusable-script frame, the model encounters a
 numeric problem and may write a class-level solver that can be run on later
-instances. We pair byte-identical class streams across conditions.
+instances. We pair identical latent class identities, roles, counts, and arrival
+orders across conditions. Numeric payloads may be rendered at a model-calibrated
+magnitude without changing that latent sequence.
 
 The main causal condition, A2, tells both the model and the reference that
 exactly $N=8$ classes occur. A separate no-$N$ condition is ecologically
@@ -226,8 +230,21 @@ Core Haiku comparisons use 12 canonical streams (seeds 2000--2011).
 Repeated conditions on these streams are not independent samples: the effective
 stream sample is 12, not the number of sessions. The final Qwen transfer test
 uses 24 paired held-out streams (2000--2023), disjoint from training seeds.
-We report numerators and denominators, paired seed differences, and
-seed-clustered bootstrap intervals where applicable.
+The Opus script arm re-renders the same 12 canonical latent streams at magnitude
+1000, which makes the tunable numeric families hand-hard for Opus while
+preserving every class identity, role, count, and arrival position. A preflight structural
+projection assertion passes on all 12 seeds. Josephus remains partly
+hand-solvable for Opus at any magnitude; we therefore treat Opus timing as the
+primary paired outcome, report a Josephus-excluded sensitivity, and do not use
+its script-arm regret as a payoff-isomorphic cross-frame estimate.
+We report numerators and denominators, pooled arm summaries, and mean paired
+seed differences. Unless stated otherwise, 95\% intervals resample paired
+seeds with replacement 10,000 times and take the 2.5th and 97.5th percentiles
+of the bootstrap distribution. For first sight among realized commitments, a
+seed with zero commitments has an undefined proportion and is excluded from
+that estimand; first-sight hazard, commitment count, and zero-commit incidence
+remain defined and are reported alongside it. Economic interactions are
+computed within seed before resampling.
 
 Mechanical validity is checked independently of behavioral outcomes. The
 harness asserts stream hashes, separates transport failures from model
@@ -280,8 +297,10 @@ Standard error & $285$ & $344$ & $520$ & $553$ \\
 The A2 comparison is the key identification result. Haiku receives the same
 class-count information and acts on the same class streams, yet waits in the
 abstract task and commits immediately when the action is reusable script
-construction. This is evidence for framing-dependent non-expression, not a
-claim that all cognition is held constant.
+construction. The mean paired R3-minus-R0 first-sight difference is $+72.2$
+percentage points (95\% seed-bootstrap interval $[+61.1,+83.3]$). This is
+evidence for framing-dependent non-expression, not a claim that all cognition
+is held constant.
 
 \subsection{Qualitative behavior}
 
@@ -325,8 +344,15 @@ Mean lateness & 1.194 & 2.167 & 0.833 & 0.000 & 0.000 \\
 R1 changes action modality without reproducing eagerness. R2 introduces real
 problem content and a current-plus-future commitment, increasing first-sight
 behavior by 22 points relative to R1 but remaining below the locked threshold.
-The original R2-to-R3 transition is 61 points. Figure~\ref{fig:ladder} displays
-the paired stream trajectories and the construction-only R2c control.
+The mean paired adjacent differences (95\% seed-bootstrap intervals) are
+R1--R0 $=-11.1$ points $[-30.6,+8.3]$, R2--R1 $=+22.2$
+$[+2.8,+44.4]$, R2c--R2 $=+61.1$ $[+38.9,+83.3]$, and R3--R2c
+$=0.0$ $[0.0,0.0]$. These descriptive intervals do not replace the
+preregistered 30-point localization rule and are not multiplicity-adjusted; the
+final degenerate interval reflects ceiling observations in both rungs, not a
+general equivalence claim.
+Figure~\ref{fig:ladder} displays the paired stream trajectories and the
+construction-only R2c control.
 
 \begin{figure}[t]
 \centering
@@ -398,7 +424,14 @@ The interaction matters more than either policy's absolute optimality. R0 is
 too cautious at $K=0$ and still somewhat too eager at high charges, but its
 timing changes with the visible economics. R2c's timing barely changes. For
 Haiku, the code-required frame largely removes behavioral elasticity to the
-investment price.
+investment price. We quantify this with a seed-paired endpoint interaction:
+the $K=0$-to-$24$ reduction in first-sight hazard under R0 minus the
+corresponding reduction under R2c. The mean interaction is $+43.3$ points
+$[+18.3,+68.4]$ for $B=1$, $+21.4$ $[+7.9,+36.1]$ for $B=3$, and
+$+37.0$ $[+19.8,+55.2]$ for $B=5$ (95\% seed-bootstrap intervals).
+Because R2c is near ceiling throughout, this interaction is driven mainly by
+R0's price response. Appendix~\ref{app:economic} reports hazard, commitments,
+zero-commit incidence, lateness, net utility, and regret together.
 
 \begin{figure}[t]
 \centering
@@ -414,84 +447,6 @@ online policy.}
 \label{fig:economic}
 \end{figure}
 
-\section{Acquisition Without Constructive Activation}
-
-Baseline Qwen2.5-Coder-14B is eager in both frames, so its behavior does not
-identify suppression of an existing policy. We ask whether reward can install
-reserve in the abstract frame and whether the learned policy activates during
-script creation.
-
-\subsection{Training}
-
-We train from the untouched instruct model using QLoRA
-\cite{dettmers2023qlora} and per-decision PPO \cite{schulman2017ppo}. Training
-runs for 20 outer steps with 25 seeds per step and four rollouts per seed,
-without demonstrations. The critic receives true class-rate features that are
-unavailable to the actor, following the general asymmetric actor--critic idea
-\cite{pinto2018asymmetric}. This privileged critic and the single successful
-run make the experiment a proof of possibility, not evidence of robust or
-sample-efficient learning.
-
-On 24 held-out abstract streams, first-sight commitment falls from 75\% for the
-base model to 32\% after training; lateness rises from 0.375 to 0.903; and
-collected items increase from 87\% to 101\% of the Bayesian comparator.
-
-\subsection{Lexical generalization}
-
-A direct concern is that urn-only training may teach a surface rule over
-\emph{balls}, \emph{colors}, and \emph{bags} rather than an allocation policy.
-We therefore evaluate the unchanged checkpoint on three held-out vocabularies
-never observed during training: coins distinguished by crest and placed in a
-treasure chest, arrows distinguished by feather and placed in a quiver, and
-potions distinguished by label and placed in a cauldron. Every content word is
-replaced while the latent streams, horizon, budget, and free-text
-\textsc{keep}/\textsc{pass} decision structure remain fixed.
-
-The reserve behavior transfers cleanly. Pooled across the three reskins,
-RL-final makes 19\% of commitments on first sight, compared with 89\% for the
-base model, and has mean lateness 0.968 versus 0.134. The RL model's
-per-vocabulary first-sight rates remain in a 10--33\% band, whereas the base
-model ranges from 71--100\%. Thus the learned disposition is not a memorized
-response to ball/urn vocabulary. This control establishes \emph{lexical}
-generalization, not general task transfer: all three reskins retain the
-abstract keep/pass structure on which the policy was trained.
-
-\subsection{Decision modality and reusable-script transfer}
-
-The final tool evaluation compares matched q8\_0 base and RL models on 24
-paired A2 streams, with calibrated script correctness and robust empty-response
-retries. Both channels are mechanically clean: there are no malformed, unknown,
-or refused calls and no token-cap hits. Nevertheless, the trained policy makes
-95\% of tool builds on first sight (58/61), identical in percentage to the base
-control (59/62), despite its 32\% abstract result. To separate construction
-from action modality, we also express the reskinned abstract task through
-isomorphic zero-argument \textsc{keep}/\textsc{pass} tool calls. Transfer is
-partial and vocabulary-sensitive: pooled first-sight commitment is 62\% for
-RL-final versus 99\% for base, and RL-final ranges from 44\% to 97\% across
-vocabularies. In the cauldron condition, RL-final keeps the first three distinct
-potions and exhausts its budget by decision turn three in 16 of 24 seeds,
-despite receiving byte-identical class sequences to the other reskins. Because
-the transcripts contain no explanatory reasoning, we report the vocabulary
-dependence without attributing a semantic cause.
-
-The combined result is more specific than either ``vocabulary overfit'' or an
-absolute tool-call wall. The learned policy generalizes across unseen lexical
-surfaces, degrades under a modality change, and fails most strongly in
-constructive script context (Figure~\ref{fig:rl-transfer}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\linewidth]{figures/fig5_rl_transfer_boundary.png}
-\caption{\textbf{Reward-learned reserve remains context-bound.} The trained
-Qwen-14B policy reserves in the original abstract urn and across three lexical
-reskins. Transfer weakens when the same keep/pass decision is expressed through
-tool calls and disappears in reusable script construction, where base and
-RL-final are both 95\% first sight. Values are pooled publication results; the
-script point is the matched q8\_0, $n=24$, EFR4 rerun. The four columns are
-distinct evaluation panels rather than one paired trajectory.}
-\label{fig:rl-transfer}
-\end{figure}
-
 \section{A Difficult but Achievable Capability}
 
 The paired benchmark admits three distinguishable states: policy absence,
@@ -501,14 +456,15 @@ Figure~\ref{fig:capability-map}.
 
 \begin{table}[t]
 \centering
-\caption{Competence-gated framing comparisons. GPT intervals use paired
-seed-level bootstrap resampling. Opus uses the matched A2 urn/tool endpoints.}
+\caption{Competence-gated framing comparisons. Arm rates are pooled ratios;
+differences are means of paired seed-level differences. Opus uses the matched
+A2 urn/tool endpoints.}
 \label{tab:models}
 \begin{tabular}{lrrrr}
 \hline
 Model & Abstract first sight & Code/tool first sight & Difference & Interpretation \\
 \hline
-Haiku 4.5 & 28\% & 100\% & +72 pp & Suppressed \\
+Haiku 4.5 & 28\% & 100\% & +72.2 pp & Suppressed \\
 Opus 4.8 & 0\% & 100\% & +100 pp & Suppressed \\
 GPT-5.4-mini & 16.7\% & 87.9\% & +75.8 pp & Suppressed \\
 GPT-5.6 Sol & 19.4\% & 27.8\% & +8.3 pp & Preserved \\
@@ -531,11 +487,23 @@ competence-gated model estimate.}
 \end{figure}
 
 Opus reserves completely in the urn but uses all of its script budget at first
-sight. GPT-5.4-mini passes the preregistered abstract gate, then rises from
+sight; its paired difference is $+100$ points, with a degenerate seed-bootstrap
+interval $[+100,+100]$ because every observed seed has the same endpoint
+values. All 36 script builds occur at first sight with zero lateness. Josephus
+accounts for three of those builds; excluding it leaves 33/33 first-sight builds
+and zero lateness. Thus the result is not driven by the one family for which
+hand solving remains a partial option. The degenerate interval is not a
+population-level certainty claim. GPT-5.4-mini passes
+the preregistered abstract gate, then rises from
 16.7\% R0 to 87.9\% R2c first-sight commitment; the paired difference is
 $+75.8$ points with a 95\% bootstrap interval of $[+54.5,+93.9]$. Seed-level
 heterogeneity remains: one R2c seed waits substantially and one makes no
-commitments.
+commitments. The displayed arm rates are pooled ratios: $29/33-6/36=71.2$
+points. The $+75.8$-point inferential estimand instead averages the 11
+within-seed differences for which both among-commitment proportions are
+defined; the zero-commit R2c seed is excluded from that conditional estimand.
+R0 and R2c hazards are 8.7\% and 59.2\%, respectively; this unconditional
+analysis retains the zero-commit seed.
 
 GPT-5.6 Sol also passes the abstract gate, collecting 98.5\% of the Bayesian
 comparator's payoff. Unlike the affected models, it remains selective when code
@@ -551,6 +519,49 @@ models that demonstrate allocation only abstractly. The two GPT points do not,
 however, establish that scale or generic capability causes preservation.
 Post-training, architecture, reasoning policy, and tool-use experience remain
 possible explanations.
+
+\section{Convergent Case Study: Acquisition Without Constructive Activation}
+
+As a separate proof-of-possibility case study, we ask whether reward can install
+reserve in a model that is initially eager in both frames, and whether the
+learned policy then activates during script creation. Starting from untouched
+Qwen2.5-Coder-14B-Instruct, one QLoRA \cite{dettmers2023qlora} per-decision PPO
+\cite{schulman2017ppo} run with no demonstrations reduces first-sight
+commitment on 24 held-out abstract streams from 75\% to 32\%; lateness rises
+from 0.375 to 0.903, and collected items rise from 87\% to 101\% of the
+Bayesian comparator. The critic receives true class-rate features unavailable
+to the actor \cite{pinto2018asymmetric}, and only one successful run is
+analyzed. The result therefore establishes acquisition in this configuration,
+not robust or sample-efficient learning. Appendix~\ref{app:rl} gives the
+training procedure and pilot history.
+
+The learned reserve is not tied to the literal words \emph{ball},
+\emph{color}, and \emph{bag}. On three unseen lexical reskins that preserve the
+abstract keep/pass structure, RL-final makes 19\% of commitments on first sight,
+versus 89\% for the base model, with mean lateness 0.968 versus 0.134. This is
+lexical generalization, not general task transfer.
+
+Transfer nevertheless remains context-bound. On 24 matched q8\_0 reusable-script
+streams, RL-final and base make 95\% of builds on first sight (58/61 and 59/62).
+Expressing the abstract reskins through zero-argument keep/pass tool calls
+produces partial, vocabulary-sensitive transfer (62\% for RL-final versus 99\%
+for base). Thus the learned disposition survives new words but degrades under a
+modality change and is absent in reusable construction
+(Figure~\ref{fig:rl-transfer}). Detailed modality probes, per-vocabulary
+results, and retry diagnostics are deferred to Appendix~\ref{app:rl}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/fig5_rl_transfer_boundary.png}
+\caption{\textbf{Reward-learned reserve remains context-bound.} The trained
+Qwen-14B policy reserves in the original abstract urn and across three lexical
+reskins. Transfer weakens when the same keep/pass decision is expressed through
+tool calls and disappears in reusable script construction, where base and
+RL-final are both 95\% first sight. Values are pooled publication results; the
+script point is the matched q8\_0, $n=24$, EFR4 rerun. The four columns are
+distinct evaluation panels rather than one paired trajectory.}
+\label{fig:rl-transfer}
+\end{figure}
 
 \section{Discussion}
 
@@ -626,5 +637,254 @@ capability worth measuring, not a universal model failure.
 
 \bibliography{references}
 
+\appendix
+
+\section{Reconstruction Details}
+\label{app:reconstruction}
+
+\subsection{Streams and session state}
+
+All confirmatory Haiku, Opus, and GPT comparisons use canonical seeds
+2000--2011. For each seed, a local pseudorandom generator first permutes the
+eight procedure families
+\texttt{lcg}, \texttt{modpow}, \texttt{continued\_frac},
+\texttt{crt\_solve}, \texttt{josephus}, \texttt{quadratic\_map\_mod},
+\texttt{xorshift\_steps}, and \texttt{matrix\_power\_mod} across three hot and
+five trap roles. Hot classes jointly receive probability 0.85 and traps 0.15,
+uniformly within role. The generator samples $T=60$ class identities
+i.i.d. and rejection-samples until at least one trap occurs in the first $B$
+positions ($B=3$ in the core comparison). Numeric instances are generated at
+magnitude 100 for the canonical Haiku conditions. The repaired Opus R3 arm
+holds the complete latent stream fixed---family, class ID, role, rate, realized
+count, occurrence position, and arrival order---and regenerates only numeric
+payloads at magnitude 1000. It does not pin or relocate any family. Structural
+projections match the canonical Opus urn artifacts on 12/12 seeds. Class
+metadata are hidden; only rendered item or problem text is shown to the model.
+Haiku R0, R1, R2, R2c, and R3 reuse the same saved magnitude-100 stream for
+each seed.
+
+Each commitment consumes one of $B$ slots and is irreversible. Subsequent
+members of a committed class are automatically collected or solved and produce
+no new decision. Sessions stop making decisions when the budget is exhausted,
+but scoring includes all later members of committed classes. Economic sessions
+use the same streams and cross $B\in\{1,3,5\}$ with
+$K\in\{0,10,20,24\}$; $K$ changes only the disclosed one-time charge and net
+score.
+
+\subsection{Prompt and tool reconstruction}
+
+The artifact retains every rendered user message, assistant response, tool
+call, and generated stream. Exact prompt generators and schemas are in
+\texttt{urn\_common.py}, \texttt{urn\_session.py},
+\texttt{urn\_tool\_session.py}, \texttt{claim\_solver\_session.py},
+\texttt{claim\_solver\_code\_session.py}, and
+\texttt{session\_state.py}. To remove ambiguity about substitutions, the core
+A2 prompts have $T=60$, $N=8$, and the current $B$ inserted into the following
+templates.
+
+\paragraph{R0/R1 allocation instructions.}
+The system states that 60 items are drawn one at a time; at any draw the model
+may KEEP the current item or PASS; at most $B$ items may be kept; keeping an
+item immediately collects it and every future item with the same visible
+attribute; passing scores zero; already-kept attributes are auto-collected and
+do not create another decision; and choices do not change the stream. The A2
+disclosure is:
+\begin{quote}\small
+There are exactly 8 distinct colors in the bag, but you are not told which
+colors are common or rare, nor how many balls of each color there are; you
+learn the rates only from the draws you have seen.
+\end{quote}
+R0 ends with the exact response instruction
+\begin{quote}\small
+For each draw, think briefly (one or two sentences), then end your reply with
+EXACTLY one line: \texttt{DECISION: KEEP} or
+\texttt{DECISION: PASS}.
+\end{quote}
+R1 replaces only that instruction with an exactly-one-call requirement. Its
+zero-argument functions are \texttt{keep}, described as collecting the current
+ball and every future ball of its color while using one keep, and
+\texttt{pass}, described as discarding the current ball for zero score. Both
+schemas have JSON type \texttt{object} with no properties. The exact R1
+response instruction is:
+\begin{quote}\small
+For each draw, decide by calling EXACTLY ONE tool: keep or pass. Do NOT write a
+``DECISION:'' line or any other text describing your choice---the tool call
+itself IS your decision. You may think briefly in plain text first if you like,
+but you must still call keep or pass.
+\end{quote}
+
+\paragraph{R2/R2c allocation instructions.}
+Both prompts state that 60 numeric problems arrive one at a time, each has a
+hidden type, exactly eight types occur, rates are initially unknown, a solver
+may be claimed at most $B$ times, a claim scores the current and all future
+problems of that type, skipping scores zero, decisions are final, and the model
+must call exactly one of \texttt{claim\_solver} or \texttt{skip\_solver}.
+R2 explicitly says not to compute an answer and uses two zero-argument tools.
+R2c instead adds the following exact requirement:
+\begin{quote}\small
+You must provide \texttt{code}: a real, correct Python function
+\texttt{def solve(inputs: dict) -> float} that solves problems of this type---it
+stands in for every future problem of the same type for the rest of the
+session, so it should actually work, not just handle the problem currently
+shown.
+\end{quote}
+The R2c \texttt{claim\_solver} schema therefore has one required string
+property, \texttt{code}; \texttt{skip\_solver} remains a zero-argument object.
+The prompt does not disclose that correctness is excluded from reward. For an
+economic cell, both R0 and R2c add the exact statement that committing costs
+$K$ points once, each collected or solved problem remains worth one point, and
+declining costs nothing. R3 uses the reusable-script harness's
+\texttt{write\_script}, \texttt{run\_script}, and answer tools; the complete
+prompt and schema generators are in \texttt{driver.py} and
+\texttt{session\_state.py}, and complete resulting transcripts are stored in
+\texttt{runs/arm\_a1\_announce\_n-announced/} for Haiku and
+\texttt{runs/arm\_a1\_announce\_opus\_n-announced\_canonical-structure/}
+for the repaired Opus endpoint.
+
+\subsection{Models and generation settings}
+
+Claude runs use \texttt{claude-haiku-4-5-20251001} and
+\texttt{claude-opus-4-8}. GPT runs use
+\texttt{gpt-5.4-mini-2026-03-17} and \texttt{gpt-5.6-sol}. Provider-default
+temperature is held fixed across paired arms. Claude R1, R2, and R2c use
+\texttt{tool\_choice=auto}; forcing a tool call suppressed deliberation in
+calibration. GPT uses \texttt{reasoning\_effort=none} in both arms and
+\texttt{tool\_choice=auto} for R2c. Maximum output is 512 tokens for R0/R1,
+1500 for R2, 2500 for R2c, and 4096 per R3 turn, with a 300,000-token session
+cap. Opus R3 sessions stop immediately after the third successful script write;
+all 12 terminate on budget exhaustion without hitting the token or per-seed
+cost breaker, and contain no malformed or unknown calls. Qwen starts from
+\texttt{Qwen/Qwen2.5-Coder-14B-Instruct}; matched final
+tool evaluations use q8\_0 base and adapted models with an 8192-token context.
+
+\subsection{Competence gate and mechanical validity}
+
+A GPT model passes the locked abstract competence gate only if all 12 R0
+sessions complete, it makes at least 2.5 commitments per seed, no more than
+50\% of realized commitments are first-sight, and its mean collection reaches
+90\% of the same-information Bayesian comparator. The preregistered
+suppression replication additionally requires at least 80\% R2c first-sight
+among commitments, a pooled R2c--R0 increase of at least 30 points, and a
+positive lower endpoint for the paired bootstrap interval.
+
+Transport or provider exceptions receive at most two additional attempts with
+linear 1.5-second backoff. Model-level failures---no decision, multiple
+decisive calls, an unknown function, malformed arguments, or an unparsable
+response---are not retried; they default to the non-commit action and remain
+counted as unresolved. A ladder rung is invalid if unresolved decisions exceed
+10\%. Response-model identity, stream hash, malformed and unknown calls,
+termination reason, usage, and token-cap hits are checked separately from
+behavior. Only a mechanical failure permits a replacement run. For the final
+Qwen script evaluation, empty-fence retries are fixed at four in both arms and
+all attempts remain logged.
+
+\subsection{Bootstrap estimands}
+
+For each paired comparison, first-sight among commitments is computed within
+seed, the second-arm value minus the first-arm value is taken, and paired seeds
+are sampled with replacement 10,000 times using bootstrap RNG seed 0. The
+reported point estimate is the arithmetic mean of seed differences and the
+interval is the percentile interval. A seed with no commitments has an
+undefined among-commitments proportion and is omitted only from that
+conditional estimand; it remains in commitment, zero-commit, hazard, and
+utility summaries. Economic endpoint interactions are computed per seed as
+\[
+\{h_{R0}(0)-h_{R0}(24)\}
+-\{h_{R2c}(0)-h_{R2c}(24)\},
+\]
+separately for each $B$, and then resampled by seed. No session within a seed
+is treated as an independent replicate.
+
+\section{Complete Economic Summaries}
+\label{app:economic}
+
+Table~\ref{tab:econ-full} reports the principal behavioral and utility
+quantities on the plotted charge surface. Hazard is pooled over eligible
+first-sight turns; all other columns are means over the 12 seeds. Zero-commit
+incidence is 0\% in every displayed cell.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\caption{Economic surface with timing, commitment, and utility outcomes reported
+together. Net is collected or solved items minus $K$ times commitments; regret
+is against the exact hindsight net optimum.}
+\label{tab:econ-full}
+\begin{tabular}{llrrrrr}
+\hline
+Frame & $(B,K)$ & Hazard (\%) & Commits & Lateness & Net & Regret \\
+\hline
+R0 & $(1,0)$  & 16.7 & 1.00 & 1.08 & 8.8 & 10.2 \\
+R0 & $(1,10)$ & 0.0  & 1.00 & 3.75 & 3.2 & 5.8 \\
+R0 & $(1,24)$ & 0.0  & 1.00 & 3.17 & -11.0 & 11.0 \\
+R0 & $(3,0)$  & 25.0 & 3.00 & 1.08 & 36.9 & 12.6 \\
+R0 & $(3,10)$ & 5.6  & 3.00 & 2.00 & 10.8 & 8.8 \\
+R0 & $(3,24)$ & 8.6  & 3.00 & 1.94 & -34.2 & 34.2 \\
+R0 & $(5,0)$  & 41.6 & 4.75 & 0.68 & 51.2 & 4.7 \\
+R0 & $(5,10)$ & 16.2 & 4.75 & 1.57 & -0.1 & 19.7 \\
+R0 & $(5,24)$ & 4.7  & 4.25 & 2.36 & -60.3 & 60.3 \\
+\hline
+R2c & $(1,0)$  & 100.0 & 1.00 & 0.00 & 9.8 & 9.2 \\
+R2c & $(1,10)$ & 100.0 & 1.00 & 0.00 & -0.2 & 9.2 \\
+R2c & $(1,24)$ & 100.0 & 1.00 & 0.00 & -14.2 & 14.2 \\
+R2c & $(3,0)$  & 94.6 & 3.00 & 0.06 & 32.3 & 17.2 \\
+R2c & $(3,10)$ & 100.0 & 3.00 & 0.00 & 2.7 & 16.9 \\
+R2c & $(3,24)$ & 97.3 & 3.00 & 0.00 & -38.1 & 38.1 \\
+R2c & $(5,0)$  & 100.0 & 5.00 & 0.00 & 50.2 & 5.8 \\
+R2c & $(5,10)$ & 100.0 & 5.00 & 0.00 & 0.2 & 19.4 \\
+R2c & $(5,24)$ & 98.3 & 5.00 & 0.02 & -69.9 & 69.9 \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Reward-Learning Details}
+\label{app:rl}
+
+The single analyzed run uses QLoRA and per-decision PPO for 20 outer steps,
+25 fresh training seeds per step, four rollouts per seed, one epoch per update,
+learning rate $6\times10^{-5}$, and rollout temperature 1.2. Training seeds
+begin at 9000 and do not overlap evaluation seeds. The critic observes the
+actor's ordinary state plus true class-rate features; the actor never receives
+those rates. Exact Monte Carlo returns are used without discounting. No
+demonstrations enter training.
+
+The unchanged final checkpoint is evaluated on the original ball vocabulary
+and on treasure-chest/coin/crest, quiver/arrow/feather, and
+cauldron/potion/label reskins. All retain $N=8,T=60,B=3$, the same latent
+streams, and free-text keep/pass decisions. A second probe changes only the
+decision channel to required zero-argument keep/pass calls. Transfer varies
+from 44\% to 97\% first sight across these tool-call reskins; the cauldron
+condition accounts for the strongest collapse, with the first three distinct
+classes selected by decision turn three in 16 of 24 seeds. We do not assign a
+semantic cause because the relevant transcripts contain no explanatory
+reasoning. The final reusable-script comparison uses 24 paired seeds
+2000--2023, matched q8\_0 quantization, calibrated script success, and four
+empty-fence retries in both base and RL-final arms.
+
+\section{Commands and Artifact Manifest}
+
+The core runs are reproduced from the repository root with
+\begin{verbatim}
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.urn_session \
+  --model haiku --announce-n --seeds $(seq 2000 2011)
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.urn_tool_session \
+  --model haiku --announce-n --seeds $(seq 2000 2011)
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.claim_solver_session \
+  --model haiku --announce-n --seeds $(seq 2000 2011)
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.claim_solver_code_session \
+  --model haiku --announce-n --seeds $(seq 2000 2011)
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.run_economic_surface
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.analyze_economic_surface
+\end{verbatim}
+Core artifacts are
+\texttt{runs/urn\_haiku\_n-announced},
+\texttt{runs/urn\_tool\_haiku\_n-announced},
+\texttt{runs/claim\_solver\_haiku\_n-announced},
+\texttt{runs/claim\_solver\_code\_haiku\_n-announced},
+\texttt{runs/arm\_a1\_announce\_n-announced}, and
+\texttt{runs/economic\_surface\_haiku}. GPT artifacts are under
+\texttt{runs/economic\_surface\_gpt-5.4-mini-2026-03-17} and
+\texttt{runs/economic\_surface\_gpt-5.6-sol}; each contains the exact model
+identifier, settings, stream, transcript, usage, and per-seed analysis.
 
 \end{document}

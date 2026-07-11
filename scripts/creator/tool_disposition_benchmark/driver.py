@@ -63,7 +63,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                       max_turns: int | None = None, announce_cap: bool = True,
                       stop_on_budget_exhausted: bool = False, progress_cb=None,
                       temperature: float | None = None,
-                      prune_no_tool: bool = False, max_no_tool_retries: int = 2) -> dict:
+                      prune_no_tool: bool = False, max_no_tool_retries: int = 2,
+                      stop_after_turn=None) -> dict:
     """token_cap is always enforced as a hard ceiling. announce_cap=False ('no-cap' arm) hides it
     from the model: the system prompt omits the budget paragraph and tool results omit
     tokens_remaining — token_cap then acts only as a silent safety ceiling on cost.
@@ -99,6 +100,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     turn_usages: list[dict] = []          # per-turn exact usage + which tools it called (for cost model)
 
     stopped_on_budget = False
+    safety_stop = None
     while not state.done and n_turns < max_turns:
         # early-stop pilot: once the write budget is spent, no further BUILD decisions are possible,
         # so all decision signal (bait, lateness, which classes built) is final -- stop to save cost.
@@ -126,6 +128,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         else:
             spent += _est_tokens(system, messages, turn)
             usage_estimated = True
+        turn_stop_reason = stop_after_turn(turn_usages) if stop_after_turn is not None else None
 
         asst = {"role": "assistant", "content": turn.content or ""}
         if turn.tool_calls:
@@ -135,6 +138,9 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         messages.append(asst)
 
         if not turn.tool_calls:
+            if turn_stop_reason:
+                safety_stop = turn_stop_reason
+                break
             consecutive_no_tool += 1
             if prune_no_tool:
                 # drop the degenerate (no-tool) assistant turn so a wall of empty ```json``` fences
@@ -192,6 +198,9 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                        spent=spent, elapsed=time.time() - t0,
                        tools=[tc["name"] for tc in turn.tool_calls],
                        writes_remaining=state.writes_remaining)
+        if turn_stop_reason:
+            safety_stop = turn_stop_reason
+            break
 
     score = state.score()
     return {
@@ -201,6 +210,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         "token_cap": token_cap,
         "hit_cap": spent >= token_cap,
         "stopped_on_budget": stopped_on_budget,
+        "stop_reason": safety_stop,
         "problems_seen": state.cur,
         "n_turns": n_turns,
         "n_tool_calls": n_tool_calls,

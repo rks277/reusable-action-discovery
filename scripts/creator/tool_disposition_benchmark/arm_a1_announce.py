@@ -45,8 +45,12 @@ _ap.add_argument("--cap", type=float, default=None,
                  help="override the USD spend guard (default: haiku/opus $12). Needed for multi-seed "
                       "Opus batches where 12*EST exceeds the default ceiling.")
 _ap.add_argument("--unit-cap", type=float, default=None,
-                 help="pause the batch after any completed seed exceeds this USD amount; the seed is "
-                      "allowed to finish so its transcript is preserved")
+                 help="stop and save a seed after its exact cumulative API usage reaches this USD "
+                      "amount, then pause the batch (may overshoot by the final in-flight API call)")
+_ap.add_argument("--canonical-structure", action="store_true",
+                 help="Opus repair arm: use MAG=1000 without pinning Josephus, assert the latent "
+                      "family/role/arrival stream matches the canonical Opus urn A2 artifact, and "
+                      "write to a separate _canonical-structure run directory")
 _ap.add_argument("--full-stream", action="store_true",
                  help="run the ENTIRE T-problem stream even after the write budget is exhausted (the "
                       "old API-model behavior). Default now truncates the session once budget is spent "
@@ -60,16 +64,23 @@ IS_LOCAL = MODEL_KEY not in CLAUDE                # non-Claude => Ollama/vLLM, f
 ANNOUNCE_N = _ARGS.announce_n
 EMPTY_FENCE_RETRY = _ARGS.empty_fence_retry
 UNIT_CAP_USD = _ARGS.unit_cap
+CANONICAL_STRUCTURE = _ARGS.canonical_structure
+if CANONICAL_STRUCTURE and (MODEL_KEY != "opus" or not ANNOUNCE_N):
+    _ap.error("--canonical-structure requires --model opus --announce-n")
 _safe = MODEL_KEY.replace(":", "_").replace("/", "_")
 BASE = Path("runs/arm_a1_announce" if MODEL_KEY == "haiku" else f"runs/arm_a1_announce_{_safe}")
 if ANNOUNCE_N:
     BASE = Path(str(BASE) + "_n-announced")
+if CANONICAL_STRUCTURE:
+    BASE = Path(str(BASE) + "_canonical-structure")
 if EMPTY_FENCE_RETRY:
     BASE = Path(str(BASE) + f"_efr{EMPTY_FENCE_RETRY}")
 SEEDS = _ARGS.seeds if _ARGS.seeds else list(range(2000, 2012))  # 12 -- paired with the urn, same seeds
 CAP_USD, EST, CONC = (12.0, 1.0, 12) if MODEL_KEY == "haiku" else (12.0, 2.5, 12)
 if IS_LOCAL:
     CAP_USD, EST = 1e9, 0.0                        # free -> spend-guard never binds
+elif UNIT_CAP_USD is not None:
+    EST = UNIT_CAP_USD                             # the per-turn breaker bounds each serial unit
 CONC = _ARGS.conc if _ARGS.conc else (CONC if not IS_LOCAL else 4)
 if _ARGS.cap is not None:
     CAP_USD = _ARGS.cap
@@ -85,7 +96,7 @@ IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))   # local models:
 # so for Opus it is PINNED as a single forced trap at the final slot instead: by T-1 there are 0
 # remaining draws, so building never pays off and it cannot influence any earlier build decision.
 MAG = 1000 if MODEL_KEY == "opus" else 100
-PINNED_TRAP = "josephus" if MODEL_KEY == "opus" else None
+PINNED_TRAP = "josephus" if MODEL_KEY == "opus" and not CANONICAL_STRUCTURE else None
 # measured pooled a_script from the 2026-07-03 Qwen-Coder calibration (a0_oracle_gap); Claude models
 # assumed ~1 (never separately measured -- their scripts are ~always correct in these transcripts).
 _A_SCRIPT = {"qwen2.5-coder:0.5b": 0.21, "qwen2.5-coder:1.5b": 0.35, "qwen2.5-coder:3b": 0.50,
@@ -103,6 +114,14 @@ def cost_of(row):
             + sum(t.get("cache_read_tokens", 0) for t in tu) * CR + sum(t.get("cache_write_tokens", 0) for t in tu) * CW) / 1e6
 
 
+_STRUCTURAL_FIELDS = ("slot_index", "family", "class_id", "class_size", "class_position",
+                      "members_remaining_after", "is_recurring", "role", "rate")
+
+
+def structural_projection(slots):
+    return [{k: s[k] for k in _STRUCTURAL_FIELDS} for s in slots]
+
+
 async def run_one(client, model, seed):
     d = BASE / f"seed_{seed}"
     if (d / "sessions.jsonl").exists():
@@ -110,10 +129,18 @@ async def run_one(client, model, seed):
     slots, meta = build_stochastic_stream(StochasticStreamSpec(
         families=UNIFORM, n_hot=B, T=T, budget=B, guarantee_trap_early=G, magnitude=MAG, seed=seed,
         pinned_last_trap=PINNED_TRAP))
+    if CANONICAL_STRUCTURE:
+        reference_path = Path("runs/urn_opus_n-announced") / f"seed_{seed}" / "stream.json"
+        reference = json.loads(reference_path.read_text())
+        assert structural_projection(slots) == structural_projection(reference), (
+            f"seed {seed}: generated MAG=1000 structure does not match canonical Opus urn A2 stream")
     d.mkdir(parents=True, exist_ok=True)
     (d / "stream.json").write_text(json.dumps(slots, indent=2))
     (d / "meta.json").write_text(json.dumps(meta, indent=2))
-    (d / "config.json").write_text(json.dumps({"budget": B, "seed": seed, "magnitude": MAG, "arm": "announce"}))
+    (d / "config.json").write_text(json.dumps({
+        "budget": B, "seed": seed, "magnitude": MAG, "arm": "announce",
+        "canonical_structure": CANONICAL_STRUCTURE, "pinned_last_trap": PINNED_TRAP,
+    }))
     state = SessionState(problems=slots_to_problems(slots), budget=B)
     state.announce_recurrence = True          # A1: disclose recurrence structure (non-prescriptive)
     if ANNOUNCE_N:
@@ -124,13 +151,19 @@ async def run_one(client, model, seed):
               f"actions={actions}  writes_left={writes_remaining}  "
               f"{spent/1000:.1f}k tok  {elapsed:.0f}s", flush=True)
 
+    def _stop_after_turn(turn_usages):
+        if UNIT_CAP_USD is not None and cost_of({"turn_usages": turn_usages}) >= UNIT_CAP_USD:
+            return "unit_cost_cap"
+        return None
+
     row = await run_session(client, model, state, token_cap=300_000, max_tokens=4096,
                             announce_cap=True, stop_on_budget_exhausted=STOP_ON_BUDGET, progress_cb=_progress,
                             prune_no_tool=bool(EMPTY_FENCE_RETRY),
-                            max_no_tool_retries=EMPTY_FENCE_RETRY or 2)
+                            max_no_tool_retries=EMPTY_FENCE_RETRY or 2,
+                            stop_after_turn=_stop_after_turn)
     row["model_key"] = MODEL_KEY
     (d / "sessions.jsonl").write_text(json.dumps(row) + "\n")
-    return cost_of(row), "ran"
+    return cost_of(row), ("cost_cap" if row.get("stop_reason") else "ran")
 
 
 async def main():
@@ -157,9 +190,9 @@ async def main():
             async with lock:
                 inflight -= 1; cumulative += cost
                 print(f"  [seed {seed}] {status:>6}  ${cost:.3f}  cumulative=${cumulative:.2f}", flush=True)
-                if UNIT_CAP_USD is not None and status == "ran" and cost > UNIT_CAP_USD:
+                if UNIT_CAP_USD is not None and (status == "cost_cap" or cost >= UNIT_CAP_USD):
                     paused = True
-                    print(f"  CIRCUIT BREAKER: seed {seed} exceeded ${UNIT_CAP_USD:.2f}; "
+                    print(f"  CIRCUIT BREAKER: seed {seed} reached ${UNIT_CAP_USD:.2f}; "
                           "no further seeds will start", flush=True)
 
     print(f"A1 announce arm: {MODEL_KEY}, uniform-hard N={N}, MAG={MAG}, pinned_trap={PINNED_TRAP}, "
