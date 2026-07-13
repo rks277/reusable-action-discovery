@@ -301,7 +301,7 @@ def figure_capability_map() -> None:
         ("Opus 4.8", 4.0, 100.0, ORANGE, "o"),
         ("GPT-5.4-mini", 15.3, 85.0, PURPLE, "o"),
         ("GPT-5.6 Sol", 23.6, 38.9, GREEN, "o"),
-        ("Qwen-14B base†", 75.0, 95.0, GRAY, "s"),
+        ("Qwen-14B base†", 75.0, 90.9, GRAY, "s"),
     ]
     fig, ax = plt.subplots(figsize=(7.2, 6.2), constrained_layout=True)
     ax.fill_between([0, 100], [0, 100], [100, 100], color=ORANGE, alpha=0.06)
@@ -313,7 +313,7 @@ def figure_capability_map() -> None:
         "Opus 4.8": (6, -8),
         "GPT-5.4-mini": (7, -3),
         "GPT-5.6 Sol": (7, -3),
-        "Qwen-14B base†": (-54, -6),
+        "Qwen-14B base†": (-54, 12),
     }
     for name, x, y, color, marker in points:
         hollow = "†" in name
@@ -355,8 +355,8 @@ def figure_capability_map() -> None:
 def figure_rl_transfer() -> None:
     """Figure 5: learned reserve across lexical, modality, and construction shifts."""
     categories = ["Abstract urn", "Vocabulary\nreskins", "Keep/pass\ntool calls", "Reusable\nscripts"]
-    base = np.asarray([75, 89, 99, 95], dtype=float)
-    rl = np.asarray([32, 19, 62, 95], dtype=float)
+    base = np.asarray([75, 89, 99, 90.9], dtype=float)
+    rl = np.asarray([32, 19, 62, 94.3], dtype=float)
     x = np.arange(len(categories))
 
     fig, ax = plt.subplots(figsize=(8.5, 4.8), constrained_layout=True)
@@ -365,18 +365,13 @@ def figure_rl_transfer() -> None:
     ax.plot(x, base, color=GRAY, marker="o", linewidth=1.8, markersize=7, label="Base Qwen-14B")
     ax.plot(x, rl, color=GREEN, marker="o", linewidth=2.3, markersize=8, label="RL-final")
     for xi, value in zip(x, base):
-        if xi == 3:
-            continue
         offset = -5 if value >= 95 else 4
         va = "top" if value >= 95 else "bottom"
         ax.text(xi, value + offset, f"{value:.0f}%", ha="center", va=va,
                 color=GRAY, fontsize=9, weight="bold")
     for xi, value in zip(x, rl):
-        if xi == 3:
-            continue
-        offset = -7 if xi == 3 else -6
+        offset = -6
         ax.text(xi, value + offset, f"{value:.0f}%", ha="center", va="top", color=GREEN, fontsize=9, weight="bold")
-    ax.text(3, 89, "both 95%", ha="center", va="top", color=INK, fontsize=9, weight="bold")
 
     ax.axvspan(-0.35, 1.35, color=GREEN, alpha=0.06)
     ax.axvspan(2.65, 3.35, color=ORANGE, alpha=0.06)
@@ -401,6 +396,76 @@ def figure_rl_transfer() -> None:
     save(fig, "fig5_rl_transfer_boundary")
 
 
+def keep_rate_by_occurrence(tag: str, max_position: int = 5) -> tuple[np.ndarray, np.ndarray]:
+    """Pooled P(KEEP) by class_position (1st/2nd/... sighting of a color), across all 24 seeds'
+    session.json transcripts for the given served Ollama tag. Positions beyond max_position are
+    folded into the last bucket."""
+    keeps = np.zeros(max_position, dtype=int)
+    totals = np.zeros(max_position, dtype=int)
+    for seed in SEEDS:
+        path = RUNS / f"urn_{tag}_latest" / f"seed_{seed}" / "session.json"
+        if not path.exists():
+            continue
+        session = load_json(path)
+        for rec in session["transcript"]:
+            pos = min(rec["class_position"], max_position) - 1
+            totals[pos] += 1
+            if rec["decision"] == "KEEP":
+                keeps[pos] += 1
+    return keeps, totals
+
+
+def figure_reserve_policy() -> None:
+    """Figure 6: the learned reserve policy's actual decision rule -- P(keep) by occurrence count,
+    base vs RL-final, pooled over the paired 24-seed held-out urn eval."""
+    max_position = 5
+    positions = np.arange(1, max_position + 1)
+    base_k, base_n = keep_rate_by_occurrence("qwen-rl-base-q8", max_position)
+    rl_k, rl_n = keep_rate_by_occurrence("qwen-rl-urn-final", max_position)
+    base_rate = 100 * base_k / base_n
+    rl_rate = 100 * rl_k / rl_n
+
+    fig, ax = plt.subplots(figsize=(7.2, 6.4))
+    fig.subplots_adjust(top=0.90, bottom=0.24)
+    ax.plot(positions, base_rate, color=GRAY, marker="o", linewidth=1.8, markersize=7,
+             label="Base Qwen-14B")
+    ax.plot(positions, rl_rate, color=GREEN, marker="o", linewidth=2.3, markersize=8,
+             label="RL-final")
+    # only callout the two positions that carry the story; 3+ have small, noisy per-bucket n
+    ax.annotate(f"{base_rate[0]:.0f}%  ({base_k[0]}/{base_n[0]})", (positions[0], base_rate[0]),
+                xytext=(8, 14), textcoords="offset points", ha="left", fontsize=9, color=GRAY,
+                weight="bold")
+    ax.annotate(f"{rl_rate[0]:.0f}%  ({rl_k[0]}/{rl_n[0]})", (positions[0], rl_rate[0]),
+                xytext=(8, -18), textcoords="offset points", ha="left", fontsize=9, color=GREEN,
+                weight="bold")
+    ax.annotate(f"{base_rate[1]:.0f}%  ({base_k[1]}/{base_n[1]})", (positions[1], base_rate[1]),
+                xytext=(0, 14), textcoords="offset points", ha="center", fontsize=9, color=GRAY,
+                weight="bold")
+    ax.annotate(f"{rl_rate[1]:.0f}%  ({rl_k[1]}/{rl_n[1]})", (positions[1], rl_rate[1]),
+                xytext=(0, 12), textcoords="offset points", ha="center", fontsize=9, color=GREEN,
+                weight="bold")
+
+    ax.set_xticks(positions)
+    ax.set_xticklabels([str(p) for p in positions[:-1]] + [f"{max_position}+"])
+    ax.set_xlabel("Occurrence count of this color within the stream", labelpad=10)
+    ax.set_ylabel("P(KEEP) (%)")
+    ax.set_xlim(0.5, max_position + 0.5)
+    ax.set_ylim(0, 100)
+    ax.set_title("The learned policy defers, then confirms", loc="left", weight="bold")
+    ax.grid(axis="y", color="#ECEFF1", linewidth=0.8)
+    ax.legend(frameon=False, loc="upper center")
+    fig.text(
+        0.02, 0.01,
+        "Pooled decisions across the paired 24-seed held-out urn eval (seeds 2000-2023, no-announce,\n"
+        "q8_0). Base keeps eagerly from the first sighting onward; RL-final passes on the first sighting\n"
+        "and keeps once recurrence is confirmed on the second -- the reserve policy's decision rule made\n"
+        "visible, not just its aggregate first-sight rate. Positions 3+ have small per-bucket n (3-7\n"
+        "decisions) and are a noisy tail, not part of the claim.",
+        fontsize=8.2, color=GRAY, va="bottom",
+    )
+    save(fig, "fig6_reserve_policy_shape")
+
+
 def main() -> None:
     configure_style()
     figure_task_and_core()
@@ -408,6 +473,7 @@ def main() -> None:
     figure_economic_elasticity()
     figure_capability_map()
     figure_rl_transfer()
+    figure_reserve_policy()
 
 
 if __name__ == "__main__":

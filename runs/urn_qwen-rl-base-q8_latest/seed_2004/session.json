@@ -1,0 +1,134 @@
+{
+  "seed": 2004,
+  "model_key": "qwen-rl-base-q8:latest",
+  "vocab": "ball",
+  "kept": {
+    "0": 1,
+    "7": 1,
+    "6": 1
+  },
+  "collected": 25,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 370,
+      "output_tokens": 22,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 427,
+      "output_tokens": 28,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 490,
+      "output_tokens": 17,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 567,
+      "output_tokens": 23,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "0": "red",
+    "3": "blue",
+    "7": "green",
+    "6": "yellow",
+    "1": "purple",
+    "4": "orange",
+    "5": "black",
+    "2": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Let's keep it. It could be the start of a sequence of that color.\n\nDECISION: KEEP",
+      "response_model": "qwen-rl-base-q8:latest"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "It seems like we don't have any information yet to decide, so let's pass and see the next one.\n\nDECISION: PASS",
+      "response_model": "qwen-rl-base-q8:latest"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 7,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Let's keep it. It could be another valuable color.\n\nDECISION: KEEP",
+      "response_model": "qwen-rl-base-q8:latest"
+    },
+    {
+      "slot": 4,
+      "color": "yellow",
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: draw 4: another green ball (already kept -> auto-collected, +1).) Draw 5 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Let's keep it. With one keep left, it's strategic to secure this color.\n\nDECISION: KEEP",
+      "response_model": "qwen-rl-base-q8:latest"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Let's keep it. It could be the start of a sequence of that color.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems like we don't have any information yet to decide, so let's pass and see the next one.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 3 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Let's keep it. It could be another valuable color.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 4: another green ball (already kept -> auto-collected, +1).) Draw 5 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Let's keep it. With one keep left, it's strategic to secure this color.\n\nDECISION: KEEP"
+    }
+  ],
+  "termination": "budget_exhausted"
+}

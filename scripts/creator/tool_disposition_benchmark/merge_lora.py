@@ -45,8 +45,10 @@ def main() -> None:
     Path(a.out).mkdir(parents=True, exist_ok=True)
     model.save_pretrained(a.out, safe_serialization=True)
     # tokenizer + chat_template.jinja: take from the adapter dir (the exact template used in training,
-    # which is what vLLM's hermes parser must round-trip against)
-    AutoTokenizer.from_pretrained(a.adapter).save_pretrained(a.out)
+    # which is what vLLM's hermes parser must round-trip against); fall back to the base tokenizer if
+    # the adapter dir doesn't carry one (e.g. a recovered checkpoint with only the LoRA weights).
+    tok_src = a.adapter if (Path(a.adapter) / "tokenizer_config.json").exists() else BASE
+    AutoTokenizer.from_pretrained(tok_src).save_pretrained(a.out)
     print(f"[merge] saved merged model -> {a.out}", flush=True)
 
 

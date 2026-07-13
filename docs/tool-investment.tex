@@ -639,8 +639,15 @@ abstract keep/pass structure, RL-final makes 19\% of commitments on first sight,
 versus 89\% for the base model, with mean lateness 0.968 versus 0.134. This is
 lexical generalization, not general task transfer.
 
-Transfer nevertheless remains context-bound. On 24 matched q8\_0 reusable-script
-streams, RL-final and base make 95\% of builds on first sight (58/61 and 59/62).
+Transfer nevertheless remains context-bound. Under the class-bound-r3-v1
+protocol (24 matched q8\_0 reusable-script streams, EFR4, write-budget slots
+attributed to the hidden class they can execute on), RL-final and base make
+94.3\% and 90.9\% of unique-class builds on first sight (50/53 and 50/55; mean
+lateness 0.057 and 0.109). RL-final is not more reserved than base under this
+corrected allocation unit -- if anything slightly less so, within noise at
+$n=24$ -- reconfirming the no-transfer verdict after the R2c allocation-unit
+repair. Both panels are mechanically clean (zero malformed, unknown, or
+refused tool calls across all 48 sessions).
 Expressing the abstract reskins through zero-argument keep/pass tool calls
 produces partial, vocabulary-sensitive transfer (62\% for RL-final versus 99\%
 for base). Thus the learned disposition survives new words but degrades under a
@@ -655,10 +662,37 @@ results, and retry diagnostics are deferred to Appendix~\ref{app:rl}.
 Qwen-14B policy reserves in the original abstract urn and across three lexical
 reskins. Transfer weakens when the same keep/pass decision is expressed through
 tool calls and disappears in reusable script construction, where base and
-RL-final are both 95\% first sight. Values are pooled publication results; the
-script point is the matched q8\_0, $n=24$, EFR4 rerun. The four columns are
+RL-final are 90.9\% and 94.3\% first sight -- RL-final is not the more reserved
+of the two. Values are pooled publication results; the script point is the
+matched q8\_0, class-bound-r3-v1, $n=24$, EFR4 rerun. The four columns are
 distinct evaluation panels rather than one paired trajectory.}
 \label{fig:rl-transfer}
+\end{figure}
+
+The pooled first-sight rate summarizes an outcome; the decision rule behind it
+is visible directly by conditioning P(KEEP) on how many times the current
+color has already appeared in the stream (Figure~\ref{fig:reserve-policy}).
+Base keeps at a roughly flat, high rate from the first sighting onward (65.9\%
+at occurrence 1, 62.5\% at occurrence 2, 88 and 16 decisions respectively),
+consistent with an eager policy that does not condition on recurrence. RL-final
+inverts this at the two occurrences that carry most of the mass: it passes on
+the first sighting (18.6\%, 22/118) and keeps once recurrence is confirmed on
+the second (79.6\%, 43/54) -- a defer-then-confirm rule, not merely a lower
+overall keep rate. Occurrences three and beyond have small per-bucket $n$
+(3--7 decisions) and are not part of this claim.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/fig6_reserve_policy_shape.png}
+\caption{\textbf{The learned policy defers, then confirms.} P(KEEP) pooled
+over the paired 24-seed held-out urn eval (seeds 2000--2023, no-announce,
+q8\_0), conditioned on how many times the current color has already appeared.
+Base keeps eagerly from the first sighting onward. RL-final passes on the
+first sighting and keeps once recurrence is confirmed on the second -- the
+reserve policy's decision rule made visible, not just its aggregate
+first-sight rate. Occurrences three and beyond have small per-bucket $n$ (3--7)
+and are a noisy tail.}
+\label{fig:reserve-policy}
 \end{figure}
 
 \section{Discussion}
@@ -972,8 +1006,14 @@ condition accounts for the strongest collapse, with the first three distinct
 classes selected by decision turn three in 16 of 24 seeds. We do not assign a
 semantic cause because the relevant transcripts contain no explanatory
 reasoning. The final reusable-script comparison uses 24 paired seeds
-2000--2023, matched q8\_0 quantization, calibrated script success, and four
-empty-fence retries in both base and RL-final arms.
+2000--2023 under the class-bound-r3-v1 protocol, matched q8\_0 quantization,
+calibrated script success, and four empty-fence retries in both base and
+RL-final arms; write-budget slots are attributed to the hidden class they can
+execute on, repairing the allocation-unit mismatch with R2c. Both arms are
+mechanically clean (zero malformed, unknown, or refused tool calls across all
+48 sessions); the base arm truncates on write-budget exhaustion for 20/24
+seeds and the 300,000-token session cap for the remaining 4/24, while
+RL-final truncates on budget exhaustion for 23/24 and the token cap for 1/24.
 
 \section{Commands and Artifact Manifest}
 

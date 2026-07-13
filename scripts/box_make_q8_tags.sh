@@ -17,13 +17,17 @@ echo "===== [2/5] RL-final bf16 -> q8_0 GGUF ====="
 python llama.cpp/convert_hf_to_gguf.py runs/rl_urn_pilot/merged \
   --outfile "$HOME/rl-urn-final-q8_0.gguf" --outtype q8_0
 
-echo "===== [3/5] save the SAME base ($BASE_ID) in bf16 + adapter tokenizer/template ====="
+echo "===== [3/5] save the SAME base ($BASE_ID) in bf16 + tokenizer/template ====="
 python - <<PY
+import os
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 m = AutoModelForCausalLM.from_pretrained("$BASE_ID", dtype=torch.bfloat16)
 m.save_pretrained("runs/base_bf16", safe_serialization=True)
-AutoTokenizer.from_pretrained("$ADAPTER").save_pretrained("runs/base_bf16")
+# use the adapter's tokenizer/template if it carries one, else the base's own (this recovered
+# adapter has only the LoRA weights, no tokenizer files)
+tok_src = "$ADAPTER" if os.path.exists("$ADAPTER/tokenizer_config.json") else "$BASE_ID"
+AutoTokenizer.from_pretrained(tok_src).save_pretrained("runs/base_bf16")
 print("saved runs/base_bf16")
 PY
 

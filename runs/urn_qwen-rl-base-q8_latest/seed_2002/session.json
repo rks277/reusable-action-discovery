@@ -1,0 +1,108 @@
+{
+  "seed": 2002,
+  "model_key": "qwen-rl-base-q8:latest",
+  "vocab": "ball",
+  "kept": {
+    "0": 1,
+    "2": 1,
+    "5": 1
+  },
+  "collected": 35,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 370,
+      "output_tokens": 46,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 451,
+      "output_tokens": 38,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 524,
+      "output_tokens": 41,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "0": "red",
+    "2": "blue",
+    "5": "green",
+    "7": "yellow",
+    "1": "purple",
+    "4": "orange",
+    "3": "black",
+    "6": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Given that this is the first draw, it's reasonable to keep the red ball, as it will lock in all future red balls and there are likely more draws to come where you can make further decisions.\n\nDECISION: KEEP",
+      "response_model": "qwen-rl-base-q8:latest"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Since you have already locked in all future red balls, you might consider keeping the blue ball if it seems likely that there are more draws and other colors to collect.\n\nDECISION: KEEP",
+      "response_model": "qwen-rl-base-q8:latest"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "With only one keep left, it's wise to lock in the green ball if you anticipate needing another color that might appear later and you want to ensure as many balls as possible.\n\nDECISION: KEEP",
+      "response_model": "qwen-rl-base-q8:latest"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Given that this is the first draw, it's reasonable to keep the red ball, as it will lock in all future red balls and there are likely more draws to come where you can make further decisions.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Since you have already locked in all future red balls, you might consider keeping the blue ball if it seems likely that there are more draws and other colors to collect.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 3 of 60: a green ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "With only one keep left, it's wise to lock in the green ball if you anticipate needing another color that might appear later and you want to ensure as many balls as possible.\n\nDECISION: KEEP"
+    }
+  ],
+  "termination": "budget_exhausted"
+}
