@@ -1,0 +1,181 @@
+{
+  "seed": 2006,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "opus",
+  "resolved_model": "claude-opus-4-8",
+  "provider": "anthropic",
+  "config": {
+    "requested_model": "opus",
+    "resolved_model": "claude-opus-4-8",
+    "provider": "anthropic",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "ef5246c9e3e699d4066634991c36ea8669efe193ac500a144acb7259a73150b0",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 0.8,
+    "unit_cap_usd": 0.1
+  },
+  "net_score": 38,
+  "claimed": {
+    "0": 1,
+    "1": 1,
+    "6": 1
+  },
+  "claimed_code": {
+    "0": "def solve(inputs: dict) -> float:\n    import re\n    # Try to extract from structured inputs first\n    def find(keys):\n        for k in keys:\n            if k in inputs:\n                return inputs[k]\n        return None\n    X = find(['X', 'x', 'start', 'initial', 'X0', 'x0'])\n    a = find(['a', 'mul', 'multiplier', 'A'])\n    c = find(['c', 'add', 'increment', 'C'])\n    m = find(['m', 'mod', 'modulus', 'M'])\n    n = find(['n', 'updates', 'times', 'N', 'iterations', 'count'])\n    if None in (X, a, c, m, n):\n        # Fallback: parse from a text field\n        text = None\n        for v in inputs.values():\n            if isinstance(v, str):\n                text = v\n                break\n        if text is not None:\n            nums = re.findall(r'-?\\d+', text)\n            nums = [int(x) for x in nums]\n            # Pattern: X = start ... updated n times ... (a * X) + c mod m\n            # Based on phrasing: start, times, a, c, m\n            X = nums[0]\n            n = nums[1]\n            a = nums[2]\n            c = nums[3]\n            m = nums[4]\n    X = int(X); a = int(a); c = int(c); m = int(m); n = int(n)\n    for _ in range(n):\n        X = (a * X + c) % m\n    return float(X)",
+    "1": "def solve(inputs: dict) -> float:\n    import re\n    def find(keys):\n        for k in keys:\n            if k in inputs:\n                return inputs[k]\n        return None\n    base = find(['base', 'b', 'a', 'x'])\n    exp = find(['exp', 'exponent', 'e', 'power', 'p', 'n'])\n    mod = find(['mod', 'm', 'modulus'])\n    if None in (base, exp, mod):\n        text = None\n        for v in inputs.values():\n            if isinstance(v, str):\n                text = v\n                break\n        if text is not None:\n            nums = [int(x) for x in re.findall(r'-?\\d+', text)]\n            base, exp, mod = nums[0], nums[1], nums[2]\n    return float(pow(int(base), int(exp), int(mod)))",
+    "6": "def solve(inputs: dict) -> float:\n    import re\n    def find(keys):\n        for k in keys:\n            if k in inputs:\n                return inputs[k]\n        return None\n    X = find(['X', 'x', 'start', 'initial'])\n    n = find(['n', 'times', 'iterations', 'repeat', 'count', 'N'])\n    a = find(['a', 'shift1'])\n    b = find(['b', 'shift2'])\n    c = find(['c', 'shift3'])\n    if X is None or n is None:\n        text = None\n        for v in inputs.values():\n            if isinstance(v, str):\n                text = v\n                break\n        nums = [int(x) for x in re.findall(r'-?\\d+', text)]\n        # pattern: 32-bit, X=start, repeat n times, shifts 11,7,15\n        # nums: [32, start, n, 11, 7, 15, ...]\n        X = nums[1]\n        n = nums[2]\n        a = nums[3]\n        b = nums[4]\n        c = nums[5]\n    X = int(X) & 0xFFFFFFFF\n    n = int(n); a = int(a); b = int(b); c = int(c)\n    mask = 0xFFFFFFFF\n    for _ in range(n):\n        X ^= (X << a) & mask\n        X &= mask\n        X ^= (X >> b)\n        X ^= (X << c) & mask\n        X &= mask\n    return float(X)"
+  },
+  "collected": 38,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 2,
+      "output_tokens": 576,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1292,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 344,
+      "cache_read_tokens": 1292,
+      "cache_write_tokens": 695,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 577,
+      "cache_read_tokens": 1987,
+      "cache_write_tokens": 555,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): A register starts at X = 204. It is updated 11 times; each update replaces X with ((2100 * X) + 1200) mod 78200. Report the final value of X.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "I'll analyze this problem. It's a linear congruential generator - a clear, well-defined type. Let me claim a solver since this seems like it could be common.",
+      "n_tool_calls": 1,
+      "code_len": 1193,
+      "error_detail": null,
+      "response_model": null
+    },
+    {
+      "slot": 1,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Compute 180522 raised to the power 20, modulo 361976 (the remainder when 180522^20 is divided by 361976).\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "Modular exponentiation - another common, well-defined type. I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 682,
+      "error_detail": null,
+      "response_model": null
+    },
+    {
+      "slot": 3,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 3: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 929902146. Repeat 13 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is an xorshift-type problem. I have only 1 claim left, so I should be careful. But this is a distinct type; let me claim it since it's well-defined and could recur.",
+      "n_tool_calls": 1,
+      "code_len": 1074,
+      "error_detail": null,
+      "response_model": null
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): A register starts at X = 204. It is updated 11 times; each update replaces X with ((2100 * X) + 1200) mod 78200. Report the final value of X.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I'll analyze this problem. It's a linear congruential generator - a clear, well-defined type. Let me claim a solver since this seems like it could be common.",
+      "tool_calls": [
+        {
+          "id": "toolu_01RgArvf8ZuSd3tECwThJC3X",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"def solve(inputs: dict) -> float:\\n    import re\\n    # Try to extract from structured inputs first\\n    def find(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return inputs[k]\\n        return None\\n    X = find(['X', 'x', 'start', 'initial', 'X0', 'x0'])\\n    a = find(['a', 'mul', 'multiplier', 'A'])\\n    c = find(['c', 'add', 'increment', 'C'])\\n    m = find(['m', 'mod', 'modulus', 'M'])\\n    n = find(['n', 'updates', 'times', 'N', 'iterations', 'count'])\\n    if None in (X, a, c, m, n):\\n        # Fallback: parse from a text field\\n        text = None\\n        for v in inputs.values():\\n            if isinstance(v, str):\\n                text = v\\n                break\\n        if text is not None:\\n            nums = re.findall(r'-?\\\\d+', text)\\n            nums = [int(x) for x in nums]\\n            # Pattern: X = start ... updated n times ... (a * X) + c mod m\\n            # Based on phrasing: start, times, a, c, m\\n            X = nums[0]\\n            n = nums[1]\\n            a = nums[2]\\n            c = nums[3]\\n            m = nums[4]\\n    X = int(X); a = int(a); c = int(c); m = int(m); n = int(n)\\n    for _ in range(n):\\n        X = (a * X + c) % m\\n    return float(X)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01RgArvf8ZuSd3tECwThJC3X",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): Compute 180522 raised to the power 20, modulo 361976 (the remainder when 180522^20 is divided by 361976).\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "Modular exponentiation - another common, well-defined type. I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "toolu_01CKwQj1WLvXofYeTZPnGs2D",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"def solve(inputs: dict) -> float:\\n    import re\\n    def find(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return inputs[k]\\n        return None\\n    base = find(['base', 'b', 'a', 'x'])\\n    exp = find(['exp', 'exponent', 'e', 'power', 'p', 'n'])\\n    mod = find(['mod', 'm', 'modulus'])\\n    if None in (base, exp, mod):\\n        text = None\\n        for v in inputs.values():\\n            if isinstance(v, str):\\n                text = v\\n                break\\n        if text is not None:\\n            nums = [int(x) for x in re.findall(r'-?\\\\d+', text)]\\n            base, exp, mod = nums[0], nums[1], nums[2]\\n    return float(pow(int(base), int(exp), int(mod)))\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01CKwQj1WLvXofYeTZPnGs2D",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 3: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 929902146. Repeat 13 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is an xorshift-type problem. I have only 1 claim left, so I should be careful. But this is a distinct type; let me claim it since it's well-defined and could recur.",
+      "tool_calls": [
+        {
+          "id": "toolu_01Ft8zHc6rzbXNmu1sV7DaHo",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"def solve(inputs: dict) -> float:\\n    import re\\n    def find(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return inputs[k]\\n        return None\\n    X = find(['X', 'x', 'start', 'initial'])\\n    n = find(['n', 'times', 'iterations', 'repeat', 'count', 'N'])\\n    a = find(['a', 'shift1'])\\n    b = find(['b', 'shift2'])\\n    c = find(['c', 'shift3'])\\n    if X is None or n is None:\\n        text = None\\n        for v in inputs.values():\\n            if isinstance(v, str):\\n                text = v\\n                break\\n        nums = [int(x) for x in re.findall(r'-?\\\\d+', text)]\\n        # pattern: 32-bit, X=start, repeat n times, shifts 11,7,15\\n        # nums: [32, start, n, 11, 7, 15, ...]\\n        X = nums[1]\\n        n = nums[2]\\n        a = nums[3]\\n        b = nums[4]\\n        c = nums[5]\\n    X = int(X) & 0xFFFFFFFF\\n    n = int(n); a = int(a); b = int(b); c = int(c)\\n    mask = 0xFFFFFFFF\\n    for _ in range(n):\\n        X ^= (X << a) & mask\\n        X &= mask\\n        X ^= (X >> b)\\n        X ^= (X << c) & mask\\n        X &= mask\\n    return float(X)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01Ft8zHc6rzbXNmu1sV7DaHo",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [],
+  "actual_cost_usd": 0.054982
+}

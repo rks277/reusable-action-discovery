@@ -1,0 +1,183 @@
+{
+  "seed": 2020,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "1fa27d62ed002c6c30e8eeb30549ce1b149b6af9c289c1387e7895a94d585936",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.2
+  },
+  "net_score": 32,
+  "claimed": {
+    "3": 1,
+    "2": 1,
+    "0": 1
+  },
+  "claimed_code": {
+    "3": "def solve(inputs: dict) -> float:\n    # Solve a system of congruences x \u2261 residues[i] (mod moduli[i]) assuming pairwise coprime moduli.\n    residues = inputs.get('residues') or inputs.get('a') or inputs.get('r')\n    moduli = inputs.get('moduli') or inputs.get('m')\n    if residues is None or moduli is None:\n        raise ValueError('Expected residues and moduli in inputs')\n    x = 0\n    M = 1\n    for r, m in zip(residues, moduli):\n        r %= m\n        # Combine x \u2261 current_x (mod M) with x \u2261 r (mod m)\n        # Since gcd(M,m)=1, find t such that M*t \u2261 r-x (mod m)\n        t = pow(M, -1, m) * ((r - x) % m) % m\n        x += M * t\n        M *= m\n        x %= M\n    return float(x)",
+    "2": "def solve(inputs: dict) -> float:\n    # Compute numerator of a finite continued fraction from its terms.\n    # Expected input: terms = [a0, a1, ..., an]\n    terms = inputs.get('terms') or inputs.get('a') or inputs.get('coeffs')\n    if terms is None:\n        raise ValueError('Expected continued fraction terms in inputs')\n    p_minus2, p_minus1 = 0, 1  # standard numerator recurrence initialization\n    # To match the prompt's convention p(-1)=1, p0=a0, we can use direct recurrence:\n    # p_i = a_i * p_{i-1} + p_{i-2}, with p_{-1}=1, p_0=a_0.\n    if not terms:\n        return 0.0\n    p_im2 = 1\n    p_im1 = terms[0]\n    if len(terms) == 1:\n        return float(p_im1)\n    for a in terms[1:]:\n        p = a * p_im1 + p_im2\n        p_im2, p_im1 = p_im1, p\n    return float(p_im1)",
+    "0": "def solve(inputs: dict) -> float:\n    # Iterate linear congruential recurrence: X <- (a*X + b) mod m for n rounds.\n    x = inputs.get('X', inputs.get('x', inputs.get('start')))\n    a = inputs.get('a', 400)\n    b = inputs.get('b', 800)\n    m = inputs.get('m', 90600)\n    n = inputs.get('n', inputs.get('rounds', 8))\n    if x is None:\n        raise ValueError('Expected initial X in inputs')\n    for _ in range(int(n)):\n        x = (a * x + b) % m\n    return float(x)"
+  },
+  "collected": 32,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 758,
+      "output_tokens": 281,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1161,
+      "output_tokens": 311,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1572,
+      "output_tokens": 200,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [695, 1808, 82, 414] modulo [1543, 2339, 821, 1787] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a CRT problem type. It's worth claiming a solver because future problems of this type should be auto-solved.",
+      "n_tool_calls": 1,
+      "code_len": 685,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 1,
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): For the continued fraction with terms [9790, 3198, 7847], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "I should claim this continued-fraction solver too; it's a different visible type and one more claim is available.",
+      "n_tool_calls": 1,
+      "code_len": 779,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 146. For 8 rounds, set X = (400 * X + 800) mod 90600. What is X after the final round?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is another distinct arithmetic recurrence type; with one claim left, I should claim it.",
+      "n_tool_calls": 1,
+      "code_len": 465,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Solve the system of congruences: x is congruent to [695, 1808, 82, 414] modulo [1543, 2339, 821, 1787] respectively (the moduli are pairwise coprime). Give the least non-negative x.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a CRT problem type. It's worth claiming a solver because future problems of this type should be auto-solved.",
+      "tool_calls": [
+        {
+          "id": "call_gry8SquKfH2C3zGWsIvL3deu",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Solve a system of congruences x \u2261 residues[i] (mod moduli[i]) assuming pairwise coprime moduli.\\n    residues = inputs.get('residues') or inputs.get('a') or inputs.get('r')\\n    moduli = inputs.get('moduli') or inputs.get('m')\\n    if residues is None or moduli is None:\\n        raise ValueError('Expected residues and moduli in inputs')\\n    x = 0\\n    M = 1\\n    for r, m in zip(residues, moduli):\\n        r %= m\\n        # Combine x \u2261 current_x (mod M) with x \u2261 r (mod m)\\n        # Since gcd(M,m)=1, find t such that M*t \u2261 r-x (mod m)\\n        t = pow(M, -1, m) * ((r - x) % m) % m\\n        x += M * t\\n        M *= m\\n        x %= M\\n    return float(x)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_gry8SquKfH2C3zGWsIvL3deu",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): For the continued fraction with terms [9790, 3198, 7847], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I should claim this continued-fraction solver too; it's a different visible type and one more claim is available.",
+      "tool_calls": [
+        {
+          "id": "call_ABVicWmIk5cSzsFegXvM5jAc",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Compute numerator of a finite continued fraction from its terms.\\n    # Expected input: terms = [a0, a1, ..., an]\\n    terms = inputs.get('terms') or inputs.get('a') or inputs.get('coeffs')\\n    if terms is None:\\n        raise ValueError('Expected continued fraction terms in inputs')\\n    p_minus2, p_minus1 = 0, 1  # standard numerator recurrence initialization\\n    # To match the prompt's convention p(-1)=1, p0=a0, we can use direct recurrence:\\n    # p_i = a_i * p_{i-1} + p_{i-2}, with p_{-1}=1, p_0=a_0.\\n    if not terms:\\n        return 0.0\\n    p_im2 = 1\\n    p_im1 = terms[0]\\n    if len(terms) == 1:\\n        return float(p_im1)\\n    for a in terms[1:]:\\n        p = a * p_im1 + p_im2\\n        p_im2, p_im1 = p_im1, p\\n    return float(p_im1)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_ABVicWmIk5cSzsFegXvM5jAc",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 146. For 8 rounds, set X = (400 * X + 800) mod 90600. What is X after the final round?\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is another distinct arithmetic recurrence type; with one claim left, I should claim it.",
+      "tool_calls": [
+        {
+          "id": "call_ye3U6HR6vS65jHBpxoMcWTG9",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Iterate linear congruential recurrence: X <- (a*X + b) mod m for n rounds.\\n    x = inputs.get('X', inputs.get('x', inputs.get('start')))\\n    a = inputs.get('a', 400)\\n    b = inputs.get('b', 800)\\n    m = inputs.get('m', 90600)\\n    n = inputs.get('n', inputs.get('rounds', 8))\\n    if x is None:\\n        raise ValueError('Expected initial X in inputs')\\n    for _ in range(int(n)):\\n        x = (a * x + b) % m\\n    return float(x)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_ye3U6HR6vS65jHBpxoMcWTG9",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.00540465
+}

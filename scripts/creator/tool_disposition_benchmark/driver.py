@@ -14,7 +14,8 @@ import json
 import time
 
 from lomekwi.raw_chat import RawChat
-from scripts.creator.tool_disposition_benchmark.prompts import problem_prompt, system_prompt
+from scripts.creator.tool_disposition_benchmark.prompts import (
+    CLASS_BOUND_SCRIPT_NOTE, problem_prompt, system_prompt)
 from scripts.creator.tool_disposition_benchmark.session_state import SessionState, TOOL_SCHEMAS
 
 MIN_CALL_BUDGET = 256
@@ -64,7 +65,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                       stop_on_budget_exhausted: bool = False, progress_cb=None,
                       temperature: float | None = None,
                       prune_no_tool: bool = False, max_no_tool_retries: int = 2,
-                      stop_after_turn=None) -> dict:
+                      stop_after_turn=None, reasoning_effort: str | None = None,
+                      tool_choice: str = "auto") -> dict:
     """token_cap is always enforced as a hard ceiling. announce_cap=False ('no-cap' arm) hides it
     from the model: the system prompt omits the budget paragraph and tool results omit
     tokens_remaining — token_cap then acts only as a silent safety ceiling on cost.
@@ -79,9 +81,11 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
     t0 = time.time()
     if max_turns is None:
         max_turns = max(60, 15 * state.n)
-    tools = TOOL_SCHEMAS()
+    tools = TOOL_SCHEMAS(class_bound=bool(state.class_bound))
     known_tools = {t["function"]["name"] for t in tools}
     system = system_prompt(state.n, state.budget, token_cap if announce_cap else None)
+    if state.class_bound:
+        system += CLASS_BOUND_SCRIPT_NOTE
     if getattr(state, "announce_recurrence", False):   # awareness arm (appended so system_prompt's
         from scripts.creator.tool_disposition_benchmark.prompts import RECURRENCE_NOTE  # signature
         system += RECURRENCE_NOTE                       # stays 3-arg for the AIME monkeypatch)
@@ -113,7 +117,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         call_max = max(64, min(max_tokens, remaining))
         n_turns += 1
         turn = await client.chat_tools(model, system, messages, tools, max_tokens=call_max,
-                                       temperature=temperature)
+                                       temperature=temperature, reasoning_effort=reasoning_effort,
+                                       tool_choice=tool_choice)
         last_finish = turn.finish_reason
         u = client.last_usage
         if u and (u.get("input_tokens") or u.get("output_tokens")):
@@ -124,6 +129,8 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                 "output_tokens": int(u.get("output_tokens", 0)),
                 "cache_read_tokens": int(u.get("cache_read_tokens", 0) or 0),
                 "cache_write_tokens": int(u.get("cache_write_tokens", 0) or 0),
+                "reasoning_tokens": int(u.get("reasoning_tokens", 0) or 0),
+                "response_model": getattr(client, "last_response_model", None),
                 "problem": state.cur})
         else:
             spent += _est_tokens(system, messages, turn)
@@ -198,7 +205,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
                        spent=spent, elapsed=time.time() - t0,
                        tools=[tc["name"] for tc in turn.tool_calls],
                        writes_remaining=state.writes_remaining)
-        if turn_stop_reason:
+        if turn_stop_reason and (state.writes_remaining > 0 or turn_stop_reason == "missing_usage"):
             safety_stop = turn_stop_reason
             break
 
@@ -222,6 +229,7 @@ async def run_session(client: RawChat, model: str, state: SessionState, *,
         "turn_usages": turn_usages,
         "last_finish_reason": last_finish,
         "scripts": dict(state.scripts),
+        "script_bindings": dict(state.script_class) if state.class_bound else {},
         "transcript": messages,
         "elapsed_s": round(time.time() - t0, 2),
     }

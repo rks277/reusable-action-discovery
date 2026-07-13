@@ -10,6 +10,13 @@ The per-problem prompt presents one concrete problem and its required significan
 from __future__ import annotations
 
 
+CLASS_BOUND_SCRIPT_NOTE = (
+    "\n\nSCRIPT SCOPE: Each script is bound to the hidden problem type on which it is written. "
+    "It may be run on the current problem and on later problems only when they have that same "
+    "hidden type. Problem types remain hidden and unlabeled."
+)
+
+
 def system_prompt(n: int, budget: int, token_cap: int | None = None) -> str:
     """token_cap=None: omit the token-budget paragraph entirely (the 'no-cap' arm — the model is
     told nothing about a token budget; a silent safety ceiling is still enforced by the driver)."""

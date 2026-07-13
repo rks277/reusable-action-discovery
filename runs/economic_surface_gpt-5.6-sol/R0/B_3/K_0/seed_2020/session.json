@@ -1,0 +1,267 @@
+{
+  "seed": 2020,
+  "framing": "R0",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.6-sol",
+  "resolved_model": "gpt-5.6-sol",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.6-sol",
+    "resolved_model": "gpt-5.6-sol",
+    "provider": "openai",
+    "framing": "R0",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": null,
+    "max_completion_tokens": 4000,
+    "stream_sha256": "1fa27d62ed002c6c30e8eeb30549ce1b149b6af9c289c1387e7895a94d585936",
+    "system_prompt_sha256": "82f44f49fb2df29f9b9cfec6076a8e83a2531938073390e41228f17e9d24c8c5",
+    "global_cap_usd": 3.0,
+    "unit_cap_usd": 0.6
+  },
+  "net_score": 29,
+  "kept": {
+    "3": 1,
+    "0": 2,
+    "2": 3
+  },
+  "collected": 29,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 428,
+      "output_tokens": 35,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 495,
+      "output_tokens": 34,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 561,
+      "output_tokens": 34,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 627,
+      "output_tokens": 40,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 699,
+      "output_tokens": 35,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 791,
+      "output_tokens": 40,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 888,
+      "output_tokens": 36,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 956,
+      "output_tokens": 41,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "color_of_class": {
+    "3": "red",
+    "2": "blue",
+    "0": "green",
+    "5": "yellow",
+    "7": "purple",
+    "6": "orange",
+    "1": "black",
+    "4": "white"
+  },
+  "transcript": [
+    {
+      "slot": 0,
+      "color": "red",
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "With no frequency information yet and all three keeps available, locking in red now guarantees every future red draw while preserving two slots for other colors.\n\nDECISION: KEEP",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 1,
+      "color": "blue",
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "With 59 draws still unseen and no evidence distinguishing blue from the other colors, using a second slot immediately would reduce flexibility too quickly.\n\nDECISION: PASS",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 2,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Draw 3 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Green also has only one observed appearance, so there is no evidence it is common enough to spend one of the two remaining slots yet.\n\nDECISION: PASS",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 3,
+      "color": "green",
+      "class_id": 0,
+      "class_position": 2,
+      "prompt": "Draw 4 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Green is the first unkept color to repeat, giving it the strongest current evidence of being common; with 56 draws remaining, locking it in is worthwhile.\n\nDECISION: KEEP",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 4,
+      "color": "yellow",
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Draw 5 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Only one slot remains, and yellow has appeared just once; it is better to wait for stronger evidence about which remaining color is most common.\n\nDECISION: PASS",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 6,
+      "color": "blue",
+      "class_id": 2,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 6: another red ball (already kept -> auto-collected, +1).) Draw 7 of 60: a blue ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Blue has now appeared twice and is the strongest unkept candidate, but with one final slot and 53 draws remaining, waiting for clearer separation preserves valuable flexibility.\n\nDECISION: PASS",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 8,
+      "color": "yellow",
+      "class_id": 5,
+      "class_position": 2,
+      "prompt": "(Since your last choice: draw 8: another green ball (already kept -> auto-collected, +1).) Draw 9 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "PASS",
+      "how": "tag",
+      "reply": "Yellow has now appeared twice, tying blue among unkept colors; with most draws still remaining, the final slot should wait for stronger evidence.\n\nDECISION: PASS",
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 9,
+      "color": "blue",
+      "class_id": 2,
+      "class_position": 3,
+      "prompt": "Draw 10 of 60: a blue ball appears. You have 1 keep(s) left. KEEP or PASS?",
+      "decision": "KEEP",
+      "how": "tag",
+      "reply": "Blue now leads the unkept colors with three appearances, and 50 draws remain to benefit from locking it in. This is sufficient evidence to use the final slot.\n\nDECISION: KEEP",
+      "response_model": "gpt-5.6-sol"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Draw 1 of 60: a red ball appears. You have 3 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "With no frequency information yet and all three keeps available, locking in red now guarantees every future red draw while preserving two slots for other colors.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 2 of 60: a blue ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "With 59 draws still unseen and no evidence distinguishing blue from the other colors, using a second slot immediately would reduce flexibility too quickly.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 3 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Green also has only one observed appearance, so there is no evidence it is common enough to spend one of the two remaining slots yet.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 4 of 60: a green ball appears. You have 2 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Green is the first unkept color to repeat, giving it the strongest current evidence of being common; with 56 draws remaining, locking it in is worthwhile.\n\nDECISION: KEEP"
+    },
+    {
+      "role": "user",
+      "content": "Draw 5 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Only one slot remains, and yellow has appeared just once; it is better to wait for stronger evidence about which remaining color is most common.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 6: another red ball (already kept -> auto-collected, +1).) Draw 7 of 60: a blue ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Blue has now appeared twice and is the strongest unkept candidate, but with one final slot and 53 draws remaining, waiting for clearer separation preserves valuable flexibility.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: draw 8: another green ball (already kept -> auto-collected, +1).) Draw 9 of 60: a yellow ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Yellow has now appeared twice, tying blue among unkept colors; with most draws still remaining, the final slot should wait for stronger evidence.\n\nDECISION: PASS"
+    },
+    {
+      "role": "user",
+      "content": "Draw 10 of 60: a blue ball appears. You have 1 keep(s) left. KEEP or PASS?"
+    },
+    {
+      "role": "assistant",
+      "content": "Blue now leads the unkept colors with three appearances, and 50 draws remain to benefit from locking it in. This is sufficient evidence to use the final slot.\n\nDECISION: KEEP"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": null,
+  "provider_response_models": [
+    "gpt-5.6-sol"
+  ],
+  "actual_cost_usd": 0.036075
+}

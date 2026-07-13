@@ -37,12 +37,15 @@ DEFAULT_RECURRING = [("product3", 5), ("weighted_sum", 5), ("lcg", 5), ("modpow"
 
 
 def slots_to_problems(slots: list[dict]) -> list[dict]:
-    """Stream slots -> session problems (order preserved). sig_figs = gold digit count -> exact int."""
+    """Stream slots -> session problems, preserving server-only type labels for script binding."""
     probs = []
     for s in slots:
         g = int(s["gold"])
         probs.append({"idx": s["slot_index"], "item_idx": s["slot_index"], "keys": s["keys"],
                       "question": s["question"], "inputs": s["inputs"],
+                      # These labels are consumed only by SessionState. problem_prompt renders an
+                      # explicit allowlist and therefore never exposes them to the model.
+                      "_class_id": s["class_id"], "_family": s["family"],
                       # exact-integer grading: gold kept as an arbitrary-precision int (golds can
                       # exceed 2**53, e.g. products/Horner), graded by exact int match not sig-figs
                       "gold": g, "sig_figs": max(1, len(str(abs(g)))), "exact_int": True})

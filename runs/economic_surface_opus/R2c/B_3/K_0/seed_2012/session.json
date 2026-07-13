@@ -1,0 +1,181 @@
+{
+  "seed": 2012,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "opus",
+  "resolved_model": "claude-opus-4-8",
+  "provider": "anthropic",
+  "config": {
+    "requested_model": "opus",
+    "resolved_model": "claude-opus-4-8",
+    "provider": "anthropic",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "7b0de312d6d8f4a0af7be566c1f30c9ee9b3489f3f8a131fb8dea6bb11e52e0e",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 2.5,
+    "unit_cap_usd": 0.5
+  },
+  "net_score": 26,
+  "claimed": {
+    "5": 1,
+    "6": 1,
+    "3": 1
+  },
+  "claimed_code": {
+    "5": "def solve(inputs: dict) -> float:\n    import re\n    # Try to extract parameters from inputs\n    # Expected keys or parse from a text\n    def getnum(keys):\n        for k in keys:\n            if k in inputs:\n                return inputs[k]\n        return None\n    # Attempt structured keys\n    a = getnum(['a', 'add', 'c'])\n    m = getnum(['m', 'mod', 'modulus'])\n    steps = getnum(['steps', 'n', 'iterations'])\n    x = getnum(['x', 'x0', 'start', 'start_x'])\n    if a is None or m is None or steps is None or x is None:\n        # parse from text\n        text = ''\n        for v in inputs.values():\n            if isinstance(v, str):\n                text += ' ' + v\n        nums = list(map(int, re.findall(r'-?\\d+', text)))\n        # pattern: x^2 + A mod M for S steps starting x0\n        # from example: 472227(add), 801732(mod), 25(steps), 780756(start)\n        if len(nums) >= 4:\n            a, m, steps, x = nums[0], nums[1], nums[2], nums[3]\n    a = int(a); m = int(m); steps = int(steps); x = int(x)\n    for _ in range(steps):\n        x = (x*x + a) % m\n    return float(x)",
+    "6": "def solve(inputs: dict) -> float:\n    import re\n    def getnum(keys):\n        for k in keys:\n            if k in inputs:\n                return inputs[k]\n        return None\n    x = getnum(['X', 'x', 'start', 'x0'])\n    steps = getnum(['steps', 'n', 'times', 'repeat'])\n    a = getnum(['a'])\n    b = getnum(['b'])\n    c = getnum(['c'])\n    if x is None or steps is None:\n        text = ''\n        for v in inputs.values():\n            if isinstance(v, str):\n                text += ' ' + v\n        nums = list(map(int, re.findall(r'-?\\d+', text)))\n        # pattern: 32(bits), X, times, 13(shift), 7(shift), 15(shift)\n        # example nums: 32,1069354423,13,13,7,15\n        # x = second num, steps = third, shifts = 4th,5th,6th\n        x = nums[1]\n        steps = nums[2]\n        a, b, c = nums[3], nums[4], nums[5]\n    x = int(x); steps = int(steps)\n    a = int(a) if a is not None else 13\n    b = int(b) if b is not None else 7\n    c = int(c) if c is not None else 15\n    mask = 0xFFFFFFFF\n    for _ in range(steps):\n        x ^= (x << a) & mask\n        x &= mask\n        x ^= (x >> b)\n        x &= mask\n        x ^= (x << c) & mask\n        x &= mask\n    return float(x)",
+    "3": "def solve(inputs: dict) -> float:\n    import re\n    rems = None\n    mods = None\n    for k in inputs:\n        kl = k.lower()\n        if 'rem' in kl:\n            rems = inputs[k]\n        if 'mod' in kl:\n            mods = inputs[k]\n    if rems is None or mods is None:\n        text = ''\n        for v in inputs.values():\n            if isinstance(v, str):\n                text += ' ' + v\n        # find bracketed lists\n        lists = re.findall(r'\\[([^\\]]+)\\]', text)\n        parsed = [list(map(int, re.findall(r'-?\\d+', l))) for l in lists]\n        if len(parsed) >= 2:\n            rems = parsed[0]\n            mods = parsed[1]\n    rems = [int(r) for r in rems]\n    mods = [int(m) for m in mods]\n    # CRT\n    x = 0\n    M = 1\n    for m in mods:\n        M *= m\n    result = 0\n    for r, m in zip(rems, mods):\n        Mi = M // m\n        # inverse of Mi mod m\n        inv = pow(Mi, -1, m)\n        result += r * Mi * inv\n    result %= M\n    return float(result)"
+  },
+  "collected": 26,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 2,
+      "output_tokens": 518,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1288,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 578,
+      "cache_read_tokens": 1288,
+      "cache_write_tokens": 692,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 2,
+      "output_tokens": 538,
+      "cache_read_tokens": 1980,
+      "cache_write_tokens": 788,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Iterate the map x -> (x^2 + 472227) mod 801732 for 25 steps, starting from x = 780756. What is the resulting value?\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "I'll claim this iterated map type since it's a clear, solvable pattern.",
+      "n_tool_calls": 1,
+      "code_len": 1078,
+      "error_detail": null,
+      "response_model": null
+    },
+    {
+      "slot": 1,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 1069354423. Repeat 13 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is an xorshift RNG type. I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 1173,
+      "error_detail": null,
+      "response_model": null
+    },
+    {
+      "slot": 3,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 3: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [2172, 48, 1617, 1136, 59] when divided by the respective moduli [2837, 563, 2861, 1699, 223] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "I have 1 claim left. This is a CRT problem. I've seen 3 distinct types so far (2 claimed). With 1 claim left and unknown future distribution, I'll claim this CRT type since it's a clean solvable pattern and I've already seen it.",
+      "n_tool_calls": 1,
+      "code_len": 958,
+      "error_detail": null,
+      "response_model": null
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Iterate the map x -> (x^2 + 472227) mod 801732 for 25 steps, starting from x = 780756. What is the resulting value?\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I'll claim this iterated map type since it's a clear, solvable pattern.",
+      "tool_calls": [
+        {
+          "id": "toolu_01NhvdqqkD3PxbzbNdpFwzPF",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"def solve(inputs: dict) -> float:\\n    import re\\n    # Try to extract parameters from inputs\\n    # Expected keys or parse from a text\\n    def getnum(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return inputs[k]\\n        return None\\n    # Attempt structured keys\\n    a = getnum(['a', 'add', 'c'])\\n    m = getnum(['m', 'mod', 'modulus'])\\n    steps = getnum(['steps', 'n', 'iterations'])\\n    x = getnum(['x', 'x0', 'start', 'start_x'])\\n    if a is None or m is None or steps is None or x is None:\\n        # parse from text\\n        text = ''\\n        for v in inputs.values():\\n            if isinstance(v, str):\\n                text += ' ' + v\\n        nums = list(map(int, re.findall(r'-?\\\\d+', text)))\\n        # pattern: x^2 + A mod M for S steps starting x0\\n        # from example: 472227(add), 801732(mod), 25(steps), 780756(start)\\n        if len(nums) >= 4:\\n            a, m, steps, x = nums[0], nums[1], nums[2], nums[3]\\n    a = int(a); m = int(m); steps = int(steps); x = int(x)\\n    for _ in range(steps):\\n        x = (x*x + a) % m\\n    return float(x)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01NhvdqqkD3PxbzbNdpFwzPF",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 1069354423. Repeat 13 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is an xorshift RNG type. I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "toolu_01F4NKPESncorsQeBW64qG9Z",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"def solve(inputs: dict) -> float:\\n    import re\\n    def getnum(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return inputs[k]\\n        return None\\n    x = getnum(['X', 'x', 'start', 'x0'])\\n    steps = getnum(['steps', 'n', 'times', 'repeat'])\\n    a = getnum(['a'])\\n    b = getnum(['b'])\\n    c = getnum(['c'])\\n    if x is None or steps is None:\\n        text = ''\\n        for v in inputs.values():\\n            if isinstance(v, str):\\n                text += ' ' + v\\n        nums = list(map(int, re.findall(r'-?\\\\d+', text)))\\n        # pattern: 32(bits), X, times, 13(shift), 7(shift), 15(shift)\\n        # example nums: 32,1069354423,13,13,7,15\\n        # x = second num, steps = third, shifts = 4th,5th,6th\\n        x = nums[1]\\n        steps = nums[2]\\n        a, b, c = nums[3], nums[4], nums[5]\\n    x = int(x); steps = int(steps)\\n    a = int(a) if a is not None else 13\\n    b = int(b) if b is not None else 7\\n    c = int(c) if c is not None else 15\\n    mask = 0xFFFFFFFF\\n    for _ in range(steps):\\n        x ^= (x << a) & mask\\n        x &= mask\\n        x ^= (x >> b)\\n        x &= mask\\n        x ^= (x << c) & mask\\n        x &= mask\\n    return float(x)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01F4NKPESncorsQeBW64qG9Z",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 3: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [2172, 48, 1617, 1136, 59] when divided by the respective moduli [2837, 563, 2861, 1699, 223] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I have 1 claim left. This is a CRT problem. I've seen 3 distinct types so far (2 claimed). With 1 claim left and unknown future distribution, I'll claim this CRT type since it's a clean solvable pattern and I've already seen it.",
+      "tool_calls": [
+        {
+          "id": "toolu_01D65bTLnbaupRwxtRQD4GW3",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"def solve(inputs: dict) -> float:\\n    import re\\n    rems = None\\n    mods = None\\n    for k in inputs:\\n        kl = k.lower()\\n        if 'rem' in kl:\\n            rems = inputs[k]\\n        if 'mod' in kl:\\n            mods = inputs[k]\\n    if rems is None or mods is None:\\n        text = ''\\n        for v in inputs.values():\\n            if isinstance(v, str):\\n                text += ' ' + v\\n        # find bracketed lists\\n        lists = re.findall(r'\\\\[([^\\\\]]+)\\\\]', text)\\n        parsed = [list(map(int, re.findall(r'-?\\\\d+', l))) for l in lists]\\n        if len(parsed) >= 2:\\n            rems = parsed[0]\\n            mods = parsed[1]\\n    rems = [int(r) for r in rems]\\n    mods = [int(m) for m in mods]\\n    # CRT\\n    x = 0\\n    M = 1\\n    for m in mods:\\n        M *= m\\n    result = 0\\n    for r, m in zip(rems, mods):\\n        Mi = M // m\\n        # inverse of Mi mod m\\n        inv = pow(Mi, -1, m)\\n        result += r * Mi * inv\\n    result %= M\\n    return float(result)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01D65bTLnbaupRwxtRQD4GW3",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [],
+  "actual_cost_usd": 0.059814
+}

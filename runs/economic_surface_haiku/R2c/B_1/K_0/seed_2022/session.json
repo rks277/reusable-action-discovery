@@ -1,0 +1,91 @@
+{
+  "seed": 2022,
+  "framing": "R2c",
+  "B": 1,
+  "K": 0,
+  "model_key": "haiku",
+  "resolved_model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "config": {
+    "requested_model": "haiku",
+    "resolved_model": "claude-haiku-4-5-20251001",
+    "provider": "anthropic",
+    "framing": "R2c",
+    "B": 1,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "0dbd41d19e0b6f9b5618c51cef9307e36c0da8c8ce6eb2a78aca981bbb4823f0",
+    "system_prompt_sha256": "5cad86d18265673431d7cdf4f3f14849d6fc2c617455d523a10e857c731f33a5",
+    "global_cap_usd": 8.0,
+    "unit_cap_usd": 0.3
+  },
+  "net_score": 11,
+  "claimed": {
+    "1": 1
+  },
+  "claimed_code": {
+    "1": "\ndef solve(inputs: dict) -> float:\n    base = inputs.get('base')\n    exponent = inputs.get('exponent')\n    modulus = inputs.get('modulus')\n    result = pow(base, exponent, modulus)\n    return float(result)\n"
+  },
+  "collected": 11,
+  "budget": 1,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 1231,
+      "output_tokens": 192,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Compute 77576 raised to the power 25, modulo 934628 (the remainder when 77576^25 is divided by 934628).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a modular exponentiation problem. I need to compute 77576^25 mod 934628.\n\nThis is a classic problem that Python handles well with its built-in `pow(base, exp, mod)` function, which efficiently computes modular exponentiation.\n\nLet me claim a solver for this type:",
+      "n_tool_calls": 1,
+      "code_len": 206,
+      "error_detail": null,
+      "response_model": null
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Compute 77576 raised to the power 25, modulo 934628 (the remainder when 77576^25 is divided by 934628).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a modular exponentiation problem. I need to compute 77576^25 mod 934628.\n\nThis is a classic problem that Python handles well with its built-in `pow(base, exp, mod)` function, which efficiently computes modular exponentiation.\n\nLet me claim a solver for this type:",
+      "tool_calls": [
+        {
+          "id": "toolu_01WWU7st12LMtE7KC6bUkMc8",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"\\ndef solve(inputs: dict) -> float:\\n    base = inputs.get('base')\\n    exponent = inputs.get('exponent')\\n    modulus = inputs.get('modulus')\\n    result = pow(base, exponent, modulus)\\n    return float(result)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01WWU7st12LMtE7KC6bUkMc8",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [],
+  "actual_cost_usd": 0.002191
+}

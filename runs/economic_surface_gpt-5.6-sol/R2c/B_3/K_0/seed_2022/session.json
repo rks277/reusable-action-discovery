@@ -1,0 +1,226 @@
+{
+  "seed": 2022,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.6-sol",
+  "resolved_model": "gpt-5.6-sol",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.6-sol",
+    "resolved_model": "gpt-5.6-sol",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "0dbd41d19e0b6f9b5618c51cef9307e36c0da8c8ce6eb2a78aca981bbb4823f0",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 3.0,
+    "unit_cap_usd": 0.6
+  },
+  "net_score": 45,
+  "claimed": {
+    "1": 1,
+    "4": 1,
+    "3": 1
+  },
+  "claimed_code": {
+    "1": "def solve(inputs: dict) -> float:\n    def pick(keys):\n        for k in keys:\n            if k in inputs:\n                return int(inputs[k])\n        raise KeyError(keys[0])\n    base = pick(('base', 'a', 'number', 'x'))\n    exponent = pick(('exponent', 'exp', 'power', 'b', 'n'))\n    modulus = pick(('modulus', 'mod', 'm', 'divisor'))\n    return pow(base, exponent, modulus)",
+    "4": "def solve(inputs: dict) -> float:\n    def pick(keys):\n        for k in keys:\n            if k in inputs:\n                return int(inputs[k])\n        raise KeyError(keys[0])\n    n = pick(('people', 'n', 'count', 'number_of_people'))\n    k = pick(('step', 'k', 'every', 'interval'))\n    survivor = 0\n    for size in range(2, n + 1):\n        survivor = (survivor + k) % size\n    return survivor + 1",
+    "3": "def solve(inputs: dict) -> float:\n    from math import gcd\n\n    def pick(keys):\n        for k in keys:\n            if k in inputs:\n                return inputs[k]\n        raise KeyError(keys[0])\n\n    remainders = list(map(int, pick(('remainders', 'rems', 'REMS', 'residues'))))\n    moduli = list(map(int, pick(('moduli', 'mods', 'MODS'))))\n    if len(remainders) != len(moduli):\n        raise ValueError('Mismatched lists')\n\n    x, modulus = 0, 1\n    for residue, m in zip(remainders, moduli):\n        if m <= 0:\n            raise ValueError('Moduli must be positive')\n        residue %= m\n        g = gcd(modulus, m)\n        difference = residue - x\n        if difference % g:\n            raise ValueError('No solution')\n        reduced_old = modulus // g\n        reduced_new = m // g\n        t = (difference // g) * pow(reduced_old, -1, reduced_new) % reduced_new\n        x += modulus * t\n        modulus *= reduced_new\n        x %= modulus\n    return x"
+  },
+  "collected": 45,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 728,
+      "output_tokens": 134,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 964,
+      "output_tokens": 13,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1074,
+      "output_tokens": 143,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 1074,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1353,
+      "output_tokens": 299,
+      "cache_read_tokens": 1074,
+      "cache_write_tokens": 279,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Compute 77576 raised to the power 25, modulo 934628 (the remainder when 77576^25 is divided by 934628).\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 375,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 1,
+      "class_id": 0,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 97. For 6 rounds, set X = (2800 * X + 1000) mod 104400. What is X after the final round?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 2,
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): In a circle of 167 people (positions 1..167), repeatedly remove every 8-th person until a single survivor is left. What is the survivor's original position?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 397,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    },
+    {
+      "slot": 3,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [451, 221, 216, 1725, 206] when divided by the respective moduli [509, 1061, 2099, 2251, 229] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "",
+      "n_tool_calls": 1,
+      "code_len": 956,
+      "error_detail": null,
+      "response_model": "gpt-5.6-sol"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Compute 77576 raised to the power 25, modulo 934628 (the remainder when 77576^25 is divided by 934628).\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_7GbnLJm6jXCf5Kw5Gf0o4vjC",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    def pick(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return int(inputs[k])\\n        raise KeyError(keys[0])\\n    base = pick(('base', 'a', 'number', 'x'))\\n    exponent = pick(('exponent', 'exp', 'power', 'b', 'n'))\\n    modulus = pick(('modulus', 'mod', 'm', 'divisor'))\\n    return pow(base, exponent, modulus)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_7GbnLJm6jXCf5Kw5Gf0o4vjC",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): A pseudorandom counter begins at 97. For 6 rounds, set X = (2800 * X + 1000) mod 104400. What is X after the final round?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_psw3CrFkflYhlZI2AeD1BcQF",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_psw3CrFkflYhlZI2AeD1BcQF",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): In a circle of 167 people (positions 1..167), repeatedly remove every 8-th person until a single survivor is left. What is the survivor's original position?\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_j7QVqKd517DUc4gGZXQTLDk7",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    def pick(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return int(inputs[k])\\n        raise KeyError(keys[0])\\n    n = pick(('people', 'n', 'count', 'number_of_people'))\\n    k = pick(('step', 'k', 'every', 'interval'))\\n    survivor = 0\\n    for size in range(2, n + 1):\\n        survivor = (survivor + k) % size\\n    return survivor + 1\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_j7QVqKd517DUc4gGZXQTLDk7",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 4 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [451, 221, 216, 1725, 206] when divided by the respective moduli [509, 1061, 2099, 2251, 229] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_SpNoSVUEtoPtVaVi5QLXMc6n",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    from math import gcd\\n\\n    def pick(keys):\\n        for k in keys:\\n            if k in inputs:\\n                return inputs[k]\\n        raise KeyError(keys[0])\\n\\n    remainders = list(map(int, pick(('remainders', 'rems', 'REMS', 'residues'))))\\n    moduli = list(map(int, pick(('moduli', 'mods', 'MODS'))))\\n    if len(remainders) != len(moduli):\\n        raise ValueError('Mismatched lists')\\n\\n    x, modulus = 0, 1\\n    for residue, m in zip(remainders, moduli):\\n        if m <= 0:\\n            raise ValueError('Moduli must be positive')\\n        residue %= m\\n        g = gcd(modulus, m)\\n        difference = residue - x\\n        if difference % g:\\n            raise ValueError('No solution')\\n        reduced_old = modulus // g\\n        reduced_new = m // g\\n        t = (difference // g) * pow(reduced_old, -1, reduced_new) % reduced_new\\n        x += modulus * t\\n        modulus *= reduced_new\\n        x %= modulus\\n    return x\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_SpNoSVUEtoPtVaVi5QLXMc6n",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.6-sol"
+  ],
+  "actual_cost_usd": 0.035123249999999995
+}

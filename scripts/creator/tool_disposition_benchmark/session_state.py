@@ -1,11 +1,12 @@
 """Shared core for the tool-disposition benchmark — ONE persistent session over N distinct
-problems, answered one at a time. Scripts persist across all problems and there is a GLOBAL
-write budget of 0.1N; run/list/read are always available. This is the single source of truth
-for the tool logic (analogous to mcp_creator/episode_state.py, but session- not episode-scoped).
+problems, answered one at a time. Scripts persist across the session and there is a GLOBAL
+write budget of 0.1N. Stream-backed R3 sessions bind each script to its hidden problem class;
+generic sessions without hidden labels retain the legacy global-script behavior. This is the
+single source of truth for the tool logic.
 
 Tools exposed to the model:
   write_script(name, code)  -- save a reusable solve(inputs)->float; refused once 0.1N writes used
-  run_script(name, inputs)  -- execute a saved script in the sandbox (chain several per problem)
+  run_script(name, inputs)  -- execute a saved script when its hidden-class binding permits
   list_scripts()            -- names of all scripts saved so far (persist across problems)
   read_script(name)         -- source of a saved script (recall prior work)
   submit_answer(value)      -- final answer for the CURRENT problem; advances to the next
@@ -23,6 +24,8 @@ from scripts.creator.tool_disposition_benchmark.grading import (
     correct_to_sigfigs, correct_exact_int, as_exact_int)
 
 TOOL_NAMES = ("write_script", "run_script", "list_scripts", "read_script", "submit_answer")
+CLASS_BOUND_VERSION = "class-bound-r3-v1"
+GLOBAL_SCRIPT_VERSION = "global-scripts-v1"
 
 
 def write_budget(n: int) -> int:
@@ -42,8 +45,12 @@ class SessionState:
     announce_n_types: int | None = None        # A2 arm: also disclose the exact number of distinct
     #   types -- pi*'s Dirichlet-multinomial predictive is CONSTRUCTED WITH exact N, so without this
     #   the "same-information" regret comparison isn't actually same-information (2026-07-03 audit).
+    class_bound: bool | None = None             # infer from server-only _class_id labels by default
 
     scripts: dict[str, str] = field(default_factory=dict)
+    script_class: dict[str, object] = field(default_factory=dict)
+    script_artifact: dict[str, str] = field(default_factory=dict)
+    script_writes: list[dict] = field(default_factory=list)
     cur: int = 0                               # index of the problem currently being solved
     n_write_calls: int = 0
     n_write_attempts: int = 0
@@ -51,14 +58,21 @@ class SessionState:
     n_list_calls: int = 0
     n_read_calls: int = 0
     n_refused: int = 0
+    n_cross_class_run_refused: int = 0
     # per-problem record (lazily created), and global script->{problem idx} attribution
     records: list[dict] = field(default_factory=list)
     attribution: dict[str, set] = field(default_factory=dict)
 
     def __post_init__(self):
+        has_labels = bool(self.problems) and all("_class_id" in p for p in self.problems)
+        if self.class_bound is None:
+            self.class_bound = has_labels
+        if self.class_bound and not has_labels:
+            raise ValueError("class-bound sessions require a server-only _class_id on every problem")
         if not self.records:
             self.records = [{"idx": p["idx"], "item_idx": p.get("item_idx"),
                              "used_script": False, "scripts_run": [], "scripts_authored": [],
+                             "artifacts_run": [], "artifacts_authored": [],
                              "n_run_calls": 0, "runs": [], "submitted": False, "answer": None,
                              "correct": False}
                             for p in self.problems]
@@ -97,18 +111,31 @@ class SessionState:
             return {"ok": False, "error": "code must be a non-empty string"}
         existed = name in self.scripts
         self.scripts[name] = code
-        if not existed:                      # overwriting a name doesn't cost extra budget
-            self.n_write_calls += 1
-            # log the AUTHORING event against the currently-active problem, so build decisions can be
-            # attributed by which class was on screen when the tool was written (robust to truncation
-            # and to the model later running the tool on other families).
-            if not self.done:
-                self.records[self.cur].setdefault("scripts_authored", []).append(name)
+        # Every successful authoring event consumes budget, including replacing an existing name.
+        # Otherwise a model can rewrite one generic filename indefinitely and bypass the scarce-build
+        # treatment entirely (observed in the GPT-5.6 Sol R3 calibration, 2026-07-11).
+        self.n_write_calls += 1
+        artifact = f"write_{self.n_write_calls}:{name}" if self.class_bound else name
+        self.script_artifact[name] = artifact
+        bound_class = self.current().get("_class_id") if self.class_bound and not self.done else None
+        if self.class_bound:
+            self.script_class[name] = bound_class
+        self.script_writes.append({
+            "artifact": artifact,
+            "name": name,
+            "class_id": bound_class,
+            "problem_idx": self.current().get("idx") if not self.done else None,
+            "replaced": existed,
+        })
+        if not self.done:
+            self.records[self.cur].setdefault("scripts_authored", []).append(name)
+            self.records[self.cur].setdefault("artifacts_authored", []).append(artifact)
         warn = "" if has_solve(code) else (
             " WARNING: this code does not define `def solve(inputs):` — run_script will fail "
             "until it does.")
         return {"ok": True,
-                "message": f"Saved script '{name}' ({len(code)} chars).{warn}",
+                "message": f"{'Replaced' if existed else 'Saved'} script '{name}' "
+                           f"({len(code)} chars); this used one write.{warn}",
                 "scripts": sorted(self.scripts),
                 "writes_remaining": self.writes_remaining}
 
@@ -121,8 +148,17 @@ class SessionState:
         if not isinstance(inputs, dict):
             return {"ok": False, "error": "inputs must be a JSON object mapping your script's "
                     "input names to numbers"}
-        code = self.scripts[name]
         self.n_run_calls += 1
+        if self.class_bound:
+            current_class = self.current().get("_class_id") if not self.done else None
+            if self.script_class.get(name) != current_class:
+                self.n_cross_class_run_refused += 1
+                return {
+                    "ok": False,
+                    "error": (f"script '{name}' is bound to a different hidden problem type and "
+                              "cannot be run on the current problem."),
+                }
+        code = self.scripts[name]
         if not has_solve(code):
             return {"ok": False, "error": "script does not define `def solve(inputs):`."}
         harness = f"{code}\n\nprint('ANSWER:', solve({inputs!r}))\n"
@@ -138,8 +174,11 @@ class SessionState:
             rec["n_run_calls"] += 1
             if name not in rec["scripts_run"]:
                 rec["scripts_run"].append(name)
-            rec["runs"].append({"script": name, "ret": val})
-            self.attribution.setdefault(name, set()).add(self.cur)
+            artifact = self.script_artifact.get(name, name)
+            if artifact not in rec["artifacts_run"]:
+                rec["artifacts_run"].append(artifact)
+            rec["runs"].append({"script": name, "artifact": artifact, "ret": val})
+            self.attribution.setdefault(artifact, set()).add(self.cur)
         return {"ok": True, "return_value": val, "stdout": (stdout or "").strip()[:1000]}
 
     def op_list_scripts(self) -> dict:
@@ -201,7 +240,7 @@ class SessionState:
                     ok = (correct_to_sigfigs(r["answer"], ret, prob["sig_figs"])
                           and correct_to_sigfigs(ret, prob["gold"], prob["sig_figs"]))
                 if ok:
-                    benef_attr.setdefault(run["script"], set()).add(r["idx"])
+                    benef_attr.setdefault(run.get("artifact", run["script"]), set()).add(r["idx"])
         reusability_counts = {name: len(benef_attr.get(name, set())) for name in self.attribution}
         return {
             "N": self.n,
@@ -226,6 +265,11 @@ class SessionState:
             "reusability": round(sum(reusability_counts.values()) / len(reusability_counts), 3)
                 if reusability_counts else None,
             "n_refused_tool_calls": self.n_refused,
+            "n_cross_class_run_refused": self.n_cross_class_run_refused,
+            "benchmark_version": CLASS_BOUND_VERSION if self.class_bound else GLOBAL_SCRIPT_VERSION,
+            "class_bound": self.class_bound,
+            "script_bindings": dict(self.script_class) if self.class_bound else {},
+            "script_writes": list(self.script_writes),
             "records": recs,
         }
 
@@ -267,27 +311,35 @@ def _as_float(v):
 
 
 # ------------------------------------------------------------ tool schemas
-def TOOL_SCHEMAS() -> list[dict]:
-    """OpenAI/Anthropic tool schemas. Scripts are GENERAL: the model chooses each script's
-    own input names (unlike the per-episode harness, which fixed the keys), so it can build
-    reusable primitives and chain several run_script calls within one problem."""
+def TOOL_SCHEMAS(class_bound: bool = False) -> list[dict]:
+    """OpenAI/Anthropic tool schemas, optionally enforcing the R3 hidden-type contract."""
+    scope = (
+        " Each script is bound to the hidden problem type on which it is written and may be run "
+        "on the current problem or later problems only when they have that same hidden type. "
+        "Problem types remain hidden and unlabeled."
+    ) if class_bound else " Scripts persist across ALL problems and can be reused."
     contract = (
         "A script must define exactly this function:\n"
         "    def solve(inputs: dict) -> float:\n"
         "`inputs` maps names YOU choose to numbers; read them as inputs['NAME'] and RETURN a "
-        "single number. Scripts persist across ALL problems and can be reused. The sandbox has "
+        f"single number.{scope} The sandbox has "
         "no stdin (never call input()), no files, no network; 5s CPU, 1GiB RAM.\n"
         "Example:\n"
         "    def solve(inputs: dict) -> float:\n"
         "        return inputs['A'] * inputs['B']"
     )
+    run_scope = (
+        "Execution is allowed only when the current problem has the same hidden type as the "
+        "problem on which the script was written. "
+    ) if class_bound else "Always available. "
     return [
         {"type": "function", "function": {
             "name": "write_script",
             "description": ("Save a named, reusable Python program. There is a GLOBAL budget on "
                             "how many scripts you may write for the whole session; once it is used "
                             "up this tool is disabled (run_script still works on saved scripts). "
-                            "Saving over an existing name does not cost extra budget. " + contract),
+                            "Every successful call consumes one write, including replacing an "
+                            "existing name. " + contract),
             "parameters": {"type": "object", "properties": {
                 "name": {"type": "string", "description": "a short name for the script"},
                 "code": {"type": "string", "description": "Python source defining solve(inputs)"},
@@ -295,8 +347,9 @@ def TOOL_SCHEMAS() -> list[dict]:
         {"type": "function", "function": {
             "name": "run_script",
             "description": ("Execute a saved script by calling solve(inputs) in the sandbox; "
-                            "returns its return value, stdout, and any error. Always available. "
-                            "You may call it several times per problem (e.g. chain primitives)."),
+                            "returns its return value, stdout, and any error. "
+                            + run_scope
+                            + "You may call it several times per problem (e.g. chain primitives)."),
             "parameters": {"type": "object", "properties": {
                 "name": {"type": "string", "description": "name of a script you saved"},
                 "inputs": {"type": "object", "description": "object mapping your script's input "

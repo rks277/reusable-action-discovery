@@ -1,0 +1,226 @@
+{
+  "seed": 2015,
+  "framing": "R2c",
+  "B": 3,
+  "K": 0,
+  "model_key": "gpt-5.4-mini-2026-03-17",
+  "resolved_model": "gpt-5.4-mini-2026-03-17",
+  "provider": "openai",
+  "config": {
+    "requested_model": "gpt-5.4-mini-2026-03-17",
+    "resolved_model": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "framing": "R2c",
+    "B": 3,
+    "K": 0,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "9a6ace22aa59cf9e9a2a06a70ecf2dc3dc1b28e21ffb0b57a2c862146ebfa0a5",
+    "system_prompt_sha256": "b8d5b4f59f409191ca22000e67ed6ac2c77767bcf77cf7d1f4e059e2a2e8cd3a",
+    "global_cap_usd": 1.0,
+    "unit_cap_usd": 0.2
+  },
+  "net_score": 35,
+  "claimed": {
+    "4": 1,
+    "2": 1,
+    "6": 1
+  },
+  "claimed_code": {
+    "4": "def solve(inputs: dict) -> float:\n    n = int(inputs.get('n', 179))\n    k = int(inputs.get('k', 4))\n    # Josephus survivor, 1-indexed.\n    s = 0\n    for i in range(1, n + 1):\n        s = (s + k) % i\n    return float(s + 1)",
+    "2": "def solve(inputs: dict) -> float:\n    # Accept either a list under 'terms' or common aliases.\n    terms = inputs.get('terms')\n    if terms is None:\n        terms = inputs.get('a')\n    if terms is None:\n        terms = [6848, 3414, 1225]\n    p_minus2 = 1\n    p_minus1 = terms[0]\n    if len(terms) == 1:\n        return float(p_minus1)\n    for a in terms[1:]:\n        p = a * p_minus1 + p_minus2\n        p_minus2, p_minus1 = p_minus1, p\n    return float(p_minus1)",
+    "6": "def solve(inputs: dict) -> float:\n    x = int(inputs.get('X', inputs.get('x', 1088673590))) & 0xFFFFFFFF\n    for _ in range(int(inputs.get('steps', 18))):\n        x ^= (x << 13) & 0xFFFFFFFF\n        x ^= (x >> 7)\n        x ^= (x << 17) & 0xFFFFFFFF\n        x &= 0xFFFFFFFF\n    return float(x)"
+  },
+  "collected": 35,
+  "budget": 3,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 734,
+      "output_tokens": 52,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 891,
+      "output_tokens": 140,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1147,
+      "output_tokens": 202,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    {
+      "input_tokens": 1506,
+      "output_tokens": 156,
+      "cache_read_tokens": 1152,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 5,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Iterate the map x -> (x^2 + 797746) mod 787917 for 26 steps, starting from x = 80573. What is the resulting value?\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "SKIP_SOLVER",
+      "how": "tool",
+      "reply": "This looks like a one-off modular iteration problem, but since I only have 3 solver claims and don't know the type distribution yet, I'll skip for now.",
+      "n_tool_calls": 1,
+      "code_len": 0,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 1,
+      "class_id": 4,
+      "class_position": 1,
+      "prompt": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): 179 people stand in a circle numbered 1..179. Counting around the circle, every 4-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a classic Josephus problem, which is likely its own type and reusable. I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 223,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 2,
+      "class_id": 2,
+      "class_position": 1,
+      "prompt": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): For the continued fraction with terms [6848, 3414, 1225], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a continued-fraction numerator recurrence type. I can solve this generally, so I'll claim it.",
+      "n_tool_calls": 1,
+      "code_len": 460,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    },
+    {
+      "slot": 4,
+      "class_id": 6,
+      "class_position": 1,
+      "prompt": "(Since your last choice: problem 4: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 1088673590. Repeat 18 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "This is a bitwise PRNG-like transform, another reusable type. I'll claim it and code the masked 32-bit update correctly.",
+      "n_tool_calls": 1,
+      "code_len": 292,
+      "error_detail": null,
+      "response_model": "gpt-5.4-mini-2026-03-17"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Iterate the map x -> (x^2 + 797746) mod 787917 for 26 steps, starting from x = 80573. What is the resulting value?\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This looks like a one-off modular iteration problem, but since I only have 3 solver claims and don't know the type distribution yet, I'll skip for now.",
+      "tool_calls": [
+        {
+          "id": "call_ZyJYBKZ1Zc1K9xhP7DzqN2md",
+          "type": "function",
+          "function": {
+            "name": "skip_solver",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_ZyJYBKZ1Zc1K9xhP7DzqN2md",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 2 of 60 (put solving logic ONLY in the code argument, not this message): 179 people stand in a circle numbered 1..179. Counting around the circle, every 4-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.\nYou have 3 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a classic Josephus problem, which is likely its own type and reusable. I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "call_xLbdji89ieU73aGmaBQH4cTP",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    n = int(inputs.get('n', 179))\\n    k = int(inputs.get('k', 4))\\n    # Josephus survivor, 1-indexed.\\n    s = 0\\n    for i in range(1, n + 1):\\n        s = (s + k) % i\\n    return float(s + 1)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_xLbdji89ieU73aGmaBQH4cTP",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "Problem 3 of 60 (put solving logic ONLY in the code argument, not this message): For the continued fraction with terms [6848, 3414, 1225], compute the numerator of its value (use p_i = a_i * p_(i-1) + p_(i-2), with p_(-1)=1, p_0 = a_0).\nYou have 2 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a continued-fraction numerator recurrence type. I can solve this generally, so I'll claim it.",
+      "tool_calls": [
+        {
+          "id": "call_5fRiuWjkISTa7o94G7alZnWO",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    # Accept either a list under 'terms' or common aliases.\\n    terms = inputs.get('terms')\\n    if terms is None:\\n        terms = inputs.get('a')\\n    if terms is None:\\n        terms = [6848, 3414, 1225]\\n    p_minus2 = 1\\n    p_minus1 = terms[0]\\n    if len(terms) == 1:\\n        return float(p_minus1)\\n    for a in terms[1:]:\\n        p = a * p_minus1 + p_minus2\\n        p_minus2, p_minus1 = p_minus1, p\\n    return float(p_minus1)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_5fRiuWjkISTa7o94G7alZnWO",
+      "content": "{\"ok\": true}"
+    },
+    {
+      "role": "user",
+      "content": "(Since your last choice: problem 4: another problem of an already-claimed type (auto-solved, +1 correct).) Problem 5 of 60 (put solving logic ONLY in the code argument, not this message): A 32-bit register holds X = 1088673590. Repeat 18 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "This is a bitwise PRNG-like transform, another reusable type. I'll claim it and code the masked 32-bit update correctly.",
+      "tool_calls": [
+        {
+          "id": "call_7STR8HF2Mna5UYLadQ4sRJtl",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\":\"def solve(inputs: dict) -> float:\\n    x = int(inputs.get('X', inputs.get('x', 1088673590))) & 0xFFFFFFFF\\n    for _ in range(int(inputs.get('steps', 18))):\\n        x ^= (x << 13) & 0xFFFFFFFF\\n        x ^= (x >> 7)\\n        x ^= (x << 17) & 0xFFFFFFFF\\n        x &= 0xFFFFFFFF\\n    return float(x)\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_7STR8HF2Mna5UYLadQ4sRJtl",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [
+    "gpt-5.4-mini-2026-03-17"
+  ],
+  "actual_cost_usd": 0.0049059
+}

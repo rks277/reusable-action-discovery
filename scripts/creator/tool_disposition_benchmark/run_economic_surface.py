@@ -278,7 +278,8 @@ async def main():
                 framing, B, K, seed = UNITS[idx]
                 d = base_dir(framing, B, K) / f"seed_{seed}"
                 will_run = not (d / "session.json").exists()
-                reserve = UNIT_CAP_USD if UNIT_CAP_USD is not None else EST
+                reserve = (EXPECTED_UNIT_USD if EXPECTED_UNIT_USD is not None
+                           else UNIT_CAP_USD if UNIT_CAP_USD is not None else EST)
                 if will_run and cumulative + (inflight + 1) * reserve > CAP_USD:
                     paused = True; return
                 idx += 1; inflight += 1

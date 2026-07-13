@@ -17,9 +17,10 @@ import argparse, asyncio, json, statistics as st
 from pathlib import Path
 from dotenv import load_dotenv
 
-from lomekwi.raw_chat import RawChat
+from lomekwi.raw_chat import RawChat, provider_for
 from scripts.creator.tool_disposition_benchmark.driver import run_session
-from scripts.creator.tool_disposition_benchmark.session_state import SessionState
+from scripts.creator.tool_disposition_benchmark.session_state import (
+    CLASS_BOUND_VERSION, SessionState)
 from scripts.creator.tool_disposition_benchmark.stream_builder import StochasticStreamSpec, build_stochastic_stream
 from scripts.creator.tool_disposition_benchmark.run_stream_session import slots_to_problems, CLAUDE
 from scripts.creator.tool_disposition_benchmark.skirental_scorer import actions_from_session, model_builds_from_actions
@@ -47,6 +48,19 @@ _ap.add_argument("--cap", type=float, default=None,
 _ap.add_argument("--unit-cap", type=float, default=None,
                  help="stop and save a seed after its exact cumulative API usage reaches this USD "
                       "amount, then pause the batch (may overshoot by the final in-flight API call)")
+_ap.add_argument("--expected-unit", type=float, default=None,
+                 help="calibrated expected seed cost used for serial global-cap reservation; pause "
+                      "after a completed seed exceeds 1.5x this amount")
+_ap.add_argument("--reasoning-effort", default="none",
+                 help="OpenAI reasoning effort (GPT R3 calibration is locked to 'none')")
+_ap.add_argument("--tool-choice", default="auto", choices=["auto", "required"],
+                 help="tool selection mode (GPT R3 calibration is locked to 'auto')")
+_ap.add_argument("--dry-run", action="store_true",
+                 help="validate routing, pricing, caps, and canonical structure without API calls")
+_ap.add_argument("--publication", action="store_true",
+                 help="explicitly authorize collection on canonical publication seeds 2000--2023")
+_ap.add_argument("--smoke", action="store_true",
+                 help="write to a separate _smoke directory; canonical publication seeds are refused")
 _ap.add_argument("--canonical-structure", action="store_true",
                  help="Opus repair arm: use MAG=1000 without pinning Josephus, assert the latent "
                       "family/role/arrival stream matches the canonical Opus urn A2 artifact, and "
@@ -60,10 +74,12 @@ _ap.add_argument("--full-stream", action="store_true",
 _ARGS = _ap.parse_known_args()[0]
 MODEL_KEY = _ARGS.model
 MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)      # Claude key -> id; else pass the raw tag through
-IS_LOCAL = MODEL_KEY not in CLAUDE                # non-Claude => Ollama/vLLM, free, stop-on-budget
+PROVIDER = provider_for(MODEL_STR)
+IS_LOCAL = PROVIDER in ("ollama", "vllm")
 ANNOUNCE_N = _ARGS.announce_n
 EMPTY_FENCE_RETRY = _ARGS.empty_fence_retry
 UNIT_CAP_USD = _ARGS.unit_cap
+EXPECTED_UNIT_USD = _ARGS.expected_unit
 CANONICAL_STRUCTURE = _ARGS.canonical_structure
 if CANONICAL_STRUCTURE and (MODEL_KEY != "opus" or not ANNOUNCE_N):
     _ap.error("--canonical-structure requires --model opus --announce-n")
@@ -73,23 +89,65 @@ if ANNOUNCE_N:
     BASE = Path(str(BASE) + "_n-announced")
 if CANONICAL_STRUCTURE:
     BASE = Path(str(BASE) + "_canonical-structure")
+if PROVIDER == "openai":
+    BASE = Path(str(BASE) + "_write-budget-v2")
+BASE = Path(str(BASE) + "_class-bound-v1")
+if _ARGS.smoke:
+    BASE = Path(str(BASE) + "_smoke")
 if EMPTY_FENCE_RETRY:
     BASE = Path(str(BASE) + f"_efr{EMPTY_FENCE_RETRY}")
 SEEDS = _ARGS.seeds if _ARGS.seeds else list(range(2000, 2012))  # 12 -- paired with the urn, same seeds
+_PUBLICATION_SEEDS = set(range(2000, 2024))
+if _ARGS.publication and _ARGS.smoke:
+    _ap.error("--publication and --smoke are mutually exclusive")
+if _ARGS.smoke and _PUBLICATION_SEEDS.intersection(SEEDS):
+    _ap.error("--smoke refuses canonical publication seeds 2000--2023")
+if not _ARGS.dry_run and _PUBLICATION_SEEDS.intersection(SEEDS) and not _ARGS.publication:
+    _ap.error("canonical seeds 2000--2023 require explicit --publication authorization")
+COLLECTION_KIND = "smoke" if _ARGS.smoke else ("publication" if _ARGS.publication else "calibration")
 CAP_USD, EST, CONC = (12.0, 1.0, 12) if MODEL_KEY == "haiku" else (12.0, 2.5, 12)
 if IS_LOCAL:
     CAP_USD, EST = 1e9, 0.0                        # free -> spend-guard never binds
+elif EXPECTED_UNIT_USD is not None:
+    EST = EXPECTED_UNIT_USD                        # exact-config calibration; per-unit cap stays higher
 elif UNIT_CAP_USD is not None:
     EST = UNIT_CAP_USD                             # the per-turn breaker bounds each serial unit
 CONC = _ARGS.conc if _ARGS.conc else (CONC if not IS_LOCAL else 4)
 if _ARGS.cap is not None:
     CAP_USD = _ARGS.cap
+if PROVIDER == "openai":
+    if not ANNOUNCE_N:
+        _ap.error("GPT R3 calibration requires --announce-n")
+    if _ARGS.cap is None or UNIT_CAP_USD is None:
+        _ap.error("paid GPT R3 runs require explicit --cap and --unit-cap")
+    if CONC != 1:
+        _ap.error("paid GPT R3 runs require --conc 1")
+    if _ARGS.reasoning_effort != "none":
+        _ap.error("GPT R3 calibration locks --reasoning-effort none")
+    if _ARGS.tool_choice != "auto":
+        _ap.error("GPT R3 calibration locks --tool-choice auto")
+    if _ARGS.full_stream:
+        _ap.error("GPT R3 calibration must truncate at budget exhaustion")
+if (CAP_USD <= 0 or (UNIT_CAP_USD is not None and UNIT_CAP_USD <= 0)
+        or (EXPECTED_UNIT_USD is not None and EXPECTED_UNIT_USD <= 0)):
+    _ap.error("spend caps must be positive")
+if UNIT_CAP_USD is not None and UNIT_CAP_USD > CAP_USD:
+    _ap.error("--unit-cap cannot exceed --cap")
 # Truncate at budget exhaustion by default (local models always did). --full-stream restores the old
 # API behavior. No build decisions occur past exhaustion, so the disposition metric is identical.
 STOP_ON_BUDGET = not _ARGS.full_stream
 _PRICES = {"haiku": (1.0, 5.0, 0.10, 1.25), "sonnet": (3.0, 15.0, 0.30, 3.75),
            "opus": (5.0, 25.0, 0.50, 6.25)}       # $/1e6 (in, out, cache_read, cache_write)
 IN, OUT, CR, CW = _PRICES.get(MODEL_KEY, (0.0, 0.0, 0.0, 0.0))   # local models: no cost
+_OPENAI_PRICES = {
+    "gpt-5.4-mini-2026-03-17": {"input": 0.75, "cached": 0.075, "cache_write": 0.75,
+                                "output": 4.50},
+    "gpt-5.6-sol": {"input": 5.0, "cached": 0.50, "cache_write": 6.25, "output": 30.0,
+                    "threshold": 272_000, "high_input": 10.0, "high_cached": 1.0,
+                    "high_cache_write": 12.5, "high_output": 45.0},
+}
+if PROVIDER == "openai" and MODEL_STR not in _OPENAI_PRICES:
+    _ap.error(f"no verified OpenAI pricing for {MODEL_STR!r}")
 # MAG=100 is only hand-hard for Haiku/Qwen; at MAG=1000 crt_solve/modpow collapse to a_hand=0.00 for
 # Opus too (calibrated 2026-07-03), but josephus stays hand-solvable (~0.5-0.6) at ANY magnitude for
 # Opus (no closed form for general K; Opus tracks the O(N) recurrence reliably regardless of length) --
@@ -110,6 +168,25 @@ A_SCRIPT = _A_SCRIPT.get(MODEL_KEY, 1.0)
 
 def cost_of(row):
     tu = row.get("turn_usages") or []
+    if PROVIDER == "openai":
+        price = _OPENAI_PRICES[MODEL_STR]
+        total = 0.0
+        for usage in tu:
+            input_tokens = int(usage.get("input_tokens", 0))
+            cached_tokens = min(input_tokens, int(usage.get("cache_read_tokens", 0)))
+            cache_write_tokens = min(input_tokens - cached_tokens,
+                                     int(usage.get("cache_write_tokens", 0)))
+            uncached_tokens = input_tokens - cached_tokens - cache_write_tokens
+            output_tokens = int(usage.get("output_tokens", 0))
+            high = input_tokens > price.get("threshold", 10**30)
+            total += (
+                uncached_tokens * (price.get("high_input", price["input"]) if high else price["input"])
+                + cached_tokens * (price.get("high_cached", price["cached"]) if high else price["cached"])
+                + cache_write_tokens
+                * (price.get("high_cache_write", price["cache_write"]) if high else price["cache_write"])
+                + output_tokens * (price.get("high_output", price["output"]) if high else price["output"])
+            ) / 1e6
+        return total
     return (sum(t.get("input_tokens", 0) for t in tu) * IN + sum(t.get("output_tokens", 0) for t in tu) * OUT
             + sum(t.get("cache_read_tokens", 0) for t in tu) * CR + sum(t.get("cache_write_tokens", 0) for t in tu) * CW) / 1e6
 
@@ -122,24 +199,37 @@ def structural_projection(slots):
     return [{k: s[k] for k in _STRUCTURAL_FIELDS} for s in slots]
 
 
+def make_and_validate_stream(seed):
+    slots, meta = build_stochastic_stream(StochasticStreamSpec(
+        families=UNIFORM, n_hot=B, T=T, budget=B, guarantee_trap_early=G, magnitude=MAG, seed=seed,
+        pinned_last_trap=PINNED_TRAP))
+    if CANONICAL_STRUCTURE or PROVIDER == "openai":
+        reference_root = ("runs/urn_opus_n-announced" if CANONICAL_STRUCTURE
+                          else "runs/urn_haiku_n-announced")
+        reference_path = Path(reference_root) / f"seed_{seed}" / "stream.json"
+        reference = json.loads(reference_path.read_text())
+        assert structural_projection(slots) == structural_projection(reference), (
+            f"seed {seed}: generated structure does not match canonical urn A2 stream")
+    return slots, meta
+
+
 async def run_one(client, model, seed):
     d = BASE / f"seed_{seed}"
     if (d / "sessions.jsonl").exists():
         return 0.0, "cached"
-    slots, meta = build_stochastic_stream(StochasticStreamSpec(
-        families=UNIFORM, n_hot=B, T=T, budget=B, guarantee_trap_early=G, magnitude=MAG, seed=seed,
-        pinned_last_trap=PINNED_TRAP))
-    if CANONICAL_STRUCTURE:
-        reference_path = Path("runs/urn_opus_n-announced") / f"seed_{seed}" / "stream.json"
-        reference = json.loads(reference_path.read_text())
-        assert structural_projection(slots) == structural_projection(reference), (
-            f"seed {seed}: generated MAG=1000 structure does not match canonical Opus urn A2 stream")
+    slots, meta = make_and_validate_stream(seed)
     d.mkdir(parents=True, exist_ok=True)
     (d / "stream.json").write_text(json.dumps(slots, indent=2))
     (d / "meta.json").write_text(json.dumps(meta, indent=2))
     (d / "config.json").write_text(json.dumps({
         "budget": B, "seed": seed, "magnitude": MAG, "arm": "announce",
         "canonical_structure": CANONICAL_STRUCTURE, "pinned_last_trap": PINNED_TRAP,
+        "requested_model": MODEL_KEY, "resolved_model": MODEL_STR, "provider": PROVIDER,
+        "announce_n": ANNOUNCE_N, "reasoning_effort": _ARGS.reasoning_effort,
+        "tool_choice": _ARGS.tool_choice, "global_cap_usd": CAP_USD,
+        "unit_cap_usd": UNIT_CAP_USD, "tool_schema_version": "write-budget-v2",
+        "benchmark_version": CLASS_BOUND_VERSION, "class_bound": True,
+        "collection_kind": COLLECTION_KIND,
     }))
     state = SessionState(problems=slots_to_problems(slots), budget=B)
     state.announce_recurrence = True          # A1: disclose recurrence structure (non-prescriptive)
@@ -152,6 +242,11 @@ async def run_one(client, model, seed):
               f"{spent/1000:.1f}k tok  {elapsed:.0f}s", flush=True)
 
     def _stop_after_turn(turn_usages):
+        latest = turn_usages[-1] if turn_usages else {}
+        if not latest or sum(int(latest.get(k, 0)) for k in
+                             ("input_tokens", "output_tokens", "cache_read_tokens",
+                              "cache_write_tokens", "reasoning_tokens")) <= 0:
+            return "missing_usage"
         if UNIT_CAP_USD is not None and cost_of({"turn_usages": turn_usages}) >= UNIT_CAP_USD:
             return "unit_cost_cap"
         return None
@@ -160,14 +255,34 @@ async def run_one(client, model, seed):
                             announce_cap=True, stop_on_budget_exhausted=STOP_ON_BUDGET, progress_cb=_progress,
                             prune_no_tool=bool(EMPTY_FENCE_RETRY),
                             max_no_tool_retries=EMPTY_FENCE_RETRY or 2,
-                            stop_after_turn=_stop_after_turn)
+                            stop_after_turn=_stop_after_turn,
+                            reasoning_effort=_ARGS.reasoning_effort,
+                            tool_choice=_ARGS.tool_choice)
     row["model_key"] = MODEL_KEY
+    row["resolved_model"] = MODEL_STR
+    row["provider"] = PROVIDER
+    row["actual_cost_usd"] = cost_of(row)
     (d / "sessions.jsonl").write_text(json.dumps(row) + "\n")
     return cost_of(row), ("cost_cap" if row.get("stop_reason") else "ran")
 
 
 async def main():
     load_dotenv(); set_profile(MODEL_KEY)
+    if _ARGS.dry_run:
+        for seed in SEEDS:
+            make_and_validate_stream(seed)
+        print(json.dumps({
+            "requested_model": MODEL_KEY, "resolved_model": MODEL_STR, "provider": PROVIDER,
+            "seeds": SEEDS, "concurrency": CONC, "cap_usd": CAP_USD,
+            "unit_cap_usd": UNIT_CAP_USD, "expected_unit_usd": EXPECTED_UNIT_USD,
+            "reasoning_effort": _ARGS.reasoning_effort,
+            "tool_choice": _ARGS.tool_choice, "magnitude": MAG,
+            "benchmark_version": CLASS_BOUND_VERSION, "class_bound": True,
+            "collection_kind": COLLECTION_KIND,
+            "canonical_structure_asserted": CANONICAL_STRUCTURE or PROVIDER == "openai",
+            "network_calls": 0,
+        }, indent=2))
+        return
     model = MODEL_STR; BASE.mkdir(parents=True, exist_ok=True)
     client = RawChat()
     cumulative = 0.0; inflight = 0; idx = 0; paused = False; lock = asyncio.Lock()
@@ -194,6 +309,11 @@ async def main():
                     paused = True
                     print(f"  CIRCUIT BREAKER: seed {seed} reached ${UNIT_CAP_USD:.2f}; "
                           "no further seeds will start", flush=True)
+                if (EXPECTED_UNIT_USD is not None and status == "ran"
+                        and cost > 1.5 * EXPECTED_UNIT_USD):
+                    paused = True
+                    print(f"  CIRCUIT BREAKER: ${cost:.3f} exceeds 1.5x calibrated "
+                          f"${EXPECTED_UNIT_USD:.3f}; no further seeds will start", flush=True)
 
     print(f"A1 announce arm: {MODEL_KEY}, uniform-hard N={N}, MAG={MAG}, pinned_trap={PINNED_TRAP}, "
           f"g={G}, {len(SEEDS)} seeds (cap=${CAP_USD}) ...", flush=True)

@@ -1,0 +1,91 @@
+{
+  "seed": 2019,
+  "framing": "R2c",
+  "B": 1,
+  "K": 10,
+  "model_key": "haiku",
+  "resolved_model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "config": {
+    "requested_model": "haiku",
+    "resolved_model": "claude-haiku-4-5-20251001",
+    "provider": "anthropic",
+    "framing": "R2c",
+    "B": 1,
+    "K": 10,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "3574194604dcd4f532645552f0d3894fae6b7ff5c2e58ceef982c358862e4645",
+    "system_prompt_sha256": "afc4d54ae4bed7376b704a3cc212aadc4acbfe8c0b0994ac11b08deea277f575",
+    "global_cap_usd": 3.0,
+    "unit_cap_usd": 0.3
+  },
+  "net_score": -8,
+  "claimed": {
+    "3": 1
+  },
+  "claimed_code": {
+    "3": "\ndef solve(inputs: dict) -> float:\n    rems = inputs['rems']\n    mods = inputs['mods']\n    \n    def extended_gcd(a, b):\n        if a == 0:\n            return b, 0, 1\n        gcd, x1, y1 = extended_gcd(b % a, a)\n        x = y1 - (b // a) * x1\n        y = x1\n        return gcd, x, y\n    \n    def mod_inverse(a, m):\n        gcd, x, _ = extended_gcd(a % m, m)\n        if gcd != 1:\n            return None\n        return (x % m + m) % m\n    \n    # Chinese Remainder Theorem\n    x = rems[0]\n    mod = mods[0]\n    \n    for i in range(1, len(rems)):\n        # Solve: x \u2261 rems[i] (mod mods[i])\n        # Current: x \u2261 x (mod mod)\n        # Find X such that: X \u2261 x (mod mod) and X \u2261 rems[i] (mod mods[i])\n        \n        r1, m1 = x, mod\n        r2, m2 = rems[i], mods[i]\n        \n        # X = r1 + m1 * k for some integer k\n        # r1 + m1 * k \u2261 r2 (mod m2)\n        # m1 * k \u2261 r2 - r1 (mod m2)\n        \n        diff = (r2 - r1) % m2\n        inv = mod_inverse(m1 % m2, m2)\n        \n        if inv is None:\n            # Handle non-coprime case with CRT for non-coprime moduli\n            from math import gcd\n            g = gcd(m1, m2)\n            if diff % g != 0:\n                return -1\n            # Adjust and solve\n            k = (diff * inv) % m2\n        else:\n            k = (diff * inv) % m2\n        \n        x = r1 + m1 * k\n        mod = (m1 * m2) // __import__('math').gcd(m1, m2)\n        x = x % mod\n    \n    return float(x)\n"
+  },
+  "collected": 2,
+  "budget": 1,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 1275,
+      "output_tokens": 797,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 3,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [330, 1602, 14, 263, 411] when divided by the respective moduli [467, 1783, 937, 1229, 1447] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "I need to solve a system of linear congruences. This is the Chinese Remainder Theorem (CRT) problem.\n\nGiven:\n- x \u2261 330 (mod 467)\n- x \u2261 1602 (mod 1783)\n- x \u2261 14 (mod 937)\n- x \u2261 263 (mod 1229)\n- x \u2261 411 (mod 1447)\n\nI need to find the smallest non-negative integer x satisfying all these congruences.\n\nSince this is the first problem and could be a common type, I'll use my one solver claim here with a proper CRT implementation:",
+      "n_tool_calls": 1,
+      "code_len": 1435,
+      "error_detail": null,
+      "response_model": null
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Find the smallest non-negative integer x that leaves remainders [330, 1602, 14, 263, 411] when divided by the respective moduli [467, 1783, 937, 1229, 1447] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I need to solve a system of linear congruences. This is the Chinese Remainder Theorem (CRT) problem.\n\nGiven:\n- x \u2261 330 (mod 467)\n- x \u2261 1602 (mod 1783)\n- x \u2261 14 (mod 937)\n- x \u2261 263 (mod 1229)\n- x \u2261 411 (mod 1447)\n\nI need to find the smallest non-negative integer x satisfying all these congruences.\n\nSince this is the first problem and could be a common type, I'll use my one solver claim here with a proper CRT implementation:",
+      "tool_calls": [
+        {
+          "id": "toolu_014NfKg3GQ2oSjDnsUQLaz2M",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"\\ndef solve(inputs: dict) -> float:\\n    rems = inputs['rems']\\n    mods = inputs['mods']\\n    \\n    def extended_gcd(a, b):\\n        if a == 0:\\n            return b, 0, 1\\n        gcd, x1, y1 = extended_gcd(b % a, a)\\n        x = y1 - (b // a) * x1\\n        y = x1\\n        return gcd, x, y\\n    \\n    def mod_inverse(a, m):\\n        gcd, x, _ = extended_gcd(a % m, m)\\n        if gcd != 1:\\n            return None\\n        return (x % m + m) % m\\n    \\n    # Chinese Remainder Theorem\\n    x = rems[0]\\n    mod = mods[0]\\n    \\n    for i in range(1, len(rems)):\\n        # Solve: x \\u2261 rems[i] (mod mods[i])\\n        # Current: x \\u2261 x (mod mod)\\n        # Find X such that: X \\u2261 x (mod mod) and X \\u2261 rems[i] (mod mods[i])\\n        \\n        r1, m1 = x, mod\\n        r2, m2 = rems[i], mods[i]\\n        \\n        # X = r1 + m1 * k for some integer k\\n        # r1 + m1 * k \\u2261 r2 (mod m2)\\n        # m1 * k \\u2261 r2 - r1 (mod m2)\\n        \\n        diff = (r2 - r1) % m2\\n        inv = mod_inverse(m1 % m2, m2)\\n        \\n        if inv is None:\\n            # Handle non-coprime case with CRT for non-coprime moduli\\n            from math import gcd\\n            g = gcd(m1, m2)\\n            if diff % g != 0:\\n                return -1\\n            # Adjust and solve\\n            k = (diff * inv) % m2\\n        else:\\n            k = (diff * inv) % m2\\n        \\n        x = r1 + m1 * k\\n        mod = (m1 * m2) // __import__('math').gcd(m1, m2)\\n        x = x % mod\\n    \\n    return float(x)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_014NfKg3GQ2oSjDnsUQLaz2M",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [],
+  "actual_cost_usd": 0.00526
+}

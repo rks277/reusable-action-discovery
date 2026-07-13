@@ -19,10 +19,10 @@
   \fcolorbox{gray}{gray!8}{\parbox[c][3.2cm][c]{#1}{\centering\ttfamily\footnotesize
   \textcolor{red}{[GENERATE]}\\[2pt] #2}}}
 
-\title{Tools as Resources: Measuring Online Tool-Investment Capability in LLM Agents}
+\title{Over-Eager Builders: Measuring Online Tool Allocation Capability in LLM Agents}
 
 \author{%
-Roshan Klein-Seetharaman\thanks{Equal contribution (co-first authors).} \quad
+Roshan Klein-Seetharaman\thanks{These authors contributed equally to this paper..} \quad
 Daniel Wang\footnotemark[1] \quad
 Andrew Xu\footnotemark[1] \\
 Sea12 Technologies \quad Yale University \\
@@ -35,31 +35,14 @@ Sea12 Technologies \quad Yale University \\
 \maketitle
 \begin{abstract}
 Creating a reusable tool is an investment: an agent pays a fixed cost now in
-exchange for uncertain future reuse. We introduce a paired benchmark that tests
-whether language-model agents preserve online allocation behavior when the same
-investment decision moves from an abstract keep/pass frame to reusable code
-construction. Claude Haiku reserves budget in the abstract frame but makes
-100\% of its script builds on first sight, compared with 28\% abstract
-first-sight commitment (paired difference $+72.2$ percentage points, 95\%
-seed-bootstrap interval $[+61.1,+83.3]$). A preregistered framing ladder
-localizes this shift to required code emission: a declarative solver claim
-yields 39\% first-sight commitment, while requiring code---without
-correctness-dependent reward or a hand-solving option---raises it to 100\%
-(paired difference $+61.1$ points, $[+38.9,+83.3]$). Across build charges
-spanning eager, selective, and never-build regimes, Haiku's abstract choices
-adjust to the economics, whereas its code-required choices remain at
-98--100\% first sight, including when never building is optimal. The shift also appears in Claude
-Opus and, after a preregistered competence gate, in GPT-5.4-mini (16.7\%
-abstract versus 87.9\% code-required). In contrast, competence-qualified
-GPT-5.6 Sol preserves reserve across the same comparison (19.4\% versus
-27.8\%; the paired interval includes zero), demonstrating that the tested
-capability is achievable rather than structurally precluded by code generation.
-In a separate proof-of-possibility case study, a Qwen-14B policy trained from
-reward acquires abstract reserve and generalizes it across held-out lexical
-reskins, but remains eager in reusable script creation.
-Together, these results establish online tool investment as a discriminative
-capability boundary: constructive framing can suppress an available allocation
-policy, but a capable model can preserve it.
+exchange for the potential of future reuse. Therefore, a user should prefer for an agent to create a small number of highly reusable tools, rather than many one-offs. We introduce a paired benchmark that tests
+whether LLM agents exhibit conscious allocation behavior under a fixed budget in two contexts: an abstract text-based formulation and a code-construction task. We find that several frontier models, including Claude Haiku, Claude Opus, and GPT-5.4-mini, act near-optimally in the abstract framing but emphatically fail to transfer this ability to script-writing. Through further experiments, we
+localize this failure to required code emission. All three models adjust their choices to the economics in a declarative environment, but their code-required behavior remains unchanged. Interestingly, we find that
+GPT-5.6 Sol remains capable across the same comparison. This indicates that optimal tool allocation is theoretically possible for LLMs, but that nearly all current models fail to achieve it, even when capable at abstractly reasoning through the same problem.
+Furthermore, a policy-trained Qwen2.5-Coder-14B model policy-trained for abstract allocation generalizes this ability across held-out lexical
+variations, but sees minimal improvement at script allocation.
+Together, these results establish online tool allocation as a significant
+capability boundary, even for modern frontier models.
 \end{abstract}
 
 \section{Introduction}
@@ -93,13 +76,16 @@ then tests whether it survives constructive reframing.
 Our results support five conclusions. First, with the number of latent classes
 disclosed in both frames, Haiku commits on first sight in 28\% of abstract
 decisions but 100\% of reusable-script decisions. Second, a preregistered
-framing ladder and a construction-only control isolate required code emission
-as sufficient to reproduce the full shift within this benchmark. Third, the
+framing ladder and a construction-only control localize the shift to the
+code-required condition, which is sufficient to reproduce the full effect
+within this benchmark. Third, the
 affected code-required policy is economically inelastic: it remains almost
-fully eager as visible build charges move from zero to a level at which every
-build is net-negative. Fourth, the benchmark is difficult but passable. Opus and
-GPT-5.4-mini exhibit the framing shift, whereas GPT-5.6 Sol preserves reserve
-after code becomes required. Fifth, as a convergent case study, a Qwen-14B
+fully eager as visible build charges move from zero to a level at which the
+hindsight optimum almost always declines to build. Fourth, the benchmark is
+difficult but passable. Opus and GPT-5.4-mini exhibit the framing shift,
+whereas GPT-5.6 Sol remains comparatively selective after code becomes
+required and does not meet the preregistered suppression criterion. Fifth, as a
+convergent case study, a Qwen-14B
 policy can acquire reserve from reward and preserve it when balls and urns are
 replaced by unseen abstract vocabularies, yet remains as eager as its base model
 during script construction.
@@ -114,7 +100,7 @@ The paper contributes:
     \item a causal study combining a preregistered framing ladder, a
     code-required control, and an economic response surface;
     \item a preregistered, competence-gated model panel that contains both a
-    large cross-frame shift and successful cross-frame preservation; and
+    large cross-frame shift and comparative cross-frame selectivity; and
     \item a proof-of-possibility reward-learning case study distinguishing
     policy acquisition from cross-context activation.
 \end{enumerate}
@@ -222,18 +208,24 @@ policy available to the model.
 \section{Experimental Protocol}
 
 The primary controlled subject is Claude Haiku 4.5. Claude Opus 4.8 provides a
-frontier-model paired test. Qwen2.5-Coder-14B is used for reward learning.
+frontier-model paired test plus an R2c code-emission bridge. Qwen2.5-Coder-14B
+is used for reward learning.
 GPT-5.4-mini and GPT-5.6 Sol are evaluated under a preregistered competence gate
 with matched R0 and R2c conditions and \texttt{reasoning\_effort=none}.
 
-Core Haiku comparisons use 12 canonical streams (seeds 2000--2011).
+Core Haiku, Opus, and GPT comparisons use 24 canonical streams (seeds
+2000--2023): the original 12 preregistered streams (2000--2011) plus a
+seed-extension panel (2012--2023) added post hoc to tighten the bootstrap
+intervals, run under the identical generator, prompts, and harness. The
+no-$N$ urn/tool comparison in Table~\ref{tab:haiku2x2} was not part of this
+extension and remains at $N=12$.
 Repeated conditions on these streams are not independent samples: the effective
-stream sample is 12, not the number of sessions. The final Qwen transfer test
+stream sample is 24, not the number of sessions. The final Qwen transfer test
 uses 24 paired held-out streams (2000--2023), disjoint from training seeds.
-The Opus script arm re-renders the same 12 canonical latent streams at magnitude
+The Opus script arm re-renders the same 24 canonical latent streams at magnitude
 1000, which makes the tunable numeric families hand-hard for Opus while
 preserving every class identity, role, count, and arrival position. A preflight structural
-projection assertion passes on all 12 seeds. Josephus remains partly
+projection assertion passes on all 24 seeds. Josephus remains partly
 hand-solvable for Opus at any magnitude; we therefore treat Opus timing as the
 primary paired outcome, report a Josephus-excluded sensitivity, and do not use
 its script-arm regret as a payoff-isomorphic cross-frame estimate.
@@ -258,8 +250,10 @@ the artifact record.
 \subsection{Haiku's paired dissociation}
 
 Figure~\ref{fig:task-core} illustrates the paired task construction and the
-main A2 contrast. Table~\ref{tab:haiku2x2} presents the same 12 streams under both information
-conditions. Disclosing $N$ makes Haiku substantially more selective in the
+main A2 contrast. Table~\ref{tab:haiku2x2} presents the A2 columns on the
+full $N=24$ seed-extension panel (seeds 2000--2023); the no-$N$ columns were
+not part of the seed extension and remain at the original $N=12$ (seeds
+2000--2011) for comparison. Disclosing $N$ makes Haiku substantially more selective in the
 abstract frame: first-sight commitment falls from 53\% to 28\%, and lateness
 rises from 0.86 to 1.19. The same disclosure has no effect in the script frame:
 all builds occur on first sight under both conditions.
@@ -270,7 +264,7 @@ all builds occur on first sight under both conditions.
 \caption{\textbf{One allocation problem, two decision frames.}
 \textbf{(a)} The abstract and script environments expose the same latent class
 stream; colors and numeric problem families are alternative surface
-representations. \textbf{(b)} On 12 paired A2 streams, Haiku reserves in the
+representations. \textbf{(b)} On 24 paired A2 streams, Haiku reserves in the
 abstract R0 frame but constructs scripts at first sight in R3. Thin lines show
 paired stream-level values and large points show pooled first-sight
 commitment. Both conditions disclose exactly $N=8$ latent classes.}
@@ -280,16 +274,18 @@ commitment. Both conditions disclose exactly $N=8$ latent classes.}
 \begin{table}[t]
 \centering
 \caption{Haiku allocation under paired information and framing conditions.
-Timing is the primary outcome; the Bayesian comparator is prior-dependent.}
+Timing is the primary outcome; the Bayesian comparator is prior-dependent.
+Urn A2 and Tool A2 columns are $N=24$ (seeds 2000--2023); the no-$N$ columns
+were not extended and remain $N=12$ (seeds 2000--2011).}
 \label{tab:haiku2x2}
 \begin{tabular}{lrrrr}
 \hline
  & Urn no-$N$ & Urn A2 & Tool no-$N$ & Tool A2 \\
 \hline
 First-sight commitment (\%) & 53 & 28 & 100 & 100 \\
-Mean lateness & 0.86 & 1.19 & 0.00 & 0.00 \\
-Regret vs.\ Bayes comparator & $640$ & $0$ & $1308$ & $1633$ \\
-Standard error & $285$ & $344$ & $520$ & $553$ \\
+Mean lateness & 0.86 & 1.39 & 0.00 & 0.00 \\
+Regret vs.\ Bayes comparator & $640$ & $74$ & $1308$ & $1477$ \\
+Standard error & $285$ & $216$ & $520$ & $395$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -298,7 +294,8 @@ The A2 comparison is the key identification result. Haiku receives the same
 class-count information and acts on the same class streams, yet waits in the
 abstract task and commits immediately when the action is reusable script
 construction. The mean paired R3-minus-R0 first-sight difference is $+72.2$
-percentage points (95\% seed-bootstrap interval $[+61.1,+83.3]$). This is
+percentage points (95\% seed-bootstrap interval $[+65.3,+79.2]$, $N=24$). This
+is
 evidence for framing-dependent non-expression, not a claim that all cognition
 is held constant.
 
@@ -328,26 +325,32 @@ not a complete factorial design.
 
 \begin{table}[t]
 \centering
-\caption{Haiku framing ladder on 12 paired A2 streams.}
+\caption{Haiku framing ladder on 24 paired A2 streams (seeds 2000--2023).}
 \label{tab:ladder}
 \begin{tabular}{lrrrrr}
 \hline
  & R0 & R1 & R2 & R2c & R3 \\
 \hline
-First sight (\%) & 28 & 17 & 39 & 100 & 100 \\
-First-sight count & 10/36 & 6/36 & 14/36 & 36/36 & 34/34 \\
-Mean lateness & 1.194 & 2.167 & 0.833 & 0.000 & 0.000 \\
+First sight (\%) & 28 & 12 & 33 & 100 & 100 \\
+First-sight count & 20/72 & 9/72 & 24/72 & 72/72 & 68/68 \\
+Mean lateness & 1.389 & 2.750 & 0.847 & 0.000 & 0.000 \\
 \hline
 \end{tabular}
 \end{table}
 
-R1 changes action modality without reproducing eagerness. R2 introduces real
+R1 changes action modality without reproducing eagerness; at $N=24$ it is, if
+anything, slightly more cautious than R0. R2 introduces real
 problem content and a current-plus-future commitment, increasing first-sight
-behavior by 22 points relative to R1 but remaining below the locked threshold.
-The mean paired adjacent differences (95\% seed-bootstrap intervals) are
-R1--R0 $=-11.1$ points $[-30.6,+8.3]$, R2--R1 $=+22.2$
-$[+2.8,+44.4]$, R2c--R2 $=+61.1$ $[+38.9,+83.3]$, and R3--R2c
-$=0.0$ $[0.0,0.0]$. These descriptive intervals do not replace the
+behavior by 21 points relative to R1 but remaining below the locked threshold.
+The mean paired adjacent differences (95\% seed-bootstrap intervals, $N=24$) are
+R1--R0 $=-15.3$ points $[-26.4,-2.8]$, R2--R1 $=+20.8$
+$[+6.9,+36.1]$, R2c--R2 $=+66.7$ $[+51.4,+80.6]$, and R3--R2c
+$=0.0$ $[0.0,0.0]$. The R1--R0 interval, which included zero at $N=12$, is now
+entirely negative: with more seeds, moving the same abstract decision into a
+tool call reads as a small but reliable additional damper on first-sight
+commitment, not a null modality change. This sharpens rather than
+weakens the localization: the eagerness jump still arrives only at R2c. These
+descriptive intervals do not replace the
 preregistered 30-point localization rule and are not multiplicity-adjusted; the
 final degenerate interval reflects ceiling observations in both rungs, not a
 general equivalence claim.
@@ -358,28 +361,32 @@ construction-only R2c control.
 \centering
 \includegraphics[width=\linewidth]{figures/fig2_framing_ladder.png}
 \caption{\textbf{Preregistered framing ladder and construction-only control.}
-Thin lines connect the same 12 canonical streams across conditions; large
+Thin lines connect the same 24 canonical streams across conditions; large
 points show pooled first-sight commitment. Tool-call modality (R1) and a
 declarative solver claim (R2) do not reproduce full eagerness. Requiring code
-while preserving R2's payoff and removing correctness stakes (R2c) raises
-first-sight commitment from 39\% to 100\%, matching full script construction
+while preserving R2's realized payoff and removing correctness-dependent reward
+(R2c) raises
+first-sight commitment from 33\% to 100\%, matching full script construction
 (R3).}
 \label{fig:ladder}
 \end{figure}
 
 \subsection{Construction-only control}
 
-R2c retains R2's binary claim/skip loop, budget, streams, payoff, and lack of a
-hand-solving option. Its only addition is a required non-empty
+R2c retains R2's binary claim/skip loop, budget, streams, realized payoff, and
+lack of a hand-solving option. Its only protocol addition is a required non-empty
 \texttt{solve(inputs)} implementation. Payoff is deliberately independent of
-code correctness, so correctness incentives cannot explain a timing shift.
+code correctness, so correctness-dependent reward cannot explain a timing
+shift.
 R2c reaches 100\% first-sight commitment and zero lateness, exactly matching
 R3 (Table~\ref{tab:ladder}). Within this benchmark, required code emission is
 therefore sufficient to reproduce the observed effect; tool-call modality,
-correctness stakes, and a hand-solving escape valve are not necessary.
+correctness-dependent reward, and a hand-solving escape valve are not
+necessary. The design does not distinguish emission itself from the compliance
+or effort induced by an instruction to produce correct code.
 
-Code quality provides a secondary diagnostic. Only 6 of 392 tested R2c
-instances (2\%) are correct, and 31 of 36 claimed solvers are degenerate across
+Code quality provides a secondary diagnostic. Only 12 of 789 tested R2c
+instances (2\%) are correct, and 61 of 72 claimed solvers are degenerate across
 their class. Inspection shows structurally plausible code that hard-codes
 incidental parameters from the current instance instead of using the input
 fields. This suggests current-instance fixation, but correctness is post hoc
@@ -390,35 +397,39 @@ and does not enter the causal R2/R2c comparison.
 We cross abstract R0 and code-required R2c with budgets
 $B\in\{1,3,5\}$ and visible build charges $K$. The main plotted charges are
 $K=0$, where eager construction of hot classes can pay; $K=10$, where hot
-classes pay but traps do not; and $K=24$, where the largest class contains only
-23 occurrences and every build is therefore net-negative. The $K=0,20,24$
-panel contains 216 sessions, and the added $K=10$ selective panel contains 72.
+classes pay but traps do not; and $K=24$, a near-never-build regime in which
+the exact hindsight optimum commits on only about 1\% of eligible first-sight
+turns. On the $N=24$
+seed-extension panel, the $K=0,20,24$
+panel contains 432 sessions, and the added $K=10$ selective panel contains 144.
 All sessions pass stream, parsing, and token-cap checks.
 
 \begin{table}[t]
 \centering
-\caption{First-sight commitment hazard (\%) over the economic surface. Entries
+\caption{First-sight commitment hazard (\%) over the economic surface, $N=24$
+seeds (2000--2023). Entries
 within a cell correspond to $B=1/3/5$.}
 \label{tab:econ}
 \begin{tabular}{lrrr}
 \hline
 Policy/frame & $K=0$ & $K=10$ & $K=24$ \\
 \hline
-R0 & 17/25/42 & 0/6/16 & 0/9/5 \\
-R2c & 100/95/100 & 100/100/100 & 100/97/98 \\
-Hindsight optimum & 33/61/83 & 33/57/39 & 0/0/0 \\
+R0 & 14/23/35 & 2/5/16 & 1/6/5 \\
+R2c & 100/97/100 & 100/100/100 & 85/99/99 \\
+Hindsight optimum & 33/64/81 & 33/62/40 & 1/1/1 \\
 \hline
 \end{tabular}
 \end{table}
 
 Figure~\ref{fig:economic} shows the interaction directly. R0 responds to price.
-At $K=10$, it waits 1.56--3.75 occurrences on average,
-and its first-sight hazard is at most 16\%. At $K=24$, it remains imperfect but
-is far less eager than at zero charge. R2c, by contrast, stays at 98--100\%
+At $K=10$, it waits 1.39--3.21 occurrences on average,
+and its first-sight hazard is at most 17\%. At $K=24$, it remains imperfect but
+is far less eager than at zero charge. R2c, by contrast, stays at 85--100\%
 first-sight across the surface. It commits immediately in the selective regime
-and spends its budget even when every build is provably dominated by doing
-nothing. At $B=5,K=24$, regret against the exact hindsight optimum is
-$69.9\pm2.1$ for R2c and $60.3\pm6.0$ for R0.
+and continues to spend its budget in the near-never-build regime, where the
+hindsight optimum almost always declines to build. At $B=5,K=24$, regret
+against the exact hindsight optimum is
+$68.6\pm1.2$ for R2c and $61.8\pm4.5$ for R0.
 
 The interaction matters more than either policy's absolute optimality. R0 is
 too cautious at $K=0$ and still somewhat too eager at high charges, but its
@@ -426,9 +437,9 @@ timing changes with the visible economics. R2c's timing barely changes. For
 Haiku, the code-required frame largely removes behavioral elasticity to the
 investment price. We quantify this with a seed-paired endpoint interaction:
 the $K=0$-to-$24$ reduction in first-sight hazard under R0 minus the
-corresponding reduction under R2c. The mean interaction is $+43.3$ points
-$[+18.3,+68.4]$ for $B=1$, $+21.4$ $[+7.9,+36.1]$ for $B=3$, and
-$+37.0$ $[+19.8,+55.2]$ for $B=5$ (95\% seed-bootstrap intervals).
+corresponding reduction under R2c. The mean interaction is $+30.8$ points
+$[+6.7,+54.2]$ for $B=1$, $+20.2$ $[+10.3,+30.3]$ for $B=3$, and
+$+29.9$ $[+18.5,+42.0]$ for $B=5$ (95\% seed-bootstrap intervals, $N=24$).
 Because R2c is near ceiling throughout, this interaction is driven mainly by
 R0's price response. Appendix~\ref{app:economic} reports hazard, commitments,
 zero-commit incidence, lateness, net utility, and regret together.
@@ -441,7 +452,8 @@ commitment does not.} First-sight commitment hazard is shown across visible
 build charges for each build budget. The abstract R0 policy becomes more
 selective as construction grows expensive, broadly co-moving with the exact
 hindsight net optimum. R2c remains near 100\% first sight, including at
-$K=24$, where every build is net-negative. Each cell reuses the same 12 paired
+$K=24$, where the hindsight optimum commits on only about 1\% of eligible
+first-sight turns. Each cell reuses the same 24 paired
 Haiku streams; the hindsight reference is an offline upper bound, not an
 online policy.}
 \label{fig:economic}
@@ -456,18 +468,28 @@ Figure~\ref{fig:capability-map}.
 
 \begin{table}[t]
 \centering
-\caption{Competence-gated framing comparisons. Arm rates are pooled ratios;
-differences are means of paired seed-level differences. Opus uses the matched
-A2 urn/tool endpoints.}
+\caption{Competence-gated framing comparisons. Entries are pooled first-sight
+proportions among realized commitments. R2c requires code emission but does not
+execute or reward its correctness; R3 is full reusable-script construction.
+Haiku, Opus, and the
+GPT models are reported at $N=24$ (seeds 2000--2023). Both GPT R3 entries are
+conditional on commitment. GPT-5.4-mini realizes only 25/72 (34.7\%) of
+available write-budget slots across the panel, with 13/24 seeds (54.2\%)
+realizing zero commitments; realized commitments are nonetheless as eager as
+Haiku's and Opus's (88.0\% first sight). GPT-5.6 Sol realizes 53/72 (73.6\%)
+of slots, with 2/24 zero-commit seeds; its realized commitments are eager to
+ceiling (100\% first sight) but cluster entirely within each session's first
+11 problems, with no later or reconsidered builds. See the main text for both
+paired R2c-versus-R3 comparisons.}
 \label{tab:models}
 \begin{tabular}{lrrrr}
 \hline
-Model & Abstract first sight & Code/tool first sight & Difference & Interpretation \\
+Model & R0 abstract & R2c code emission & R3 full script & Interpretation \\
 \hline
-Haiku 4.5 & 28\% & 100\% & +72.2 pp & Suppressed \\
-Opus 4.8 & 0\% & 100\% & +100 pp & Suppressed \\
-GPT-5.4-mini & 16.7\% & 87.9\% & +75.8 pp & Suppressed \\
-GPT-5.6 Sol & 19.4\% & 27.8\% & +8.3 pp & Preserved \\
+Haiku 4.5 & 28\% & 100\% & 100\% & Suppressed at R2c \\
+Opus 4.8 & 4\% & 91.7\% & 100\% & Suppressed at R2c \\
+GPT-5.4-mini & 15.3\% & 85.0\% & 88.0\% & Suppressed at R2c; rarely commits at R3 \\
+GPT-5.6 Sol & 23.6\% & 38.9\% & 100\% & Selective at R2c; front-loaded, partial R3 realization \\
 \hline
 \end{tabular}
 \end{table}
@@ -479,46 +501,122 @@ GPT-5.6 Sol & 19.4\% & 27.8\% & +8.3 pp & Preserved \\
 diagonal denotes preservation of first-sight timing across abstract and
 code-required frames. Haiku, Opus, and GPT-5.4-mini lie far above it: each
 reserves abstractly but becomes eager during construction. GPT-5.6 Sol remains
-near the diagonal, demonstrating successful cross-frame preservation. The
+nearer the diagonal and does not meet the preregistered suppression criterion;
+its interval does not establish equivalence. Plotted
+constructive endpoints are R3 for Haiku and Opus and R2c for the GPT models;
+Table~\ref{tab:models} reports the available R2c/R3 ladder cells explicitly. The
 hollow Qwen-14B point is descriptive only: its urn and final script values come
 from different matched evaluation panels and should not be compared as a
 competence-gated model estimate.}
 \label{fig:capability-map}
 \end{figure}
 
-Opus reserves completely in the urn but uses all of its script budget at first
-sight; its paired difference is $+100$ points, with a degenerate seed-bootstrap
-interval $[+100,+100]$ because every observed seed has the same endpoint
-values. All 36 script builds occur at first sight with zero lateness. Josephus
-accounts for three of those builds; excluding it leaves 33/33 first-sight builds
-and zero lateness. Thus the result is not driven by the one family for which
-hand solving remains a partial option. The degenerate interval is not a
-population-level certainty claim. GPT-5.4-mini passes
+Opus reserves almost completely in the urn (4\% first sight, 3/72 commitments)
+but becomes nearly eager as soon as code
+emission is required. In R2c it makes all 72 available claims, 66 at first sight
+(91.7\% among commitments; first-sight hazard 66/77 = 85.7\%), with mean
+lateness 0.083. Its mean net score is 32.7 and regret against the exact hindsight
+net optimum is $17.0\pm1.2$. Under full R3, all 72 script builds occur at first
+sight with zero lateness; the R3-minus-R0 paired difference is $+95.8$ points,
+with a 95\% seed-bootstrap interval $[+91.7,+100.0]$ -- no longer degenerate at
+$N=24$, since Opus R0 no longer reserves on literally every seed, but still
+reflecting a near-total framing shift. Josephus accounts for seven R3 builds;
+excluding it leaves 65/65 first-sight builds and zero lateness. Thus the R3
+result is not driven by the one family for which hand solving remains a partial
+option. Together, R2c and R3 localize Opus's shift to required code emission,
+replicating Haiku's qualitative ladder boundary. GPT-5.4-mini passes
 the preregistered abstract gate, then rises from
-16.7\% R0 to 87.9\% R2c first-sight commitment; the paired difference is
-$+75.8$ points with a 95\% bootstrap interval of $[+54.5,+93.9]$. Seed-level
-heterogeneity remains: one R2c seed waits substantially and one makes no
-commitments. The displayed arm rates are pooled ratios: $29/33-6/36=71.2$
-points. The $+75.8$-point inferential estimand instead averages the 11
+15.3\% R0 to 85.0\% R2c first-sight commitment; the paired difference is
+$+73.3$ points with a 95\% bootstrap interval of $[+58.3,+86.7]$. Seed-level
+heterogeneity remains: one R2c seed (2007) waits substantially (mean lateness
+4.33) and four make no commitments. The displayed arm rates are pooled ratios:
+$11/72-51/60\approx69.7$
+points. The $+73.3$-point inferential estimand instead averages the 20
 within-seed differences for which both among-commitment proportions are
-defined; the zero-commit R2c seed is excluded from that conditional estimand.
-R0 and R2c hazards are 8.7\% and 59.2\%, respectively; this unconditional
-analysis retains the zero-commit seed.
+defined; the four zero-commit R2c seeds are excluded from that conditional
+estimand. R0 and R2c hazards are 8.0\% and 47.2\%, respectively; this
+unconditional analysis retains the zero-commit seeds.
 
-GPT-5.6 Sol also passes the abstract gate, collecting 98.5\% of the Bayesian
-comparator's payoff. Unlike the affected models, it remains selective when code
-is required: R0 and R2c first-sight rates are 19.4\% and 27.8\%, with mean
-lateness 1.14 and 1.11. The paired difference is $+8.3$ points with a 95\%
-interval of $[-11.1,+27.8]$. Under the locked protocol, Sol preserves the
-timing policy across construction.
+Under full R3, GPT-5.4-mini's script-construction behavior diverges sharply
+from its R2c code-emission behavior on the same 24 canonical seeds. Only 25 of
+the 72 possible write-budget slots are ever exercised (commits per seed 1.04),
+and 13/24 seeds (54.2\%) realize zero script builds despite each stream
+presenting up to eight recurring problem types -- versus 4/24 zero-commit
+seeds at R2c. Conditional on committing at all, however, GPT-5.4-mini is
+eager: 22/25 realized commitments (88.0\%) occur at first sight, with pooled
+lateness 0.12 among realized builds, comparable to Opus's 0.083. The
+unconditional first-sight hazard is 12.3\% (22/179); this denominator is far
+larger than R2c's because non-committing R3 sessions run the entire
+60-problem stream rather than truncating at budget exhaustion, so they expose
+many more eligible first-occurrence turns. Paired against R2c on the same
+seeds (10,000-resample seed-bootstrap, RNG seed 0, matching
+Section~\ref{app:bootstrap}): zero-commit incidence rises by $+37.5$ points
+$[+12.5,+62.5]$ and commits per seed fall by $-1.46$ $[-2.13,-0.75]$, while
+first-sight timing conditional on commitment is statistically indistinguishable
+between the two arms ($+5.6$ points $[-16.7,+33.3]$, $n=9$ seeds committing in
+both). GPT-5.4-mini's suppression therefore localizes one rung further than
+Haiku's or Opus's: required code emission (R2c) does not reliably restore
+commitment itself, but conditional on emission the timing pattern is the same
+near-immediate eagerness seen in the other models. This dissociation is
+consistent with a reasoning-policy explanation specific to this snapshot:
+OpenAI's Chat Completions endpoint rejects function-tool calls at
+\texttt{reasoning\_effort=low} for \texttt{gpt-5.4-mini-2026-03-17}, forcing
+\texttt{reasoning\_effort=none} in both arms. Absent visible deliberation,
+whichever action -- \texttt{write\_script} or the always-available
+\texttt{submit\_answer} -- is emitted on a session's first problem or two
+appears to persist for the remainder of the stream, with no observed
+within-session revision even after dozens of exposures to a recurring type
+and near-zero measured accuracy. All 24 R3 sessions are mechanically clean
+(zero malformed, unknown, or refused tool calls).
 
-This result is positive evidence for the benchmark. Code generation does not
-mechanically force eager commitment, and the task is not an impossible trap.
-It can distinguish a model that integrates allocation with construction from
-models that demonstrate allocation only abstractly. The two GPT points do not,
-however, establish that scale or generic capability causes preservation.
-Post-training, architecture, reasoning policy, and tool-use experience remain
-possible explanations.
+GPT-5.6 Sol also passes the abstract gate, collecting 99.8\% of the Bayesian
+comparator's payoff. Unlike the affected models, it
+remains selective when code
+is required: R0 and R2c first-sight rates are 23.6\% and 38.9\%, with mean
+lateness 1.08 and 0.90. The paired difference is $+15.3$ points with a 95\%
+interval of $[+0.0,+30.6]$. Under the locked protocol, Sol retains qualitative
+selectivity and does not meet the preregistered suppression criterion. Because
+the interval extends to a 30.6-point increase, however, these data do not
+establish statistical equivalence of the two arms.
+
+Under full R3, GPT-5.6 Sol realizes 53 of the 72 possible write-budget slots
+(73.6\%), with 2/24 seeds (8.3\%) realizing zero commitments -- a much smaller
+shortfall than GPT-5.4-mini's. Conditional on committing, however, every
+realized commitment (53/53, 100\%) occurs at first sight with zero lateness,
+versus 38.9\% at R2c; the paired R2c-to-R3 change is $+57.6$ points
+$[+42.4,+71.2]$ (same seed-bootstrap procedure, Section~\ref{app:bootstrap}),
+while commits per seed fall by $-0.79$ $[-1.21,-0.42]$ and zero-commit
+incidence rises by $+8.3$ points $[+0.0,+20.8]$. This reversal is not simply
+increased confidence: by raw stream position rather than class-relative
+position, all 22 of Sol's committing seeds write their first script on the
+session's very first problem, and every realized build across the panel falls
+within the first 11 problems of the 60-problem stream, with no later writes
+and no observed reconsideration. Haiku and Opus show the identical early-slot
+clustering on these same canonical streams -- the generator guarantees early
+exposure to the recurring types, so clustering itself is expected, not
+anomalous. What is specific to Sol is the absence of any \emph{later}
+commitment: R2c claims are genuinely spread across turns 0--9 and sometimes
+occur after a type has already recurred once or twice (mean lateness 0.90);
+R3 shows no such spread. The dissociation therefore reflects a front-loaded,
+non-revisited batch of construction decisions made in the session's opening
+turns, contrasting with R2c's turn-by-turn forced binary choice, which elicits
+genuine within-session waiting. All 24 R3 sessions are mechanically clean
+(zero malformed, unknown, or refused tool calls); 12/24 truncate on budget
+exhaustion and 12/24 on the 300,000-token session cap.
+
+The Sol result is positive evidence for the benchmark at R2c: required code
+generation does not mechanically force full eagerness there, and the task is
+not an impossible trap. Full R3 construction complicates the R0/R2c contrast,
+however: Sol's overall commitment rate falls only modestly (100\%
+$\rightarrow$ 73.6\%) while its conditional timing swings to ceiling, in a
+front-loaded pattern distinct from both Haiku's and Opus's clean full
+preservation and GPT-5.4-mini's frequent complete non-commitment. R2c
+distinguishes a model that integrates allocation with construction from one
+that demonstrates allocation only abstractly; whether that distinction
+extends as cleanly to R3 is less clear for Sol than for Haiku and Opus. These
+results do not establish that scale or generic capability causes
+preservation. Post-training, architecture, reasoning policy, and tool-use
+experience remain possible explanations.
 
 \section{Convergent Case Study: Acquisition Without Constructive Activation}
 
@@ -569,15 +667,19 @@ distinct evaluation panels rather than one paired trajectory.}
 The experiments separate three questions that ordinary tool benchmarks
 conflate. A policy may be absent, as in baseline Qwen; acquired from reward but
 context-bound, as in the Qwen case study; or already present but suppressed by
-constructive framing, as in Haiku, Opus, and GPT-5.4-mini. GPT-5.6 Sol shows
-that activation during construction is itself a measurable capability.
+constructive framing, as in Haiku, Opus, and GPT-5.4-mini. GPT-5.6 Sol remains
+comparatively selective under the same code-required comparison, showing that
+the benchmark can measure degrees of cross-frame activation without yet
+establishing equivalence between its arms.
 
 \paragraph{Why might construction suppress allocation?}
 Required code emission may invoke a reactive coding-assistant policy centered
 on solving the visible instance. It may also collapse ``solve now'' and
-``invest for later'' into one salient action. R2c rules out correctness stakes
-and hand-solving availability as necessary causes, but it does not identify a
-neural mechanism. The transcript and code-quality evidence supports
+``invest for later'' into one salient action. R2c rules out
+correctness-dependent reward and hand-solving availability as necessary causes,
+but it does not separate emission from the compliance and effort induced by an
+instruction to produce correct code, nor does it identify a neural mechanism.
+The transcript and code-quality evidence supports
 current-instance fixation only as a bounded behavioral interpretation.
 
 \paragraph{Implications for agents.}
@@ -601,15 +703,18 @@ repository, data-cleaning, API, and analysis workloads.
 The benchmark uses one synthetic numeric environment with engineered hot and
 trap recurrence. Real tasks have ambiguous class boundaries, nonstationary
 frequencies, partial reuse, and variable construction quality. R2c intentionally
-decouples payoff from correctness to isolate code emission; it is not a
+decouples payoff from correctness to study a code-required claim condition; it
+does not separate emission from compliance or output effort and is not a
 realistic model of artifact value.
 
-The core causal ladder is centered on Haiku and uses 12 independent canonical
-streams. Hundreds of crossed sessions do not increase the independent stream
-sample beyond 12. The model panel establishes heterogeneity and achievability,
+The core causal ladder is centered on Haiku and uses 24 independent canonical
+streams (12 preregistered plus a 12-seed extension added post hoc under the
+identical generator and harness). Hundreds of crossed sessions do not increase
+the independent stream sample beyond 24. The model panel establishes heterogeneity and achievability,
 not a scaling trend or broad population estimate. The full economic response
-surface is run only on Haiku, so GPT-5.6 Sol's result demonstrates cross-frame
-timing preservation, not economic optimality at varying prices.
+surface is run only on Haiku, so GPT-5.6 Sol's result shows comparative
+selectivity under one paired condition, not cross-frame equivalence or economic
+optimality at varying prices.
 
 The Bayesian urn comparator is prior-dependent and mismatched to the engineered
 generator. We therefore treat timing as primary and use the exact hindsight
@@ -630,9 +735,10 @@ decision under uncertain reuse. Paired experiments show that several models
 which reserve abstractly commit immediately when required to emit code. In
 Haiku, required code emission reproduces the full shift and renders commitment
 nearly invariant to visible economics. A learned Qwen reserve policy likewise
-remains context-bound. Yet GPT-5.6 Sol preserves reserve across the locked
-framing change, demonstrating that online allocation during constructive action
-is difficult but achievable. Online tool investment is therefore a distinct
+remains context-bound. Yet GPT-5.6 Sol remains comparatively selective across
+the locked framing change and does not show the suppression-level shift seen in
+the other models, demonstrating that required construction need not produce
+full eagerness. Online tool investment is therefore a distinct
 capability worth measuring, not a universal model failure.
 
 \bibliography{references}
@@ -645,7 +751,8 @@ capability worth measuring, not a universal model failure.
 \subsection{Streams and session state}
 
 All confirmatory Haiku, Opus, and GPT comparisons use canonical seeds
-2000--2011. For each seed, a local pseudorandom generator first permutes the
+2000--2023 (the original 2000--2011 plus a 2012--2023 seed-extension panel
+generated by the identical procedure and run under the identical harness). For each seed, a local pseudorandom generator first permutes the
 eight procedure families
 \texttt{lcg}, \texttt{modpow}, \texttt{continued\_frac},
 \texttt{crt\_solve}, \texttt{josephus}, \texttt{quadratic\_map\_mod},
@@ -658,7 +765,7 @@ magnitude 100 for the canonical Haiku conditions. The repaired Opus R3 arm
 holds the complete latent stream fixed---family, class ID, role, rate, realized
 count, occurrence position, and arrival order---and regenerates only numeric
 payloads at magnitude 1000. It does not pin or relocate any family. Structural
-projections match the canonical Opus urn artifacts on 12/12 seeds. Class
+projections match the canonical Opus urn artifacts on 24/24 seeds. Class
 metadata are hidden; only rendered item or problem text is shown to the model.
 Haiku R0, R1, R2, R2c, and R3 reuse the same saved magnitude-100 stream for
 each seed.
@@ -752,14 +859,20 @@ calibration. GPT uses \texttt{reasoning\_effort=none} in both arms and
 \texttt{tool\_choice=auto} for R2c. Maximum output is 512 tokens for R0/R1,
 1500 for R2, 2500 for R2c, and 4096 per R3 turn, with a 300,000-token session
 cap. Opus R3 sessions stop immediately after the third successful script write;
-all 12 terminate on budget exhaustion without hitting the token or per-seed
-cost breaker, and contain no malformed or unknown calls. Qwen starts from
+all 24 terminate on budget exhaustion without hitting the token or per-seed
+cost breaker, and contain no malformed or unknown calls. GPT-5.4-mini R3
+sessions truncate on write-budget exhaustion when any script is written (6/24
+seeds) and otherwise run to the 300,000-token session cap or full stream
+completion (18/24 seeds); all 24 are mechanically clean, with zero malformed,
+unknown, or refused tool calls. GPT-5.6 Sol R3 sessions likewise truncate on
+budget exhaustion for 12/24 seeds and on the 300,000-token session cap for the
+other 12; all 24 are mechanically clean. Qwen starts from
 \texttt{Qwen/Qwen2.5-Coder-14B-Instruct}; matched final
 tool evaluations use q8\_0 base and adapted models with an 8192-token context.
 
 \subsection{Competence gate and mechanical validity}
 
-A GPT model passes the locked abstract competence gate only if all 12 R0
+A GPT model passes the locked abstract competence gate only if all 24 R0
 sessions complete, it makes at least 2.5 commitments per seed, no more than
 50\% of realized commitments are first-sight, and its mean collection reaches
 90\% of the same-information Bayesian comparator. The preregistered
@@ -779,6 +892,7 @@ Qwen script evaluation, empty-fence retries are fixed at four in both arms and
 all attempts remain logged.
 
 \subsection{Bootstrap estimands}
+\label{app:bootstrap}
 
 For each paired comparison, first-sight among commitments is computed within
 seed, the second-arm value minus the first-arm value is taken, and paired seeds
@@ -799,8 +913,8 @@ is treated as an independent replicate.
 \label{app:economic}
 
 Table~\ref{tab:econ-full} reports the principal behavioral and utility
-quantities on the plotted charge surface. Hazard is pooled over eligible
-first-sight turns; all other columns are means over the 12 seeds. Zero-commit
+quantities on the plotted charge surface, $N=24$ seeds (2000--2023). Hazard is pooled over eligible
+first-sight turns; all other columns are means over the 24 seeds. Zero-commit
 incidence is 0\% in every displayed cell.
 
 \begin{table}[H]
@@ -814,25 +928,25 @@ is against the exact hindsight net optimum.}
 \hline
 Frame & $(B,K)$ & Hazard (\%) & Commits & Lateness & Net & Regret \\
 \hline
-R0 & $(1,0)$  & 16.7 & 1.00 & 1.08 & 8.8 & 10.2 \\
-R0 & $(1,10)$ & 0.0  & 1.00 & 3.75 & 3.2 & 5.8 \\
-R0 & $(1,24)$ & 0.0  & 1.00 & 3.17 & -11.0 & 11.0 \\
-R0 & $(3,0)$  & 25.0 & 3.00 & 1.08 & 36.9 & 12.6 \\
-R0 & $(3,10)$ & 5.6  & 3.00 & 2.00 & 10.8 & 8.8 \\
-R0 & $(3,24)$ & 8.6  & 3.00 & 1.94 & -34.2 & 34.2 \\
-R0 & $(5,0)$  & 41.6 & 4.75 & 0.68 & 51.2 & 4.7 \\
-R0 & $(5,10)$ & 16.2 & 4.75 & 1.57 & -0.1 & 19.7 \\
-R0 & $(5,24)$ & 4.7  & 4.25 & 2.36 & -60.3 & 60.3 \\
+R0 & $(1,0)$  & 14.1 & 1.00 & 1.42 & 10.6 & 8.9 \\
+R0 & $(1,10)$ & 1.7  & 1.00 & 3.21 & 3.1 & 6.4 \\
+R0 & $(1,24)$ & 0.9  & 1.00 & 3.00 & -10.5 & 10.6 \\
+R0 & $(3,0)$  & 22.7 & 3.00 & 1.21 & 37.5 & 12.1 \\
+R0 & $(3,10)$ & 4.9  & 3.00 & 2.29 & 10.1 & 9.6 \\
+R0 & $(3,24)$ & 5.7  & 2.96 & 2.21 & -33.4 & 33.5 \\
+R0 & $(5,0)$  & 34.8 & 4.83 & 0.83 & 51.0 & 4.9 \\
+R0 & $(5,10)$ & 16.5 & 4.67 & 1.39 & 1.6 & 18.1 \\
+R0 & $(5,24)$ & 5.3  & 4.33 & 2.45 & -61.8 & 61.8 \\
 \hline
-R2c & $(1,0)$  & 100.0 & 1.00 & 0.00 & 9.8 & 9.2 \\
-R2c & $(1,10)$ & 100.0 & 1.00 & 0.00 & -0.2 & 9.2 \\
-R2c & $(1,24)$ & 100.0 & 1.00 & 0.00 & -14.2 & 14.2 \\
-R2c & $(3,0)$  & 94.6 & 3.00 & 0.06 & 32.3 & 17.2 \\
-R2c & $(3,10)$ & 100.0 & 3.00 & 0.00 & 2.7 & 16.9 \\
-R2c & $(3,24)$ & 97.3 & 3.00 & 0.00 & -38.1 & 38.1 \\
-R2c & $(5,0)$  & 100.0 & 5.00 & 0.00 & 50.2 & 5.8 \\
-R2c & $(5,10)$ & 100.0 & 5.00 & 0.00 & 0.2 & 19.4 \\
-R2c & $(5,24)$ & 98.3 & 5.00 & 0.02 & -69.9 & 69.9 \\
+R2c & $(1,0)$  & 100.0 & 1.00 & 0.00 & 10.0 & 9.5 \\
+R2c & $(1,10)$ & 100.0 & 1.00 & 0.00 & 0.0 & 9.5 \\
+R2c & $(1,24)$ & 85.2 & 1.00 & 0.08 & -14.1 & 14.2 \\
+R2c & $(3,0)$  & 97.3 & 3.00 & 0.03 & 32.7 & 17.0 \\
+R2c & $(3,10)$ & 100.0 & 3.00 & 0.00 & 2.9 & 16.8 \\
+R2c & $(3,24)$ & 98.6 & 3.00 & 0.00 & -38.5 & 38.6 \\
+R2c & $(5,0)$  & 100.0 & 5.00 & 0.00 & 51.5 & 4.4 \\
+R2c & $(5,10)$ & 100.0 & 5.00 & 0.00 & 1.5 & 18.2 \\
+R2c & $(5,24)$ & 99.2 & 5.00 & 0.01 & -68.5 & 68.6 \\
 \hline
 \end{tabular}
 \end{table}
@@ -863,18 +977,24 @@ empty-fence retries in both base and RL-final arms.
 
 \section{Commands and Artifact Manifest}
 
-The core runs are reproduced from the repository root with
+The core runs are reproduced from the repository root with the $N=24$
+seed-extension panel (2000--2023); the original preregistered panel used
+\texttt{\$(seq 2000 2011)} in place of \texttt{\$(seq 2000 2023)} below.
 \begin{verbatim}
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.urn_session \
-  --model haiku --announce-n --seeds $(seq 2000 2011)
+  --model haiku --announce-n --seeds $(seq 2000 2023)
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.urn_tool_session \
-  --model haiku --announce-n --seeds $(seq 2000 2011)
+  --model haiku --announce-n --seeds $(seq 2000 2023)
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.claim_solver_session \
-  --model haiku --announce-n --seeds $(seq 2000 2011)
+  --model haiku --announce-n --seeds $(seq 2000 2023)
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.claim_solver_code_session \
-  --model haiku --announce-n --seeds $(seq 2000 2011)
-PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.run_economic_surface
-PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.analyze_economic_surface
+  --model haiku --announce-n --seeds $(seq 2000 2023)
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.arm_a1_announce \
+  --model haiku --announce-n --full-stream --seeds $(seq 2000 2023) --cap 20.0 --unit-cap 2.0
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.run_economic_surface \
+  --seeds $(seq 2000 2023)
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.analyze_economic_surface \
+  --seeds $(seq 2000 2023) --charges 0 10 20 24
 \end{verbatim}
 Core artifacts are
 \texttt{runs/urn\_haiku\_n-announced},

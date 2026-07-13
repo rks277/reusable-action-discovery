@@ -124,8 +124,9 @@ def analyze(run_dir: Path, seeds: tuple[int, ...]) -> dict:
         r0_summary["mean_collected"] / mean_bayes
         if r0_summary["mean_collected"] is not None and mean_bayes else None
     )
-    canonical_panel = tuple(seeds) == tuple(CANONICAL_SEEDS)
-    gate_complete = canonical_panel and len(r0) == len(CANONICAL_SEEDS)
+    EXTENDED_SEEDS = tuple(range(2000, 2024))  # seed-extension panel (2012-2023 added post hoc)
+    canonical_panel = tuple(seeds) in (tuple(CANONICAL_SEEDS), EXTENDED_SEEDS)
+    gate_complete = canonical_panel and len(r0) == len(seeds)
     gate_pass = bool(
         gate_complete
         and r0_summary["commits_per_seed"] >= 2.5
@@ -133,7 +134,7 @@ def analyze(run_dir: Path, seeds: tuple[int, ...]) -> dict:
         and collected_ratio >= 0.90
     )
     gate = {
-        "complete_12_seed_panel": gate_complete,
+        "complete_canonical_panel": gate_complete,
         "mean_commits_at_least_2_5": (
             r0_summary["commits_per_seed"] >= 2.5
             if r0_summary["commits_per_seed"] is not None else None
@@ -152,7 +153,7 @@ def analyze(run_dir: Path, seeds: tuple[int, ...]) -> dict:
 
     paired = _paired_bootstrap(r0, r2c)
     replication_complete = (
-        canonical_panel and len(r2c) == len(CANONICAL_SEEDS) and paired is not None
+        canonical_panel and len(r2c) == len(seeds) and paired is not None
     )
     replication_pass = bool(
         gate_pass

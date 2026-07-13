@@ -120,7 +120,7 @@ async def main():
     if args.no_scripts:
         driver.system_prompt = aime_byhand_system_prompt
         submit_only = [t for t in TOOL_SCHEMAS() if t["function"]["name"] == "submit_answer"]
-        driver.TOOL_SCHEMAS = lambda: submit_only      # strip write/run/list/read tools
+        driver.TOOL_SCHEMAS = lambda **_kwargs: submit_only  # strip write/run/list/read tools
     models = [CLAUDE.get(m, m) for m in args.models]
     problems = load_aime(args.paper)
     budget = args.budget if args.budget is not None else len(problems)

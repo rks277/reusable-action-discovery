@@ -21,7 +21,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "runs"
 OUT = ROOT / "figs" / "tool-investment"
-SEEDS = list(range(2000, 2012))
+SEEDS = list(range(2000, 2024))
 
 NAVY = "#28536B"
 BLUE = "#3C78A8"
@@ -188,7 +188,7 @@ def figure_task_and_core() -> None:
     ax_pair.text(
         0.5,
         -0.19,
-        "12 paired canonical streams · A2 discloses N=8 in both frames",
+        "24 paired canonical streams · A2 discloses N=8 in both frames",
         transform=ax_pair.transAxes,
         ha="center",
         fontsize=8.5,
@@ -224,7 +224,7 @@ def figure_ladder() -> None:
 
     ax.axvspan(2.5, 4.25, color=ORANGE, alpha=0.08, zorder=0)
     ax.annotate(
-        "required code emission\nR2 → R2c: +61 points",
+        "required code emission\nR2 → R2c: +67 points",
         xy=(3, means[3]),
         xytext=(2.35, 66),
         arrowprops={"arrowstyle": "->", "color": ORANGE, "linewidth": 1.3},
@@ -242,7 +242,7 @@ def figure_ladder() -> None:
     ax.text(
         0.0,
         -0.25,
-        "Thin lines: 12 paired streams. Large points: pooled first-sight percentage. "
+        "Thin lines: 24 paired streams. Large points: pooled first-sight percentage. "
         "R2c keeps R2's payoff and removes correctness stakes.",
         transform=ax.transAxes,
         fontsize=8.5,
@@ -253,7 +253,7 @@ def figure_ladder() -> None:
 
 def figure_economic_elasticity() -> None:
     """Figure 3: R0, R2c, and exact hindsight optimum over visible charges."""
-    summary = load_json(RUNS / "economic_surface_haiku" / "analysis.json")
+    summary = load_json(RUNS / "economic_surface_haiku" / "analysis_n24.json")
     charges = [0, 10, 24]
     budgets = [1, 3, 5]
     fig, axes = plt.subplots(1, 3, figsize=(11.1, 4.2), sharey=True, constrained_layout=True)
@@ -286,7 +286,7 @@ def figure_economic_elasticity() -> None:
     fig.text(
         0.5,
         -0.035,
-        "Haiku · 12 paired streams per cell · opt* is the exact hindsight net optimum, not an online policy",
+        "Haiku · 24 paired streams per cell · opt* is the exact hindsight net optimum, not an online policy",
         ha="center",
         fontsize=8.5,
         color=GRAY,
@@ -298,9 +298,9 @@ def figure_capability_map() -> None:
     """Figure 4: abstract competence versus preservation during construction."""
     points = [
         ("Haiku 4.5", 28.0, 100.0, ORANGE, "o"),
-        ("Opus 4.8", 0.0, 100.0, ORANGE, "o"),
-        ("GPT-5.4-mini", 16.7, 87.9, PURPLE, "o"),
-        ("GPT-5.6 Sol", 19.4, 27.8, GREEN, "o"),
+        ("Opus 4.8", 4.0, 100.0, ORANGE, "o"),
+        ("GPT-5.4-mini", 15.3, 85.0, PURPLE, "o"),
+        ("GPT-5.6 Sol", 23.6, 38.9, GREEN, "o"),
         ("Qwen-14B base†", 75.0, 95.0, GRAY, "s"),
     ]
     fig, ax = plt.subplots(figsize=(7.2, 6.2), constrained_layout=True)

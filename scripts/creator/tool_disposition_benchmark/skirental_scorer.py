@@ -321,10 +321,11 @@ def actions_from_session(session: dict, slots: list[dict]) -> list[dict]:
 
     BUILD is attributed by the AUTHORING event: a slot whose record logged `scripts_authored` (a
     `write_script` fired while that problem was on screen) is a 'build' for that class ('rebuild' if
-    the class already authored one). This is robust to (a) truncation cutting off a freshly-built
-    tool before it is reused, and (b) the model running a tool on a DIFFERENT family (exploration /
-    flailing) -- neither of which is a build for the visited class. Running an existing script with
-    no new authoring -> 'reuse'; nothing -> 'hand'.
+    the class already authored one). This is robust to truncation cutting off a freshly-built tool
+    before it is reused. Under class-bound R3, every successful run is necessarily on the script's
+    bound class. Historical global-script sessions may contain cross-class runs and must not be
+    interpreted as class-specific reuse. Running an existing script with no new authoring -> 'reuse';
+    nothing -> 'hand'.
 
     Fallback: older runs (recorded before `scripts_authored` existed) use the legacy proxy = a
     script's FIRST appearance in `scripts_run` marks its authoring slot."""

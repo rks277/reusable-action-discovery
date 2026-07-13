@@ -1,0 +1,91 @@
+{
+  "seed": 2013,
+  "framing": "R2c",
+  "B": 1,
+  "K": 20,
+  "model_key": "haiku",
+  "resolved_model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "config": {
+    "requested_model": "haiku",
+    "resolved_model": "claude-haiku-4-5-20251001",
+    "provider": "anthropic",
+    "framing": "R2c",
+    "B": 1,
+    "K": 20,
+    "N": 8,
+    "T": 60,
+    "announce_n": true,
+    "temperature": null,
+    "reasoning_effort": "none",
+    "tool_choice": "auto",
+    "max_completion_tokens": 4000,
+    "stream_sha256": "e0ba3446a850c2cb3b00b92494400584cbffc26048b291824caea1ecb0751a84",
+    "system_prompt_sha256": "cc2e87d4f628e858d2fc4e643756b447464787711e703940b61b3da4644ca402",
+    "global_cap_usd": 8.0,
+    "unit_cap_usd": 0.3
+  },
+  "net_score": -18,
+  "claimed": {
+    "1": 1
+  },
+  "claimed_code": {
+    "1": "\ndef solve(inputs: dict) -> float:\n    base = inputs['base']\n    exponent = inputs['exponent']\n    modulus = inputs['modulus']\n    result = pow(base, exponent, modulus)\n    return float(result)\n"
+  },
+  "collected": 2,
+  "budget": 1,
+  "unparsed": 0,
+  "turn_usages": [
+    {
+      "input_tokens": 1231,
+      "output_tokens": 180,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ],
+  "transcript": [
+    {
+      "slot": 0,
+      "class_id": 1,
+      "class_position": 1,
+      "prompt": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Compute 608194 raised to the power 27, modulo 891159 (the remainder when 608194^27 is divided by 891159).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver.",
+      "decision": "CLAIM_SOLVER",
+      "how": "tool",
+      "reply": "I need to solve modular exponentiation: compute 608194^27 mod 891159.\n\nThis is a classic modular exponentiation problem. Python's built-in `pow` function with three arguments efficiently computes this using fast exponentiation.\n\nLet me claim a solver for this type:",
+      "n_tool_calls": 1,
+      "code_len": 194,
+      "error_detail": null,
+      "response_model": null
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Problem 1 of 60 (put solving logic ONLY in the code argument, not this message): Compute 608194 raised to the power 27, modulo 891159 (the remainder when 608194^27 is divided by 891159).\nYou have 1 solver claim(s) left. Call claim_solver (with code) or skip_solver."
+    },
+    {
+      "role": "assistant",
+      "content": "I need to solve modular exponentiation: compute 608194^27 mod 891159.\n\nThis is a classic modular exponentiation problem. Python's built-in `pow` function with three arguments efficiently computes this using fast exponentiation.\n\nLet me claim a solver for this type:",
+      "tool_calls": [
+        {
+          "id": "toolu_01KxmdKFdbEhLiLFxd7rCP6N",
+          "type": "function",
+          "function": {
+            "name": "claim_solver",
+            "arguments": "{\"code\": \"\\ndef solve(inputs: dict) -> float:\\n    base = inputs['base']\\n    exponent = inputs['exponent']\\n    modulus = inputs['modulus']\\n    result = pow(base, exponent, modulus)\\n    return float(result)\\n\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "toolu_01KxmdKFdbEhLiLFxd7rCP6N",
+      "content": "{\"ok\": true}"
+    }
+  ],
+  "termination": "budget_exhausted",
+  "tool_choice": "auto",
+  "provider_response_models": [],
+  "actual_cost_usd": 0.002131
+}
