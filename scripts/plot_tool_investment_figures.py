@@ -298,7 +298,7 @@ def figure_capability_map() -> None:
     """Figure 4: abstract competence versus preservation during construction."""
     points = [
         ("Haiku 4.5", 28.0, 100.0, ORANGE, "o"),
-        ("Opus 4.8", 4.0, 100.0, ORANGE, "o"),
+        ("Opus 4.8", 4.0, 98.6, ORANGE, "o"),
         ("GPT-5.4-mini", 15.3, 85.0, PURPLE, "o"),
         ("GPT-5.6 Sol", 23.6, 38.9, GREEN, "o"),
         ("Qwen-14B base†", 75.0, 90.9, GRAY, "s"),

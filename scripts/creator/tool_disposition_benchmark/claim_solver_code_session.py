@@ -66,6 +66,13 @@ _ap.add_argument("--tool-choice", default=None, choices=["required", "auto"],
                  help="passed straight to chat_tools' tool_choice. Default (unset) resolves per "
                       "provider, same rationale as `claim_solver_session.py`: 'required' for "
                       "local/Ollama, 'auto' for Claude (forcing suppresses deliberation on Anthropic).")
+_ap.add_argument("--empty-fence-retry", type=int, default=0, metavar="N",
+                 help="idle-tail lever (2026-07-12, ported from arm_a1_announce.py's driver.run_session): "
+                      "on a no-tool-call turn (empty ```json``` fence or plain text), prune it from "
+                      "context and hard-retry the SAME slot up to N attempts, with an escalating format "
+                      "reminder, before defaulting to skip and advancing (default 0 = off, one attempt, "
+                      "prior behavior unchanged). Writes to an _efrN-suffixed dir so it never collides "
+                      "with baseline (EFR-off) runs.")
 _ap.add_argument("--selftest", action="store_true",
                  help="run the deterministic transition self-test (skip, first-sight claim-with-code, "
                       "delayed claim-with-code, malformed/missing code, auto-solve, budget exhaustion) "
@@ -75,14 +82,29 @@ MODEL_KEY = _ARGS.model
 MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)
 IS_LOCAL = MODEL_KEY not in CLAUDE
 ANNOUNCE_N = _ARGS.announce_n
+EMPTY_FENCE_RETRY = _ARGS.empty_fence_retry
 _safe = MODEL_KEY.replace(":", "_").replace("/", "_")
 TOOL_CHOICE = _ARGS.tool_choice if _ARGS.tool_choice is not None else ("required" if IS_LOCAL else "auto")
 
+# Same two-stage escalation as `driver.py`'s FORMAT_REMINDER/EMPTY_FENCE_REMINDER, restated for this
+# rung's two-tool vocabulary (claim_solver/skip_solver) instead of the write/run/list/read/submit set.
+_R2C_FORMAT_REMINDER = (
+    "Use the tools to proceed. Respond with a REAL tool call -- not plain text, not a markdown code "
+    "block, not an invented tag. Available tools: claim_solver (with your `code` argument) / skip_solver."
+)
+_R2C_EMPTY_FENCE_REMINDER = (
+    "Your last message contained NO tool call (an empty code fence or plain text). Do NOT emit ```json "
+    "or any empty fence. Emit exactly ONE tool call now and nothing else: claim_solver (with your `code` "
+    "argument) or skip_solver."
+)
+_R2C_REMINDERS = (_R2C_FORMAT_REMINDER, _R2C_EMPTY_FENCE_REMINDER)
+
 
 def base_dir() -> Path:
-    """`runs/claim_solver_code_<model>[_n-announced]/` -- sibling convention to
+    """`runs/claim_solver_code_<model>[_n-announced][_efrN]/` -- sibling convention to
     `claim_solver_session.py`'s `runs/claim_solver_*`, disjoint prefix so the two rungs never collide."""
-    return Path(f"runs/claim_solver_code_{_safe}" + ("_n-announced" if ANNOUNCE_N else ""))
+    suffix = ("_n-announced" if ANNOUNCE_N else "") + (f"_efr{EMPTY_FENCE_RETRY}" if EMPTY_FENCE_RETRY else "")
+    return Path(f"runs/claim_solver_code_{_safe}" + suffix)
 
 
 SEEDS = _ARGS.seeds if _ARGS.seeds else list(range(2000, 2012))
@@ -226,12 +248,18 @@ def cost_of(turn_usages):
 async def run_episode_code_claim(client, model, slots: list[dict], *, T: int, B: int, system: str,
                                  temperature: float | None = None, tool_choice: str = "auto",
                                  max_tokens: int = 2500, reasoning_effort: str | None = None,
-                                 stop_after_turn=None) -> dict:
+                                 stop_after_turn=None, empty_fence_retry: int = 0) -> dict:
     """Code-required analogue of `claim_solver_session.run_episode_claim` -- same per-draw loop
     shape (pending/auto-solve, budget decrement, transport retry-then-error), `resolve_code_claim_decision`
     instead of the shared zero-arg resolver, and an extra `claimed_code` return field (`class_id ->
     code`) that `grade_claimed_code` consumes post-hoc. `max_tokens` defaults higher than R2's 1500
-    -- code is inherently longer than R2's reasoning-only replies."""
+    -- code is inherently longer than R2's reasoning-only replies.
+
+    `empty_fence_retry` (2026-07-12, ported from `driver.run_session`'s `prune_no_tool`/
+    `max_no_tool_retries`): on a no-tool-call turn (how=="default"), prune that turn from context and
+    hard-retry the SAME slot with an escalating reminder, up to `empty_fence_retry` attempts, before
+    falling back to the default SKIP_SOLVER and advancing -- 0 (default) reproduces the original
+    one-shot-per-slot behavior exactly."""
     tools = tool_schemas()
     messages, turn_usages, transcript = [], [], []
     claimed: dict[int, int] = {}
@@ -258,33 +286,50 @@ async def run_episode_code_claim(client, model, slots: list[dict], *, T: int, B:
                 f"You have {budget_left} solver claim(s) left. Call claim_solver (with code) or "
                 f"skip_solver.")
         messages.append({"role": "user", "content": user})
-        chat_kwargs = {"max_tokens": max_tokens, "temperature": temperature,
-                       "tool_choice": tool_choice}
-        if reasoning_effort is not None:
-            chat_kwargs["reasoning_effort"] = reasoning_effort
-        turn, exc = await call_with_retry(
-            lambda: client.chat_tools(model, system, messages, tools, **chat_kwargs))
-        if exc is None:
-            u = dict(client.last_usage or {})
-        else:
-            from lomekwi.raw_chat import ChatTurn
-            turn, u = ChatTurn(content=f"[error {type(exc).__name__}: {exc}, retries exhausted]",
-                               tool_calls=[]), {}
-        turn_usages.append(u)
+        max_attempts = empty_fence_retry if empty_fence_retry else 1
+        attempt = 0
+        while True:
+            attempt += 1
+            chat_kwargs = {"max_tokens": max_tokens, "temperature": temperature,
+                           "tool_choice": tool_choice}
+            if reasoning_effort is not None:
+                chat_kwargs["reasoning_effort"] = reasoning_effort
+            turn, exc = await call_with_retry(
+                lambda: client.chat_tools(model, system, messages, tools, **chat_kwargs))
+            if exc is None:
+                u = dict(client.last_usage or {})
+            else:
+                from lomekwi.raw_chat import ChatTurn
+                turn, u = ChatTurn(content=f"[error {type(exc).__name__}: {exc}, retries exhausted]",
+                                   tool_calls=[]), {}
+            turn_usages.append(u)
 
-        asst = {"role": "assistant", "content": turn.content or ""}
-        if turn.tool_calls:
-            asst["tool_calls"] = [{"id": tc["id"], "type": "function",
-                                   "function": {"name": tc["name"], "arguments": tc["arguments"]}}
-                                  for tc in turn.tool_calls]
-        messages.append(asst)
+            asst = {"role": "assistant", "content": turn.content or ""}
+            if turn.tool_calls:
+                asst["tool_calls"] = [{"id": tc["id"], "type": "function",
+                                       "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                                      for tc in turn.tool_calls]
+            messages.append(asst)
 
-        if exc is None:
-            dec, how, results, code = resolve_code_claim_decision(turn.tool_calls)
-        else:
-            dec, how, results, code = "SKIP_SOLVER", "error", [], None
-        for r in results:
-            messages.append({"role": "tool", "tool_call_id": r["tool_call_id"], "content": r["content"]})
+            if exc is None:
+                dec, how, results, code = resolve_code_claim_decision(turn.tool_calls)
+            else:
+                dec, how, results, code = "SKIP_SOLVER", "error", [], None
+            for r in results:
+                messages.append({"role": "tool", "tool_call_id": r["tool_call_id"], "content": r["content"]})
+
+            no_tool = exc is None and not turn.tool_calls
+            if no_tool and attempt < max_attempts:
+                # drop the degenerate (no-tool) assistant turn so a wall of empty fences never
+                # accumulates in context and self-reinforces the collapse (mirrors driver.py's
+                # prune_no_tool); also drop a stacked reminder from the previous retry, if any.
+                messages.pop()
+                if messages and messages[-1]["role"] == "user" and messages[-1]["content"] in _R2C_REMINDERS:
+                    messages.pop()
+                messages.append({"role": "user",
+                                 "content": _R2C_REMINDERS[min(attempt - 1, len(_R2C_REMINDERS) - 1)]})
+                continue
+            break
         if how in ("default", "both", "unknown", "error", "malformed_args"):
             unparsed += 1
         transcript.append({"slot": s["slot_index"], "class_id": cid, "class_position": pos,
@@ -358,7 +403,8 @@ async def run_one(client, model, seed):
 
     system = render_system_code_claim(T, B, N, ANNOUNCE_N)
     row = await run_episode_code_claim(client, model, slots, T=T, B=B, system=system,
-                                       temperature=_ARGS.temp, tool_choice=TOOL_CHOICE)
+                                       temperature=_ARGS.temp, tool_choice=TOOL_CHOICE,
+                                       empty_fence_retry=EMPTY_FENCE_RETRY)
     grades = grade_claimed_code(slots, {int(k): v for k, v in row["claimed_code"].items()})
     row = {"seed": seed, "model_key": MODEL_KEY, "modality": "tool-claim-code",
            "tool_choice": TOOL_CHOICE, "code_grades": grades, **row}

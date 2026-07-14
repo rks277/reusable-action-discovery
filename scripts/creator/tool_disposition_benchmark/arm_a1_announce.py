@@ -71,6 +71,12 @@ _ap.add_argument("--full-stream", action="store_true",
                       "-- no build decisions remain past that point, so first-sight/lateness are "
                       "unchanged and the tail is valued analytically (value_of_builds). Truncating "
                       "avoids paying for ~57 post-budget problems of debugging on an eager model.")
+_ap.add_argument("--magnitude", type=int, default=None,
+                 help="override the default per-model numeric magnitude (1000 for opus, 100 otherwise). "
+                      "Diagnostic use only -- e.g. running Opus at MAG=100 to expose it to the exact "
+                      "same problem instances Haiku/GPT saw, at the cost of reintroducing Opus's known "
+                      "hand-solve availability at that magnitude. Writes to a _mag<N>-suffixed directory "
+                      "so it cannot collide with the canonical per-model magnitude artifacts.")
 _ARGS = _ap.parse_known_args()[0]
 MODEL_KEY = _ARGS.model
 MODEL_STR = CLAUDE.get(MODEL_KEY, MODEL_KEY)      # Claude key -> id; else pass the raw tag through
@@ -89,6 +95,8 @@ if ANNOUNCE_N:
     BASE = Path(str(BASE) + "_n-announced")
 if CANONICAL_STRUCTURE:
     BASE = Path(str(BASE) + "_canonical-structure")
+if _ARGS.magnitude is not None:
+    BASE = Path(str(BASE) + f"_mag{_ARGS.magnitude}")
 if PROVIDER == "openai":
     BASE = Path(str(BASE) + "_write-budget-v2")
 BASE = Path(str(BASE) + "_class-bound-v1")
@@ -153,7 +161,7 @@ if PROVIDER == "openai" and MODEL_STR not in _OPENAI_PRICES:
 # Opus (no closed form for general K; Opus tracks the O(N) recurrence reliably regardless of length) --
 # so for Opus it is PINNED as a single forced trap at the final slot instead: by T-1 there are 0
 # remaining draws, so building never pays off and it cannot influence any earlier build decision.
-MAG = 1000 if MODEL_KEY == "opus" else 100
+MAG = _ARGS.magnitude if _ARGS.magnitude is not None else (1000 if MODEL_KEY == "opus" else 100)
 PINNED_TRAP = "josephus" if MODEL_KEY == "opus" and not CANONICAL_STRUCTURE else None
 # measured pooled a_script from the 2026-07-03 Qwen-Coder calibration (a0_oracle_gap); Claude models
 # assumed ~1 (never separately measured -- their scripts are ~always correct in these transcripts).

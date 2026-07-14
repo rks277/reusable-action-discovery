@@ -1,0 +1,2258 @@
+[
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 204,
+      "A": 63000,
+      "B": 36700,
+      "M": 29688900,
+      "K": 23
+    },
+    "vals_order": [
+      204,
+      63000,
+      36700,
+      29688900,
+      23
+    ],
+    "gold": 10900300,
+    "question": "A pseudorandom counter begins at 204. For 23 rounds, set X = (63000 * X + 36700) mod 29688900. What is X after the final round?",
+    "slot_index": 0,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 1,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 240470,
+      "EXP": 19,
+      "MOD": 230904
+    },
+    "vals_order": [
+      240470,
+      19,
+      230904
+    ],
+    "gold": 167840,
+    "question": "Compute 240470 raised to the power 19, modulo 230904 (the remainder when 240470^19 is divided by 230904).",
+    "slot_index": 1,
+    "class_id": 1,
+    "class_size": 3,
+    "class_position": 1,
+    "members_remaining_after": 2,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 51,
+      "A": 64300,
+      "B": 72700,
+      "M": 9481800,
+      "K": 29
+    },
+    "vals_order": [
+      51,
+      64300,
+      72700,
+      9481800,
+      29
+    ],
+    "gold": 3442700,
+    "question": "Initialize s = 51. Repeat the following 29 times: s = (64300 * s + 72700) % 9481800. Give the resulting value of s.",
+    "slot_index": 2,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 2,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3887580650,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 24
+    },
+    "vals_order": [
+      3887580650,
+      11,
+      7,
+      15,
+      24
+    ],
+    "gold": 3002806156,
+    "question": "Start with the 32-bit value 3887580650. Apply the xorshift step 24 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 3,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 1,
+    "members_remaining_after": 22,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        1666,
+        487,
+        2729,
+        28,
+        416
+      ],
+      "MODULI": [
+        1753,
+        1949,
+        2851,
+        2753,
+        617
+      ]
+    },
+    "vals_order": [
+      [
+        1666,
+        487,
+        2729,
+        28,
+        416
+      ],
+      [
+        1753,
+        1949,
+        2851,
+        2753,
+        617
+      ]
+    ],
+    "gold": 1817536158846616,
+    "question": "Find the smallest non-negative integer x that leaves remainders [1666, 487, 2729, 28, 416] when divided by the respective moduli [1753, 1949, 2851, 2753, 617] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 4,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 1,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2471542133,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 12
+    },
+    "vals_order": [
+      2471542133,
+      11,
+      9,
+      17,
+      12
+    ],
+    "gold": 3463626054,
+    "question": "A 32-bit register holds X = 2471542133. Repeat 12 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 5,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 2,
+    "members_remaining_after": 21,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 188,
+      "A": 40700,
+      "B": 53600,
+      "M": 36185900,
+      "K": 31
+    },
+    "vals_order": [
+      188,
+      40700,
+      53600,
+      36185900,
+      31
+    ],
+    "gold": 10662300,
+    "question": "A pseudorandom counter begins at 188. For 31 rounds, set X = (40700 * X + 53600) mod 36185900. What is X after the final round?",
+    "slot_index": 6,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 3,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        146,
+        1660,
+        1800,
+        365,
+        145
+      ],
+      "MODULI": [
+        233,
+        1901,
+        2897,
+        1669,
+        787
+      ]
+    },
+    "vals_order": [
+      [
+        146,
+        1660,
+        1800,
+        365,
+        145
+      ],
+      [
+        233,
+        1901,
+        2897,
+        1669,
+        787
+      ]
+    ],
+    "gold": 1583638443080424,
+    "question": "Solve the system of congruences: x is congruent to [146, 1660, 1800, 365, 145] modulo [233, 1901, 2897, 1669, 787] respectively (the moduli are pairwise coprime). Give the least non-negative x.",
+    "slot_index": 7,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 2,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        339,
+        323,
+        724,
+        51,
+        129
+      ],
+      "MODULI": [
+        769,
+        1237,
+        2549,
+        1579,
+        229
+      ]
+    },
+    "vals_order": [
+      [
+        339,
+        323,
+        724,
+        51,
+        129
+      ],
+      [
+        769,
+        1237,
+        2549,
+        1579,
+        229
+      ]
+    ],
+    "gold": 485783891791439,
+    "question": "Find the smallest non-negative integer x that leaves remainders [339, 323, 724, 51, 129] when divided by the respective moduli [769, 1237, 2549, 1579, 229] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 8,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 3,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3704834152,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 19
+    },
+    "vals_order": [
+      3704834152,
+      11,
+      9,
+      15,
+      19
+    ],
+    "gold": 3201229710,
+    "question": "Start with the 32-bit value 3704834152. Apply the xorshift step 19 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 9,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 3,
+    "members_remaining_after": 20,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 266,
+      "A": 69500,
+      "B": 34200,
+      "M": 39921100,
+      "K": 26
+    },
+    "vals_order": [
+      266,
+      69500,
+      34200,
+      39921100,
+      26
+    ],
+    "gold": 2754700,
+    "question": "Initialize s = 266. Repeat the following 26 times: s = (69500 * s + 34200) % 39921100. Give the resulting value of s.",
+    "slot_index": 10,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 4,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 90899,
+      "EXP": 14,
+      "MOD": 732866
+    },
+    "vals_order": [
+      90899,
+      14,
+      732866
+    ],
+    "gold": 513443,
+    "question": "A key-exchange step needs g^x mod p with g = 90899, x = 14, and p = 732866. What is the result?",
+    "slot_index": 11,
+    "class_id": 1,
+    "class_size": 3,
+    "class_position": 2,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 114,
+      "A": 82800,
+      "B": 70100,
+      "M": 31420500,
+      "K": 26
+    },
+    "vals_order": [
+      114,
+      82800,
+      70100,
+      31420500,
+      26
+    ],
+    "gold": 17558600,
+    "question": "A register starts at X = 114. It is updated 26 times; each update replaces X with ((82800 * X) + 70100) mod 31420500. Report the final value of X.",
+    "slot_index": 12,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 5,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 32249,
+      "C": 681634,
+      "MOD": 797375,
+      "K": 30
+    },
+    "vals_order": [
+      32249,
+      681634,
+      797375,
+      30
+    ],
+    "gold": 213734,
+    "question": "Start with x = 32249. Repeat 30 times: replace x with (x*x + 681634) mod 797375. Report the final x.",
+    "slot_index": 13,
+    "class_id": 5,
+    "class_size": 4,
+    "class_position": 1,
+    "members_remaining_after": 3,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        139,
+        232,
+        1312,
+        905
+      ],
+      "MODULI": [
+        241,
+        383,
+        1531,
+        1153
+      ]
+    },
+    "vals_order": [
+      [
+        139,
+        232,
+        1312,
+        905
+      ],
+      [
+        241,
+        383,
+        1531,
+        1153
+      ]
+    ],
+    "gold": 45132439110,
+    "question": "Solve the system of congruences: x is congruent to [139, 232, 1312, 905] modulo [241, 383, 1531, 1153] respectively (the moduli are pairwise coprime). Give the least non-negative x.",
+    "slot_index": 14,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 4,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3747443035,
+      "A": 13,
+      "B": 9,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      3747443035,
+      13,
+      9,
+      17,
+      25
+    ],
+    "gold": 3641007414,
+    "question": "A 32-bit register holds X = 3747443035. Repeat 25 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 15,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 4,
+    "members_remaining_after": 19,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        734,
+        1863,
+        117,
+        307
+      ],
+      "MODULI": [
+        1571,
+        1871,
+        367,
+        659
+      ]
+    },
+    "vals_order": [
+      [
+        734,
+        1863,
+        117,
+        307
+      ],
+      [
+        1571,
+        1871,
+        367,
+        659
+      ]
+    ],
+    "gold": 709415814056,
+    "question": "Find the smallest non-negative integer x that leaves remainders [734, 1863, 117, 307] when divided by the respective moduli [1571, 1871, 367, 659] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 16,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 5,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3406705304,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 22
+    },
+    "vals_order": [
+      3406705304,
+      13,
+      9,
+      15,
+      22
+    ],
+    "gold": 2145391755,
+    "question": "A 32-bit register holds X = 3406705304. Repeat 22 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 17,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 5,
+    "members_remaining_after": 18,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        313,
+        137,
+        258,
+        35,
+        172
+      ],
+      "MODULI": [
+        1151,
+        2377,
+        2939,
+        197,
+        1823
+      ]
+    },
+    "vals_order": [
+      [
+        313,
+        137,
+        258,
+        35,
+        172
+      ],
+      [
+        1151,
+        2377,
+        2939,
+        197,
+        1823
+      ]
+    ],
+    "gold": 849778803052521,
+    "question": "Find the smallest non-negative integer x that leaves remainders [313, 137, 258, 35, 172] when divided by the respective moduli [1151, 2377, 2939, 197, 1823] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 18,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 6,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2812066960,
+      "A": 13,
+      "B": 9,
+      "C": 17,
+      "K": 13
+    },
+    "vals_order": [
+      2812066960,
+      13,
+      9,
+      17,
+      13
+    ],
+    "gold": 1196849817,
+    "question": "Start with the 32-bit value 2812066960. Apply the xorshift step 13 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 19,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 6,
+    "members_remaining_after": 17,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 445593,
+      "C": 993392,
+      "MOD": 197858,
+      "K": 16
+    },
+    "vals_order": [
+      445593,
+      993392,
+      197858,
+      16
+    ],
+    "gold": 174107,
+    "question": "Start with x = 445593. Repeat 16 times: replace x with (x*x + 993392) mod 197858. Report the final x.",
+    "slot_index": 20,
+    "class_id": 5,
+    "class_size": 4,
+    "class_position": 2,
+    "members_remaining_after": 2,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1336676228,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 23
+    },
+    "vals_order": [
+      1336676228,
+      11,
+      9,
+      15,
+      23
+    ],
+    "gold": 2885752845,
+    "question": "A 32-bit register holds X = 1336676228. Repeat 23 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 21,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 7,
+    "members_remaining_after": 16,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 221,
+      "A": 53000,
+      "B": 38400,
+      "M": 10847500,
+      "K": 32
+    },
+    "vals_order": [
+      221,
+      53000,
+      38400,
+      10847500,
+      32
+    ],
+    "gold": 10470900,
+    "question": "A register starts at X = 221. It is updated 32 times; each update replaces X with ((53000 * X) + 38400) mod 10847500. Report the final value of X.",
+    "slot_index": 22,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 6,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2416656729,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 15
+    },
+    "vals_order": [
+      2416656729,
+      13,
+      9,
+      15,
+      15
+    ],
+    "gold": 1975484340,
+    "question": "A 32-bit register holds X = 2416656729. Repeat 15 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 23,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 8,
+    "members_remaining_after": 15,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 174,
+      "K": 5
+    },
+    "vals_order": [
+      174,
+      5
+    ],
+    "gold": 161,
+    "question": "174 people stand in a circle numbered 1..174. Counting around the circle, every 5-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 24,
+    "class_id": 4,
+    "class_size": 2,
+    "class_position": 1,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 570707,
+      "C": 750874,
+      "MOD": 784591,
+      "K": 30
+    },
+    "vals_order": [
+      570707,
+      750874,
+      784591,
+      30
+    ],
+    "gold": 562048,
+    "question": "Iterate the map x -> (x^2 + 750874) mod 784591 for 30 steps, starting from x = 570707. What is the resulting value?",
+    "slot_index": 25,
+    "class_id": 5,
+    "class_size": 4,
+    "class_position": 3,
+    "members_remaining_after": 1,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3243050966,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 13
+    },
+    "vals_order": [
+      3243050966,
+      13,
+      7,
+      17,
+      13
+    ],
+    "gold": 2328321243,
+    "question": "Start with the 32-bit value 3243050966. Apply the xorshift step 13 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 26,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 9,
+    "members_remaining_after": 14,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 212,
+      "A": 55600,
+      "B": 33900,
+      "M": 37910300,
+      "K": 22
+    },
+    "vals_order": [
+      212,
+      55600,
+      33900,
+      37910300,
+      22
+    ],
+    "gold": 9788400,
+    "question": "A pseudorandom counter begins at 212. For 22 rounds, set X = (55600 * X + 33900) mod 37910300. What is X after the final round?",
+    "slot_index": 27,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 7,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        488,
+        1540,
+        131,
+        51
+      ],
+      "MODULI": [
+        2113,
+        2671,
+        151,
+        113
+      ]
+    },
+    "vals_order": [
+      [
+        488,
+        1540,
+        131,
+        51
+      ],
+      [
+        2113,
+        2671,
+        151,
+        113
+      ]
+    ],
+    "gold": 18984684266,
+    "question": "Find the smallest non-negative integer x that leaves remainders [488, 1540, 131, 51] when divided by the respective moduli [2113, 2671, 151, 113] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 28,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 7,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1122703892,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 22
+    },
+    "vals_order": [
+      1122703892,
+      11,
+      7,
+      17,
+      22
+    ],
+    "gold": 2564054413,
+    "question": "A 32-bit register holds X = 1122703892. Repeat 22 times: X ^= (X << 11); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 29,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 10,
+    "members_remaining_after": 13,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        2479,
+        1040,
+        394,
+        690
+      ],
+      "MODULI": [
+        2851,
+        2713,
+        397,
+        853
+      ]
+    },
+    "vals_order": [
+      [
+        2479,
+        1040,
+        394,
+        690
+      ],
+      [
+        2851,
+        2713,
+        397,
+        853
+      ]
+    ],
+    "gold": 572170602275,
+    "question": "Find the smallest non-negative integer x that leaves remainders [2479, 1040, 394, 690] when divided by the respective moduli [2851, 2713, 397, 853] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 30,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 8,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "matrix_power_mod",
+    "magnitude": 100,
+    "keys": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "A": 38,
+      "B": 26,
+      "C": 22,
+      "D": 22,
+      "MOD": 637254,
+      "K": 39
+    },
+    "vals_order": [
+      38,
+      26,
+      22,
+      22,
+      637254,
+      39
+    ],
+    "gold": 488700,
+    "question": "Compute the matrix power M^39 mod 637254 for M = [[38, 26], [22, 22]] (i.e. M multiplied together 39 times: M^1 = M, M^2 = M*M, ..., taking mod 637254 throughout); give the sum of the entries of the result.",
+    "slot_index": 31,
+    "class_id": 7,
+    "class_size": 1,
+    "class_position": 1,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "josephus",
+    "magnitude": 100,
+    "keys": [
+      "N",
+      "K"
+    ],
+    "inputs": {
+      "N": 147,
+      "K": 3
+    },
+    "vals_order": [
+      147,
+      3
+    ],
+    "gold": 127,
+    "question": "147 people stand in a circle numbered 1..147. Counting around the circle, every 3-th person is eliminated (continuing past those already gone) until one remains. Report the position of the survivor.",
+    "slot_index": 32,
+    "class_id": 4,
+    "class_size": 2,
+    "class_position": 2,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 113,
+      "A": 23700,
+      "B": 34600,
+      "M": 35495800,
+      "K": 28
+    },
+    "vals_order": [
+      113,
+      23700,
+      34600,
+      35495800,
+      28
+    ],
+    "gold": 13719400,
+    "question": "A pseudorandom counter begins at 113. For 28 rounds, set X = (23700 * X + 34600) mod 35495800. What is X after the final round?",
+    "slot_index": 33,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 8,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        77,
+        118,
+        1251,
+        1497,
+        1446
+      ],
+      "MODULI": [
+        541,
+        229,
+        1657,
+        2437,
+        1709
+      ]
+    },
+    "vals_order": [
+      [
+        77,
+        118,
+        1251,
+        1497,
+        1446
+      ],
+      [
+        541,
+        229,
+        1657,
+        2437,
+        1709
+      ]
+    ],
+    "gold": 668882832934978,
+    "question": "Find the smallest non-negative integer x that leaves remainders [77, 118, 1251, 1497, 1446] when divided by the respective moduli [541, 229, 1657, 2437, 1709] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 34,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 9,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 225,
+      "A": 60700,
+      "B": 42900,
+      "M": 12466100,
+      "K": 25
+    },
+    "vals_order": [
+      225,
+      60700,
+      42900,
+      12466100,
+      25
+    ],
+    "gold": 10832400,
+    "question": "A pseudorandom counter begins at 225. For 25 rounds, set X = (60700 * X + 42900) mod 12466100. What is X after the final round?",
+    "slot_index": 35,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 9,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "modpow",
+    "magnitude": 100,
+    "keys": [
+      "BASE",
+      "EXP",
+      "MOD"
+    ],
+    "inputs": {
+      "BASE": 853545,
+      "EXP": 17,
+      "MOD": 889551
+    },
+    "vals_order": [
+      853545,
+      17,
+      889551
+    ],
+    "gold": 120429,
+    "question": "Compute 853545 raised to the power 17, modulo 889551 (the remainder when 853545^17 is divided by 889551).",
+    "slot_index": 36,
+    "class_id": 1,
+    "class_size": 3,
+    "class_position": 3,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2224553683,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 24
+    },
+    "vals_order": [
+      2224553683,
+      13,
+      9,
+      15,
+      24
+    ],
+    "gold": 888712187,
+    "question": "A 32-bit register holds X = 2224553683. Repeat 24 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 37,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 11,
+    "members_remaining_after": 12,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 3143983728,
+      "A": 11,
+      "B": 7,
+      "C": 17,
+      "K": 25
+    },
+    "vals_order": [
+      3143983728,
+      11,
+      7,
+      17,
+      25
+    ],
+    "gold": 4120080548,
+    "question": "Start with the 32-bit value 3143983728. Apply the xorshift step 25 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<17) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 38,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 12,
+    "members_remaining_after": 11,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        2115,
+        550,
+        219,
+        358,
+        590
+      ],
+      "MODULI": [
+        2441,
+        941,
+        1693,
+        751,
+        2237
+      ]
+    },
+    "vals_order": [
+      [
+        2115,
+        550,
+        219,
+        358,
+        590
+      ],
+      [
+        2441,
+        941,
+        1693,
+        751,
+        2237
+      ]
+    ],
+    "gold": 1327509612157729,
+    "question": "Solve the system of congruences: x is congruent to [2115, 550, 219, 358, 590] modulo [2441, 941, 1693, 751, 2237] respectively (the moduli are pairwise coprime). Give the least non-negative x.",
+    "slot_index": 39,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 10,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        10,
+        124,
+        282,
+        434
+      ],
+      "MODULI": [
+        103,
+        1553,
+        491,
+        2971
+      ]
+    },
+    "vals_order": [
+      [
+        10,
+        124,
+        282,
+        434
+      ],
+      [
+        103,
+        1553,
+        491,
+        2971
+      ]
+    ],
+    "gold": 179498889608,
+    "question": "Find the smallest non-negative integer x that leaves remainders [10, 124, 282, 434] when divided by the respective moduli [103, 1553, 491, 2971] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 40,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 11,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        95,
+        544,
+        885,
+        1865,
+        748
+      ],
+      "MODULI": [
+        443,
+        577,
+        2659,
+        2221,
+        2161
+      ]
+    },
+    "vals_order": [
+      [
+        95,
+        544,
+        885,
+        1865,
+        748
+      ],
+      [
+        443,
+        577,
+        2659,
+        2221,
+        2161
+      ]
+    ],
+    "gold": 1883498691627355,
+    "question": "Find the smallest non-negative integer x that leaves remainders [95, 544, 885, 1865, 748] when divided by the respective moduli [443, 577, 2659, 2221, 2161] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 41,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 12,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 732076475,
+      "A": 13,
+      "B": 9,
+      "C": 17,
+      "K": 13
+    },
+    "vals_order": [
+      732076475,
+      13,
+      9,
+      17,
+      13
+    ],
+    "gold": 3362439163,
+    "question": "A 32-bit register holds X = 732076475. Repeat 13 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 42,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 13,
+    "members_remaining_after": 10,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2961214467,
+      "A": 11,
+      "B": 9,
+      "C": 17,
+      "K": 19
+    },
+    "vals_order": [
+      2961214467,
+      11,
+      9,
+      17,
+      19
+    ],
+    "gold": 1935663456,
+    "question": "A 32-bit register holds X = 2961214467. Repeat 19 times: X ^= (X << 11); X ^= (X >> 9); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 43,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 14,
+    "members_remaining_after": 9,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        777,
+        1468,
+        162,
+        907
+      ],
+      "MODULI": [
+        1621,
+        2137,
+        257,
+        2909
+      ]
+    },
+    "vals_order": [
+      [
+        777,
+        1468,
+        162,
+        907
+      ],
+      [
+        1621,
+        2137,
+        257,
+        2909
+      ]
+    ],
+    "gold": 1113075575481,
+    "question": "Find the smallest non-negative integer x that leaves remainders [777, 1468, 162, 907] when divided by the respective moduli [1621, 2137, 257, 2909] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 44,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 13,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "quadratic_map_mod",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "C",
+      "MOD",
+      "K"
+    ],
+    "inputs": {
+      "X": 639983,
+      "C": 910182,
+      "MOD": 176821,
+      "K": 22
+    },
+    "vals_order": [
+      639983,
+      910182,
+      176821,
+      22
+    ],
+    "gold": 123093,
+    "question": "Start with x = 639983. Repeat 22 times: replace x with (x*x + 910182) mod 176821. Report the final x.",
+    "slot_index": 45,
+    "class_id": 5,
+    "class_size": 4,
+    "class_position": 4,
+    "members_remaining_after": 0,
+    "is_recurring": false,
+    "role": "trap",
+    "rate": 0.03
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        14,
+        1684,
+        21,
+        371,
+        521
+      ],
+      "MODULI": [
+        1979,
+        2089,
+        733,
+        1571,
+        829
+      ]
+    },
+    "vals_order": [
+      [
+        14,
+        1684,
+        21,
+        371,
+        521
+      ],
+      [
+        1979,
+        2089,
+        733,
+        1571,
+        829
+      ]
+    ],
+    "gold": 3415326388687212,
+    "question": "Solve the system of congruences: x is congruent to [14, 1684, 21, 371, 521] modulo [1979, 2089, 733, 1571, 829] respectively (the moduli are pairwise coprime). Give the least non-negative x.",
+    "slot_index": 46,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 14,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2344993476,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 14
+    },
+    "vals_order": [
+      2344993476,
+      13,
+      9,
+      15,
+      14
+    ],
+    "gold": 324375831,
+    "question": "Start with the 32-bit value 2344993476. Apply the xorshift step 14 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 47,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 15,
+    "members_remaining_after": 8,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1484638774,
+      "A": 11,
+      "B": 9,
+      "C": 15,
+      "K": 16
+    },
+    "vals_order": [
+      1484638774,
+      11,
+      9,
+      15,
+      16
+    ],
+    "gold": 2646835221,
+    "question": "Start with the 32-bit value 1484638774. Apply the xorshift step 16 times, where one step is X ^= (X<<11); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 48,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 16,
+    "members_remaining_after": 7,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 435210560,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 14
+    },
+    "vals_order": [
+      435210560,
+      13,
+      7,
+      15,
+      14
+    ],
+    "gold": 1163358113,
+    "question": "A 32-bit register holds X = 435210560. Repeat 14 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 49,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 17,
+    "members_remaining_after": 6,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 165,
+      "A": 63300,
+      "B": 39500,
+      "M": 30119800,
+      "K": 28
+    },
+    "vals_order": [
+      165,
+      63300,
+      39500,
+      30119800,
+      28
+    ],
+    "gold": 848500,
+    "question": "Initialize s = 165. Repeat the following 28 times: s = (63300 * s + 39500) % 30119800. Give the resulting value of s.",
+    "slot_index": 50,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 10,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 950661359,
+      "A": 11,
+      "B": 7,
+      "C": 15,
+      "K": 14
+    },
+    "vals_order": [
+      950661359,
+      11,
+      7,
+      15,
+      14
+    ],
+    "gold": 4244160238,
+    "question": "Start with the 32-bit value 950661359. Apply the xorshift step 14 times, where one step is X ^= (X<<11); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 51,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 18,
+    "members_remaining_after": 5,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2121201712,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 13
+    },
+    "vals_order": [
+      2121201712,
+      13,
+      9,
+      15,
+      13
+    ],
+    "gold": 1474518887,
+    "question": "Start with the 32-bit value 2121201712. Apply the xorshift step 13 times, where one step is X ^= (X<<13); X ^= (X>>9); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 52,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 19,
+    "members_remaining_after": 4,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 1483141580,
+      "A": 13,
+      "B": 7,
+      "C": 17,
+      "K": 23
+    },
+    "vals_order": [
+      1483141580,
+      13,
+      7,
+      17,
+      23
+    ],
+    "gold": 2189157896,
+    "question": "A 32-bit register holds X = 1483141580. Repeat 23 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 17); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 53,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 20,
+    "members_remaining_after": 3,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2049377809,
+      "A": 13,
+      "B": 9,
+      "C": 15,
+      "K": 16
+    },
+    "vals_order": [
+      2049377809,
+      13,
+      9,
+      15,
+      16
+    ],
+    "gold": 19111940,
+    "question": "A 32-bit register holds X = 2049377809. Repeat 16 times: X ^= (X << 13); X ^= (X >> 9); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 54,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 21,
+    "members_remaining_after": 2,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 2953517001,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 18
+    },
+    "vals_order": [
+      2953517001,
+      13,
+      7,
+      15,
+      18
+    ],
+    "gold": 3186677576,
+    "question": "Start with the 32-bit value 2953517001. Apply the xorshift step 18 times, where one step is X ^= (X<<13); X ^= (X>>7); X ^= (X<<15) (all arithmetic kept within 32 bits). What is the resulting X?",
+    "slot_index": 55,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 22,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "xorshift_steps",
+    "magnitude": 100,
+    "keys": [
+      "X",
+      "A",
+      "B",
+      "C",
+      "K"
+    ],
+    "inputs": {
+      "X": 18438076,
+      "A": 13,
+      "B": 7,
+      "C": 15,
+      "K": 21
+    },
+    "vals_order": [
+      18438076,
+      13,
+      7,
+      15,
+      21
+    ],
+    "gold": 115788153,
+    "question": "A 32-bit register holds X = 18438076. Repeat 21 times: X ^= (X << 13); X ^= (X >> 7); X ^= (X << 15); keeping X masked to 32 bits (AND with 0xFFFFFFFF) after each left shift. Report the final X.",
+    "slot_index": 56,
+    "class_id": 6,
+    "class_size": 23,
+    "class_position": 23,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 90,
+      "A": 27100,
+      "B": 34100,
+      "M": 7826200,
+      "K": 27
+    },
+    "vals_order": [
+      90,
+      27100,
+      34100,
+      7826200,
+      27
+    ],
+    "gold": 6962900,
+    "question": "A register starts at X = 90. It is updated 27 times; each update replaces X with ((27100 * X) + 34100) mod 7826200. Report the final value of X.",
+    "slot_index": 57,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 11,
+    "members_remaining_after": 1,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "lcg",
+    "magnitude": 100,
+    "keys": [
+      "SEED",
+      "A",
+      "B",
+      "M",
+      "K"
+    ],
+    "inputs": {
+      "SEED": 79,
+      "A": 42800,
+      "B": 49700,
+      "M": 7945900,
+      "K": 24
+    },
+    "vals_order": [
+      79,
+      42800,
+      49700,
+      7945900,
+      24
+    ],
+    "gold": 7384300,
+    "question": "A pseudorandom counter begins at 79. For 24 rounds, set X = (42800 * X + 49700) mod 7945900. What is X after the final round?",
+    "slot_index": 58,
+    "class_id": 0,
+    "class_size": 12,
+    "class_position": 12,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  },
+  {
+    "family": "crt_solve",
+    "magnitude": 100,
+    "keys": [
+      "REMAINDERS",
+      "MODULI"
+    ],
+    "inputs": {
+      "REMAINDERS": [
+        1634,
+        797,
+        500,
+        28,
+        264
+      ],
+      "MODULI": [
+        2819,
+        2017,
+        1153,
+        643,
+        1123
+      ]
+    },
+    "vals_order": [
+      [
+        1634,
+        797,
+        500,
+        28,
+        264
+      ],
+      [
+        2819,
+        2017,
+        1153,
+        643,
+        1123
+      ]
+    ],
+    "gold": 4026913082274357,
+    "question": "Find the smallest non-negative integer x that leaves remainders [1634, 797, 500, 28, 264] when divided by the respective moduli [2819, 2017, 1153, 643, 1123] (i.e. x mod MODS[i] = REMS[i] for every i). Report x.",
+    "slot_index": 59,
+    "class_id": 3,
+    "class_size": 15,
+    "class_position": 15,
+    "members_remaining_after": 0,
+    "is_recurring": true,
+    "role": "hot",
+    "rate": 0.2833333333333333
+  }
+]

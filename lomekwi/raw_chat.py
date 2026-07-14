@@ -421,6 +421,24 @@ def _extract_untagged_tool_call(content: str, known_names: set[str]) -> tuple[li
     openai/ollama/vllm providers when the SDK found no tool_calls; a real tool_calls response is
     used as-is and this is never consulted."""
     content = _repair_triple_quoted_strings(content)
+    stripped = content.strip()
+    # Bare "<tool_name>" or "<tool_name>\n<json args>" with NO envelope at all -- not even the
+    # {"name":..,"arguments":..} dict this function otherwise looks for, let alone <tool_call> tags
+    # (observed 2026-07-12, qwen-rl-urn-final via Ollama: 100% consistent across 60/60 turns of a
+    # session, not a degeneracy -- it is simply a third untagged shape this parser didn't know about).
+    for name in known_names:
+        if stripped == name:
+            return [{"id": f"untagged_{uuid.uuid4().hex[:8]}", "name": name,
+                     "arguments": "{}", "args": {}}], ""
+        prefix = name + "\n"
+        if stripped.startswith(prefix):
+            try:
+                args = json.loads(stripped[len(prefix):].lstrip())
+            except json.JSONDecodeError:
+                args = None
+            if isinstance(args, dict):
+                return [{"id": f"untagged_{uuid.uuid4().hex[:8]}", "name": name,
+                         "arguments": json.dumps(args), "args": args}], ""
     dec = json.JSONDecoder()
     i = content.find("{")
     while i != -1:

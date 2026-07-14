@@ -19,12 +19,11 @@
   \fcolorbox{gray}{gray!8}{\parbox[c][3.2cm][c]{#1}{\centering\ttfamily\footnotesize
   \textcolor{red}{[GENERATE]}\\[2pt] #2}}}
 
-\title{Over-Eager Builders: Measuring Online Tool Allocation Capability in LLM Agents}
+\title{AlloBench: Measuring Online Tool Allocation Capability in LLM Agents}
 
 \author{%
-Roshan Klein-Seetharaman\thanks{These authors contributed equally to this paper..} \quad
-Daniel Wang\footnotemark[1] \quad
-Andrew Xu\footnotemark[1] \\
+Daniel Wang\thanks{These authors contributed equally to this paper.} \quad
+Andrew Xu\footnotemark[1] \quad Roshan Klein-Seetharaman \\
 Sea12 Technologies \quad Yale University \\
 \texttt{daniel.wang.dzw22@yale.edu}}
 
@@ -35,7 +34,7 @@ Sea12 Technologies \quad Yale University \\
 \maketitle
 \begin{abstract}
 Creating a reusable tool is an investment: an agent pays a fixed cost now in
-exchange for the potential of future reuse. Therefore, a user should prefer for an agent to create a small number of highly reusable tools, rather than many one-offs. We introduce a paired benchmark that tests
+exchange for the potential of future reuse. Therefore, a user should prefer an agent that creates a small number of highly reusable tools, rather than many one-offs. We introduce a paired benchmark that tests
 whether LLM agents exhibit conscious allocation behavior under a fixed budget in two contexts: an abstract text-based formulation and a code-construction task. We find that several frontier models, including Claude Haiku, Claude Opus, and GPT-5.4-mini, act near-optimally in the abstract framing but emphatically fail to transfer this ability to script-writing. Through further experiments, we
 localize this failure to required code emission. All three models adjust their choices to the economics in a declarative environment, but their code-required behavior remains unchanged. Interestingly, we find that
 GPT-5.6 Sol remains capable across the same comparison. This indicates that optimal tool allocation is theoretically possible for LLMs, but that nearly all current models fail to achieve it, even when capable at abstractly reasoning through the same problem.
@@ -179,12 +178,25 @@ instances. We pair identical latent class identities, roles, counts, and arrival
 orders across conditions. Numeric payloads may be rendered at a model-calibrated
 magnitude without changing that latent sequence.
 
+\textbf{The benchmark's primary comparison pairs R0 (the abstract frame above)
+with R2c} (defined precisely in Section~\ref{sec:r2c}): a code-required claim
+that shares R0's action space, budget, and realized payoff, and deliberately
+does not execute or reward code correctness. Because neither arm depends on
+whether the model can actually write working code, this pair isolates the
+allocation decision -- when and what to commit to -- from coding skill. R1, R2,
+and full script construction (R3) are diagnostic extensions used later
+(Section~\ref{sec:ladder}) to localize which representational
+feature drives any observed shift; they are not required to state the
+benchmark's core result and, for R3 specifically, additionally depend on
+script correctness, which is why we do not report Score (below) on it.
+
 The main causal condition, A2, tells both the model and the reference that
 exactly $N=8$ classes occur. A separate no-$N$ condition is ecologically
 natural but gives the Bayesian reference more information than the model.
 Unless stated otherwise, causal comparisons use A2.
 
 \subsection{Outcomes and references}
+\label{sec:outcomes}
 
 Our primary outcomes are behavioral timing measures:
 \begin{itemize}
@@ -205,6 +217,30 @@ reference chooses up to $B$ classes with the largest positive values. This
 reference is prior-free and provides an offline upper bound, not an online
 policy available to the model.
 
+\paragraph{Score.} First-sight commitment and lateness are process measures:
+they describe when a model commits, not whether committing paid off. We
+additionally report \textbf{Score}, a single comprehensive, bigger-is-better
+outcome: the competitive ratio of a policy's realized net utility to the exact
+hindsight-optimal net utility on the same realized stream, pooled across seeds,
+\[
+\text{Score} = \frac{\sum_i \text{collected}_i}{\sum_i \text{optimal}_i}
+\times 100\%,
+\]
+where $\text{collected}_i$ is the policy's realized net utility on seed $i$ and
+$\text{optimal}_i$ is the hindsight optimum defined above, both at the
+benchmark's core $B=3,K=0$ setting. Score is bounded above by 100\% by
+construction (no online policy can beat the hindsight optimum) and folds both
+timing (lateness cost) and allocation-target accuracy (whether the committed
+classes are actually the highest-value ones) into one number, which first-sight
+commitment cannot distinguish: two policies with identical first-sight rates
+can have very different Scores if one of them commits to the wrong classes.
+We report Score only for the benchmark's primary R0/R2c pair (Section~\ref{sec:r2c}
+defines R2c precisely): both share R0's action space and payoff structure and
+neither depends on executing or grading code, so Score isolates allocation
+skill from coding skill. R3 additionally requires a working script to realize
+its credited value, which would conflate the two, so we do not report Score
+for R3.
+
 \section{Experimental Protocol}
 
 The primary controlled subject is Claude Haiku 4.5. Claude Opus 4.8 provides a
@@ -222,13 +258,18 @@ extension and remains at $N=12$.
 Repeated conditions on these streams are not independent samples: the effective
 stream sample is 24, not the number of sessions. The final Qwen transfer test
 uses 24 paired held-out streams (2000--2023), disjoint from training seeds.
-The Opus script arm re-renders the same 24 canonical latent streams at magnitude
-1000, which makes the tunable numeric families hand-hard for Opus while
-preserving every class identity, role, count, and arrival position. A preflight structural
-projection assertion passes on all 24 seeds. Josephus remains partly
-hand-solvable for Opus at any magnitude; we therefore treat Opus timing as the
-primary paired outcome, report a Josephus-excluded sensitivity, and do not use
-its script-arm regret as a payoff-isomorphic cross-frame estimate.
+The Opus script arm uses the same 24 canonical latent streams and the same
+magnitude-100 numeric rendering as Haiku and both GPT models, so all four
+models answer literally identical problem instances under R3, closing the one
+remaining asymmetry in the model panel. A preflight structural projection
+assertion passes on all 24 seeds. Josephus remains partly hand-solvable for
+Opus at any magnitude; we therefore treat Opus timing as the primary paired
+outcome, report a Josephus-excluded sensitivity, and do not use its script-arm
+regret as a payoff-isomorphic cross-frame estimate.
+Appendix~\ref{app:magnitude-sensitivity} additionally reports Opus's R3 arm
+under the magnitude-1000 pool used earlier in this project to foreclose
+Opus's partial hand-solving ability, retained for completeness: the timing
+result is unchanged within the seed-bootstrap interval.
 We report numerators and denominators, pooled arm summaries, and mean paired
 seed differences. Unless stated otherwise, 95\% intervals resample paired
 seeds with replacement 10,000 times and take the 2.5th and 97.5th percentiles
@@ -309,6 +350,7 @@ transcripts are consistent with the timing result but are not themselves the
 causal evidence.
 
 \section{What Triggers Eager Construction?}
+\label{sec:ladder}
 
 \subsection{Preregistered framing ladder}
 
@@ -372,6 +414,7 @@ first-sight commitment from 33\% to 100\%, matching full script construction
 \end{figure}
 
 \subsection{Construction-only control}
+\label{sec:r2c}
 
 R2c retains R2's binary claim/skip loop, budget, streams, realized payoff, and
 lack of a hand-solving option. Its only protocol addition is a required non-empty
@@ -480,14 +523,17 @@ Haiku's and Opus's (88.0\% first sight). GPT-5.6 Sol realizes 53/72 (73.6\%)
 of slots, with 2/24 zero-commit seeds; its realized commitments are eager to
 ceiling (100\% first sight) but cluster entirely within each session's first
 11 problems, with no later or reconsidered builds. See the main text for both
-paired R2c-versus-R3 comparisons.}
+paired R2c-versus-R3 comparisons. All R0/R2c/R3 cells for every model use the
+identical magnitude-100 numeric rendering, so every model answers literally the
+same problem instances; Appendix~\ref{app:magnitude-sensitivity} reports a
+magnitude-1000 completeness check for Opus's R3 arm.}
 \label{tab:models}
 \begin{tabular}{lrrrr}
 \hline
 Model & R0 abstract & R2c code emission & R3 full script & Interpretation \\
 \hline
 Haiku 4.5 & 28\% & 100\% & 100\% & Suppressed at R2c \\
-Opus 4.8 & 4\% & 91.7\% & 100\% & Suppressed at R2c \\
+Opus 4.8 & 4\% & 91.7\% & 98.6\% & Suppressed at R2c \\
 GPT-5.4-mini & 15.3\% & 85.0\% & 88.0\% & Suppressed at R2c; rarely commits at R3 \\
 GPT-5.6 Sol & 23.6\% & 38.9\% & 100\% & Selective at R2c; front-loaded, partial R3 realization \\
 \hline
@@ -503,8 +549,10 @@ code-required frames. Haiku, Opus, and GPT-5.4-mini lie far above it: each
 reserves abstractly but becomes eager during construction. GPT-5.6 Sol remains
 nearer the diagonal and does not meet the preregistered suppression criterion;
 its interval does not establish equivalence. Plotted
-constructive endpoints are R3 for Haiku and Opus and R2c for the GPT models;
-Table~\ref{tab:models} reports the available R2c/R3 ladder cells explicitly. The
+constructive endpoints are R3 for Haiku and Opus and R2c for the GPT models,
+all rendered at the same magnitude-100 numeric pool so every plotted model
+faces the same problem instances; Table~\ref{tab:models} reports the available
+R2c/R3 ladder cells explicitly. The
 hollow Qwen-14B point is descriptive only: its urn and final script values come
 from different matched evaluation panels and should not be compared as a
 competence-gated model estimate.}
@@ -516,14 +564,26 @@ but becomes nearly eager as soon as code
 emission is required. In R2c it makes all 72 available claims, 66 at first sight
 (91.7\% among commitments; first-sight hazard 66/77 = 85.7\%), with mean
 lateness 0.083. Its mean net score is 32.7 and regret against the exact hindsight
-net optimum is $17.0\pm1.2$. Under full R3, all 72 script builds occur at first
-sight with zero lateness; the R3-minus-R0 paired difference is $+95.8$ points,
-with a 95\% seed-bootstrap interval $[+91.7,+100.0]$ -- no longer degenerate at
-$N=24$, since Opus R0 no longer reserves on literally every seed, but still
-reflecting a near-total framing shift. Josephus accounts for seven R3 builds;
-excluding it leaves 65/65 first-sight builds and zero lateness. Thus the R3
-result is not driven by the one family for which hand solving remains a partial
-option. Together, R2c and R3 localize Opus's shift to required code emission,
+net optimum is $17.0\pm1.2$. Under full R3, rendered at magnitude 100 -- the
+identical problem instances answered by Haiku, GPT-5.4-mini, and GPT-5.6 Sol,
+rather than the magnitude-1000 pool used earlier in this project specifically to
+foreclose Opus's partial hand-solving ability -- 71 of 72 script builds occur at
+first sight (98.6\%), mean lateness 0.014; the single non-first-sight build
+(modpow, seed 2018) commits at class position 2. The R3-minus-R0 paired
+difference is $+94.4$ points, with a 95\% seed-bootstrap interval
+$[+88.9,+98.6]$ -- no longer degenerate at $N=24$, since Opus R0 no longer
+reserves on literally every seed, but still reflecting a near-total framing
+shift. Josephus accounts for seven of the 72 R3 builds, all of them at first
+sight; excluding it leaves 64/65 first-sight builds (98.5\%), so the one
+non-first-sight build is unrelated to Josephus's known hand-solvability. Across
+the full 24-seed panel, Opus submitted a raw, script-free answer to an unbuilt
+class only once, and that attempt was incorrect, despite facing the same
+magnitude at which its own calibration shows roughly 25--38\% hand-solve
+accuracy in isolation. Thus the R3 result is not an artifact of the
+magnitude-1000 hardening used elsewhere: at matched magnitude, with a genuine
+if narrow hand-solve alternative on the table, Opus's construction-time
+eagerness is essentially unchanged (Appendix~\ref{app:magnitude-sensitivity}).
+Together, R2c and R3 localize Opus's shift to required code emission,
 replicating Haiku's qualitative ladder boundary. GPT-5.4-mini passes
 the preregistered abstract gate, then rises from
 15.3\% R0 to 85.0\% R2c first-sight commitment; the paired difference is
@@ -618,7 +678,67 @@ results do not establish that scale or generic capability causes
 preservation. Post-training, architecture, reasoning policy, and tool-use
 experience remain possible explanations.
 
+\subsection{Score: a comprehensive, bigger-is-better outcome}
+\label{sec:score}
+
+First-sight commitment describes timing only, and Table~\ref{tab:models}'s
+percentages are not directly comparable across R0 and R2c/R3 in value terms: a
+model can commit immediately yet to the wrong classes, or wait and still
+misallocate. Table~\ref{tab:score} reports Score (Section~\ref{sec:outcomes})
+for the benchmark's primary R0/R2c pair across every model with both arms
+collected. Score is the pooled competitive ratio against the exact hindsight
+optimum at $B=3,K=0$, so 100\% is the ceiling and bigger is better throughout.
+
+\begin{table}[h]
+\centering
+\caption{Score: percent of the exact hindsight-optimal net utility realized,
+pooled over 24 canonical seeds ($B=3,K=0$), on the benchmark's primary R0/R2c
+pair. Bigger is better. Qwen's R2c cells pool every realized outcome across
+all 24 seeds with no seed exclusions, including seeds on which the model's
+own idle-tail generation failure (Section~\ref{sec:qwen-case-study};
+Appendix~\ref{app:mech-validity}) left its write budget only partially spent;
+we report the unfiltered outcome rather than a filtered subset to avoid
+biasing the comparison toward whichever arm happens to fail less often.}
+\label{tab:score}
+\begin{tabular}{lrr}
+\hline
+Model & R0 score & R2c score \\
+\hline
+Haiku 4.5 & 77.6\% & 66.2\% \\
+Opus 4.8 & \textbf{86.0}\% & 65.9\% \\
+GPT-5.4-mini & 75.1\% & 54.2\% \\
+GPT-5.6 Sol & 78.3\% & \textbf{78.4}\% \\
+Qwen-14B base (q8) & 69.0\% & 61.2\% \\
+Qwen-14B RL-final (q8) & 81.9\% & 61.2\% \\
+\hline
+\end{tabular}
+\end{table}
+
+Score changes which comparisons look striking. GPT-5.6 Sol's R2c score
+(78.4\%) is the panel's best despite an R0-to-R2c first-sight shift that looks
+mild next to GPT-5.4-mini's; decomposing Score into budget utilization and
+allocation-target accuracy shows GPT-5.4-mini's R2c shortfall (54.2\%) is
+driven roughly equally by leaving optimal build slots unclaimed and by
+misallocating the slots it does spend, not primarily by timing. Opus and
+Haiku's R2c scores (65.9\% and 66.2\%) sit well below their own R0 scores (86.0\%
+and 77.6\%) despite reaching or approaching ceiling first-sight commitment in
+R2c: acting immediately is not the same as acting on the right classes. The
+RL-trained Qwen-14B policy's R0 score (81.9\%, versus 69.0\% for its untouched
+base) is a substantially cleaner statement of the training's effect than the
+Bayesian-comparator percentage reported in
+Section~\ref{sec:qwen-case-study}, and exceeds every
+frontier model's R0 score except Opus's -- but that gain does not appear at
+R2c: RL-final and base score 61.2\% and 61.2\% respectively (collected 730
+and 729 of an identical 1192-point hindsight optimum across the same 24
+seeds), statistically indistinguishable. This extends
+Section~\ref{sec:qwen-case-study}'s first-sight-based transfer-failure finding
+(RL-final and base indistinguishable at 95\% vs.\ 95\% first sight under full
+R3) to the comprehensive Score outcome under R2c: the reserve policy R0
+training installs does not carry over into either code-construction framing,
+by either measure.
+
 \section{Convergent Case Study: Acquisition Without Constructive Activation}
+\label{sec:qwen-case-study}
 
 As a separate proof-of-possibility case study, we ask whether reward can install
 reserve in a model that is initially eager in both frames, and whether the
@@ -795,14 +915,18 @@ five trap roles. Hot classes jointly receive probability 0.85 and traps 0.15,
 uniformly within role. The generator samples $T=60$ class identities
 i.i.d. and rejection-samples until at least one trap occurs in the first $B$
 positions ($B=3$ in the core comparison). Numeric instances are generated at
-magnitude 100 for the canonical Haiku conditions. The repaired Opus R3 arm
-holds the complete latent stream fixed---family, class ID, role, rate, realized
-count, occurrence position, and arrival order---and regenerates only numeric
-payloads at magnitude 1000. It does not pin or relocate any family. Structural
-projections match the canonical Opus urn artifacts on 24/24 seeds. Class
-metadata are hidden; only rendered item or problem text is shown to the model.
-Haiku R0, R1, R2, R2c, and R3 reuse the same saved magnitude-100 stream for
-each seed.
+magnitude 100 for the canonical Haiku, GPT, and primary Opus R3 conditions. The
+Opus R3 arm holds the complete latent stream fixed---family, class ID, role,
+rate, realized count, occurrence position, and arrival order---and reuses the
+same magnitude-100 numeric rendering as Haiku and both GPT models, so all four
+models answer literally identical problem instances. It does not pin or
+relocate any family. Structural projections match the canonical Opus urn
+artifacts on 24/24 seeds. Class metadata are hidden; only rendered item or
+problem text is shown to the model. Haiku R0, R1, R2, R2c, and R3 reuse the
+same saved magnitude-100 stream for each seed. Appendix~\ref{app:magnitude-sensitivity}
+separately reports a magnitude-1000 completeness check for Opus's R3 arm, the
+pool used earlier in this project to foreclose Opus's partial hand-solving
+ability.
 
 Each commitment consumes one of $B$ slots and is irreversible. Subsequent
 members of a committed class are automatically collected or solved and produce
@@ -905,6 +1029,7 @@ other 12; all 24 are mechanically clean. Qwen starts from
 tool evaluations use q8\_0 base and adapted models with an 8192-token context.
 
 \subsection{Competence gate and mechanical validity}
+\label{app:mech-validity}
 
 A GPT model passes the locked abstract competence gate only if all 24 R0
 sessions complete, it makes at least 2.5 commitments per seed, no more than
@@ -925,6 +1050,33 @@ behavior. Only a mechanical failure permits a replacement run. For the final
 Qwen script evaluation, empty-fence retries are fixed at four in both arms and
 all attempts remain logged.
 
+\paragraph{Qwen R2c exceeds the 10\% threshold; we report it anyway, unfiltered.}
+Both Qwen R2c arms exceed the panel's 10\% unresolved-decision threshold by a
+wide margin: base-q8 resolves 186/347 decisions (46.4\% unresolved) and
+RL-final resolves 146/402 (63.7\% unresolved), against zero malformed or
+unknown calls for every other model in Table~\ref{tab:score}. This is the same
+idle-tail empty-fence generation failure documented for this model family in
+Section~\ref{sec:qwen-case-study} -- common to base and RL-final, not an
+RL-training artifact -- and it survives the same \texttt{empty-fence-retry=4}
+mitigation used for the final Qwen script evaluation above: the retry breaks
+runaway repetition and lets most sessions still spend their full write budget
+(22/24 base-q8 seeds, 17/24 RL-final seeds reach \texttt{budget\_exhausted}
+with all 3 claims placed), but does not restore a clean channel. Rather than
+invoke the mechanical-failure exception to drop or resample the affected
+seeds, we report Score pooled over all 24 seeds for both arms, unresolved
+decisions included, because the two arms fail at different rates (2/24
+base-q8 seeds versus 7/24 RL-final seeds never place their third claim before
+the stream ends): excluding a model's own failed seeds would remove more of
+precisely the outcomes that scored worst for whichever arm fails more often,
+manufacturing a base-vs-RL gap out of the exclusion rule itself rather than
+out of behavior. The unfiltered numbers (Table~\ref{tab:score}: 61.2\% for
+both arms, collected 729 and 730 of 1192) are therefore the conservative,
+selection-bias-free comparison, at the cost of reflecting a genuine 14B
+capability limitation on this harness's code-writing tool schema rather than
+a fully clean channel. We disclose this explicitly as a departure from the
+10\% rule rather than silently reporting a number the stated methodology
+would otherwise call invalid.
+
 \subsection{Bootstrap estimands}
 \label{app:bootstrap}
 
@@ -942,6 +1094,43 @@ utility summaries. Economic endpoint interactions are computed per seed as
 \]
 separately for each $B$, and then resampled by seed. No session within a seed
 is treated as an independent replicate.
+
+\section{Magnitude Sensitivity Check}
+\label{app:magnitude-sensitivity}
+
+The main text reports Opus's R3 arm at magnitude 100, matching Haiku and both
+GPT models so that all four models in the panel answer literally the same
+problem instances. This magnitude was not the arm originally used earlier in
+this project: an initial calibration found that at magnitude 100, Opus hand-solves
+roughly 25--38\% of problems in isolation (\texttt{josephus} alone at
+essentially 100\%), so a magnitude-1000 rendering was adopted specifically to
+foreclose that escape valve before the R3 timing result was trusted. We
+include that magnitude-1000 arm here purely for completeness, not as the
+primary result.
+
+Rerunning the identical 24 canonical seeds, harness, and truncation protocol at
+magnitude 1000, Opus makes 72/72 R3 builds at first sight (100\%) with zero
+mean lateness; the R3-minus-R0 paired difference is $+95.8$ points, 95\%
+seed-bootstrap interval $[+91.7,+100.0]$. This is statistically indistinguishable
+from the magnitude-100 result reported in the main text (98.6\% first sight,
+71/72 builds, mean lateness 0.014, paired difference $+94.4$ points
+$[+88.9,+98.6]$): the two intervals overlap substantially, and neither timing
+estimate is degenerate at $N=24$. Josephus accounts for seven of the 72 builds
+in both arms, all at first sight in both, so its known hand-solvability at any
+magnitude does not drive either result.
+
+The magnitude change therefore has no detectable effect on Opus's
+construction-time eagerness. We report the magnitude-100 arm as primary
+because it removes an asymmetry across the model panel, not because the
+magnitude-1000 arm turned out to be confounded: at magnitude 100, with a
+genuine if narrow hand-solve alternative available on every turn, Opus
+submitted a raw, script-free answer to an unbuilt class only once across the
+full 24-seed panel, and that attempt was incorrect. Artifacts are in
+\texttt{runs/arm\_a1\_announce\_opus\_n-announced\_canonical-structure\_mag100\_class-bound-v1}
+(magnitude 100, this appendix's comparison arm and the main text's primary
+result) and
+\texttt{runs/arm\_a1\_announce\_opus\_n-announced\_canonical-structure\_class-bound-v1}
+(magnitude 1000, the completeness check).
 
 \section{Complete Economic Summaries}
 \label{app:economic}
@@ -1031,6 +1220,9 @@ PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.claim_solve
   --model haiku --announce-n --seeds $(seq 2000 2023)
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.arm_a1_announce \
   --model haiku --announce-n --full-stream --seeds $(seq 2000 2023) --cap 20.0 --unit-cap 2.0
+PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.arm_a1_announce \
+  --model opus --announce-n --canonical-structure --magnitude 100 --publication \
+  --seeds $(seq 2000 2023) --cap 3.0 --unit-cap 0.75
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.run_economic_surface \
   --seeds $(seq 2000 2023)
 PYTHONPATH=. python -u -m scripts.creator.tool_disposition_benchmark.analyze_economic_surface \
@@ -1042,7 +1234,13 @@ Core artifacts are
 \texttt{runs/claim\_solver\_haiku\_n-announced},
 \texttt{runs/claim\_solver\_code\_haiku\_n-announced},
 \texttt{runs/arm\_a1\_announce\_n-announced}, and
-\texttt{runs/economic\_surface\_haiku}. GPT artifacts are under
+\texttt{runs/economic\_surface\_haiku}. The primary Opus R3 artifact (magnitude
+100) is
+\texttt{runs/arm\_a1\_announce\_opus\_n-announced\_canonical-structure\_mag100\_class-bound-v1};
+the magnitude-1000 completeness check (Appendix~\ref{app:magnitude-sensitivity})
+is
+\texttt{runs/arm\_a1\_announce\_opus\_n-announced\_canonical-structure\_class-bound-v1}.
+GPT artifacts are under
 \texttt{runs/economic\_surface\_gpt-5.4-mini-2026-03-17} and
 \texttt{runs/economic\_surface\_gpt-5.6-sol}; each contains the exact model
 identifier, settings, stream, transcript, usage, and per-seed analysis.
